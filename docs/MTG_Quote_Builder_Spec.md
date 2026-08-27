@@ -742,3 +742,33 @@ specimens in any order cannot make the two sections disagree.
 - **"Partial" markers are gone.** No section of the form is unbuilt now, so the
   remaining notes are empty states ("tick the specimens above and each gets a
   block here"), and are styled as such.
+
+### §13.1 — The extension rate was never actually carried
+
+Traced from John's report that "things aren't autopopulating yet in the study
+extension format". The lookup itself worked — sponsor, contacts, deal name,
+specimens and cohorts all arrived from an MT number, a quote reference or a PO.
+The **price** did not, in either pricing mode, while the field's own hint said
+"Carried over from the original quote when the lookup finds it."
+
+Cause: `applyParentQuote` read `header.perSubject` off the parent. Only an
+extension holds that field. A **full** quote prices each specimen separately and
+has no single per-subject figure, so every extension of a full quote — which is
+most of them — carried an empty price.
+
+`parentPerSubject(q)` now returns the flat figure when the parent is itself an
+extension, and otherwise sums the parent's per-specimen prices. It deliberately
+does **not** fall back to `totalCost ÷ subjects`: that total carries shipping and
+other costs, which must not end up inside a per-subject specimen rate.
+
+Per-cohort pricing also starts at the carried rate rather than blank, with the
+figure named underneath, so the rep overrides the cohorts that differ instead of
+typing all of them.
+
+The demo data hid this — the seeded parent quote had no pricing at all. It now
+carries the per-specimen prices it would really hold ($400 whole blood, $525
+plasma, $300 buffy coat), which reconcile to the $612,500 total already on it.
+
+Also: carried cohorts arrived with a literal `0` in *additional subjects* that a
+rep had to clear before typing, and which read as an answer rather than an empty
+box. They now start blank behind a `0` placeholder.

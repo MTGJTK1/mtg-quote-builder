@@ -979,6 +979,9 @@
       cohorts: [{ name: 'Colorectal cancer', subjects: 200 },
                 { name: 'Pancreatic cancer', subjects: 150 },
                 { name: 'Healthy controls', subjects: 150 }],
+      pricing: { specimenPrices: {
+        'Whole blood': { price: '400.00' }, 'Plasma': { price: '525.00' },
+        'Buffy coat': { price: '300.00' } } },
       header: { validity: '30 Day Quote', serviceTypes: ['Prospective'],
         sponsorContactName: 'Marcus Reyes', sponsorContactEmail: 'mreyes@natera.com' } },
     { client: 'Natera', sponsorAcronym: 'NTA', quoteName: 'Pan-cancer - blood (MT2291 extension #1)',
@@ -1071,6 +1074,25 @@
    */
   function cleanCohortName(v) {
     return String(v || '').replace(/^\s*cohort\s*\d*\s*[:.\-–]?\s*/i, '');
+  }
+
+  /** The per-subject rate to carry into an extension.
+   *
+   *  A parent that is itself an extension holds one flat figure. A full quote
+   *  does not — it prices each specimen separately — so the rate is the sum of
+   *  those. Deliberately not derived from totalCost, which carries shipping and
+   *  other costs that should not land in a per-subject specimen price.
+   */
+  function parentPerSubject(q) {
+    var flat = (q.header || {}).perSubject;
+    if (flat) return flat;
+    var prices = ((q.pricing || {}).specimenPrices) || {};
+    var sum = 0, seen = false;
+    Object.keys(prices).forEach(function (k) {
+      var n = num((prices[k] || {}).price);
+      if (n) { sum += n; seen = true; }
+    });
+    return seen ? sum.toFixed(2) : '';
   }
 
   function num(v) {
@@ -1534,7 +1556,7 @@
       draft.header.perSubject = draft.header.perSubject || study.perSubject;
       draft.hubspotDealName = draft.hubspotDealName || study.dealName || '';
       draft.cohorts = (study.cohorts || []).map(function (c) {
-        return { name: c.name, subjects: c.subjects, additionalSubjects: 0 };
+        return { name: c.name, subjects: c.subjects, additionalSubjects: '' };
       });
       draft.header.matchedVia = via;
       draft.header.matchedStudy = study.quote;
@@ -1620,7 +1642,7 @@
         quote: q.quoteNumber, po: (q.header || {}).originalStudyPo || '',
         contactName: (q.header || {}).sponsorContactName || '',
         contactEmail: (q.header || {}).sponsorContactEmail || '',
-        perSubject: (q.header || {}).perSubject || '',
+        perSubject: parentPerSubject(q),
         dealName: q.hubspotDealName || '',
         cohorts: q.cohorts || []
       }, via);
@@ -1911,6 +1933,7 @@
           nameIn.value = c.name || '';
 
           var addIn = el('input', { type: 'text', inputmode: 'numeric',
+            placeholder: '0',
             'aria-label': 'Additional subjects for ' + (c.name || 'cohort ' + (i + 1)),
             oninput: function () { draft.cohorts[i].additionalSubjects = addIn.value; recompute(); } });
           addIn.value = c.additionalSubjects == null ? '' : String(c.additionalSubjects);
@@ -2781,8 +2804,13 @@
             el('span', { text: 'Cohort' }), el('span', { class: 'ca', text: 'Subjects' }),
             el('span', { class: 'ca', text: '$ per subject' }),
             el('span', { class: 'ca', text: 'Subtotal' }), el('span', {})]));
+          // An extension normally re-quotes the original study's rate, so each
+          // cohort starts at the figure the lookup carried over. The rep
+          // overrides the cohorts that differ instead of typing every one.
+          var carried = draft.header.matchedStudy ? draft.header.perSubject : '';
           draft.cohorts.forEach(function (c, i) {
             var key = c.name || ('cohort-' + i);
+            if (pr.cohortPrices[key] == null && carried) pr.cohortPrices[key] = carried;
             var subs = num(c.additionalSubjects);
             var sub = el('span', { class: 'ca' });
             var priceIn = el('input', { type: 'text', inputmode: 'decimal',
@@ -2800,6 +2828,12 @@
               el('span', { class: 'ca' }, [priceIn]), sub, el('span', {})]));
           });
           mainBox.appendChild(rows);
+          if (carried) {
+            mainBox.appendChild(el('div', { class: 'hint',
+              text: 'Each cohort starts at ' + money(num(carried)) +
+                    ', the rate carried over from the original quote. Change the '
+                    + 'ones that differ.' }));
+          }
           return;
         }
 
