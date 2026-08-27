@@ -5,65 +5,46 @@ sites) plus John's description of how feasibility is actually used, 2026-08-27.
 The current form is acknowledged as "not great"; this note separates what it
 captures from what the process actually needs.
 
-## The observation that shapes everything
+## What this tool is for
 
-**The current form is a request, and the answers have nowhere to live.**
+Ops already sends the request to sites as a fillable form, and the responses
+flow back into HubSpot. The responses are not missing and this tool does not
+need to capture them.
 
-Every field in the Word document is something MTG sends *out* to sites — the
-study design, the deadline, the questions. What comes *back* is:
+**The problem is the front of the process, not the back.** The Word form is
+what a sales rep has to fill in, and it is unfriendly: free-text boxes with
+"Click or tap here to enter text", no structure, no guidance about what ops
+actually needs. So reps under-fill it and ops chases them.
 
-- which sites will participate
-- what monthly enrollment each can manage
-- what each site will charge
+So the feasibility builder's job is narrow and clear:
 
-And that is precisely the part that feeds a quote — average site cost, expected
-aggregate enrollment, and shipping cost when specimens are batched. None of it
-has a home in the form. It presumably lives in email threads and someone's
-memory.
+> A form a sales rep finds easy to complete, that produces everything ops needs
+> to send out to sites.
 
-So the feasibility builder is not one document. It is two halves:
+Nothing more. It is a better front door onto an existing process.
 
-    Request   the study design, sent to sites          ← the current Word form
-    Responses one row per site, coming back            ← currently nowhere
+## Where the site responses fit
 
-The responses half is the reason to build this at all. A tool that only
-reproduces the request form would be a nicer version of a Word file. A tool that
-captures the responses turns feasibility into the quote's pricing input.
+Responses landing in HubSpot is what makes "feasibility results feed the quote"
+technically possible: the quote builder reads them back rather than the rep
+re-keying them. Average site cost, expected aggregate enrolment and batched
+shipping cost all derive from that data.
 
-## The durable asset is site knowledge, not the document
+**Unverified:** whether those response fields exist as HubSpot deal properties,
+or live somewhere else in the portal. Spec §7 measured the deal properties for
+study design and found the population fields reliable; the site-response fields
+were not part of that audit. Worth measuring before Phase 5 assumes they are
+readable.
+
+## Feasibility results age
 
 John: *"we don't have to re-run feasibility on future studies that look the same
 … but there is so much variation and things change with our sites over time that
 we regularly rerun."*
 
-Two things follow.
-
-**Feasibility results age.** Site costs and enrolment rates drift. A feasibility
-result carries a date, and the tool should say how old it is when offering it —
-"assessed 14 months ago" is a different proposition from "assessed in March."
-
-**The reusable unit is the site response, not the feasibility.** What makes
-"we don't have to re-run this one" possible is accumulated knowledge about
-sites: this site does dermatology punch biopsies, enrolls ~8/month, charges
-$X per subject. Feasibilities are how that knowledge is collected; the knowledge
-outlives any one of them.
-
-That means a third entity beyond Study/Feasibility/Quote:
-
-    Site         { id, name, country, capabilities }
-    SiteResponse { id, feasibilityId, siteId, willParticipate,
-                   monthlyEnrollment, perSubjectCost, notes, respondedAt }
-
-This connects to tables the schema already has. `CostLogEntry` and
-`FreshTissueRate` are the same idea — cross-quote knowledge that grows — and
-site responses are where much of that knowledge would come from rather than
-being typed in by hand.
-
-**Prior-feasibility search follows naturally.** Given a new study, find earlier
-feasibilities with similar population, specimen types and geography, and show
-their site responses with ages attached. That is the feature that lets a rep
-skip a re-run with their eyes open, and it only works if responses are captured
-as data.
+Anything offered for reuse should carry its age — "assessed 14 months ago" is a
+different proposition from "assessed in March". That applies whether the data is
+read from HubSpot or held here.
 
 ## Field mapping — the current form against the quote builder
 
@@ -74,9 +55,9 @@ as data.
 | **Feasibility response deadline** | — | feasibility only |
 | **Additional questions for site(s)** | — | feasibility only |
 | Study collection type (prospective/retrospective) | §01 Service type | shared |
-| **Approved geographical site locations** | — | feasibility only, and a quote input |
+| **Approved geographical site locations** | — | feasibility only — in a quote this lives inside the inclusion criteria |
 | Indications / cohort descriptions / # subjects | §03 Population & cohorts | shared |
-| **Treatment status** | — | belongs in §03; missing from the quote builder |
+| **Treatment status** | — | belongs in the inclusion criteria, not its own field — see below |
 | Inclusion criteria | §03 Inclusion | shared |
 | Exclusion criteria | §03 Exclusion | shared |
 | Type of biospecimen w/ description | §05 Biospecimens | shared |
@@ -94,37 +75,59 @@ Confirms the architecture note: the overlap is nearly total, and it runs in the
 direction expected — feasibility captures study design, the quote adds approach
 and pricing.
 
-**Three fields the quote builder is missing** and should gain, since they are
-study design rather than feasibility mechanics:
+### The quote builder needs none of these three
 
-- **Approved geographical site locations** — drives site selection and shipping,
-  and belongs on the quote too.
-- **Treatment status** (treatment-naive, on-treatment, post-treatment…) — a
-  real cohort attribute, currently absent from §03.
-- **Additional questions for sites** — arguably feasibility-only, but worth
-  confirming.
+An earlier draft of this note proposed adding geography, treatment status and
+site questions to the quote builder. All three are wrong:
+
+- **Geography** already lives in the inclusion criteria — "where we are
+  collecting" is an inclusion, not a separate field.
+- **Treatment status** likewise. And the feasibility form's naive/treated
+  dropdown is the weak part of that form, not a model to copy: the real
+  population is defined by *which* therapies are excluded, washout periods, and
+  similar detail that no dropdown holds.
+- **Additional questions for sites** is feasibility-only, and deliberately free
+  text — the point is asking things nothing else captures, like "do you treat
+  subjects with X therapeutic."
+
+### Do not structure the inclusion/exclusion criteria
+
+This is the load-bearing conclusion. I/E criteria carry geography, treatment
+history, washout periods, disease severity and one-off requirements — and reps
+write them as prose because that is what the sponsor sends and what a site
+needs to read.
+
+Every attempt to lift a piece out into its own field (a geography picker, a
+treatment-status dropdown) produces a field that captures a fraction of the
+truth while implying it captured all of it. The feasibility form's treatment
+status is exactly that failure, and John names it as why the form is weak.
+
+Same lesson as spec §4's reverted approaches: structure that does not match how
+reps actually think makes the form worse, not better. Keep I/E as free text,
+one criterion per line, rendering as real bullets.
 
 ## Answers recorded, 2026-08-27
 
-- **Sponsor-facing?** No — internal only. *But note:* the request form is sent
-  to **sites**, so there is still a document to generate, just without the
-  sponsor letterhead treatment from spec §3. Worth confirming whether sites
-  receive a generated document or something lighter.
-- **One feasibility → many quotes?** Yes, in effect — feasibility results are
-  reused across similar future studies. Snapshot-on-copy is therefore required,
-  not merely preferred.
+- **Sponsor-facing?** No — internal only. Ops sends the request to sites as a
+  fillable form of their own, so this tool generates no site-facing document.
+  Its output is a complete, correct request handed to ops.
+- **Where do responses go?** Back into HubSpot, through the ops fillable form.
+  Not this tool's job to capture.
+- **One feasibility → many quotes?** Yes, in effect — results are reused on
+  later studies that look the same. Snapshot-on-copy therefore required.
 - **Quote without feasibility?** Yes. A quote can be completed without
-  feasibility ever starting or finishing. Feasibility must never be a
-  precondition; it is an input when present.
+  feasibility ever starting or finishing. Never a precondition.
 - **Quote from an in-progress feasibility?** Implied yes, given reps "cut
   corners" on well-known designs. The link should carry the feasibility's state
   so a quote drawing on an incomplete assessment says so.
 
 ## Still open
 
-1. Does the site request go out as a generated document, or as something else
-   (email body, form link)? Changes whether docx work is needed here at all.
-2. Is there a site list to seed from, or does it accumulate from use?
-3. What does "treatment status" offer as options?
-4. Does a feasibility belong to one sponsor's study, or can it be run
-   speculatively against a design with no sponsor attached?
+1. **Do the site-response fields exist as HubSpot properties?** Site
+   participation, monthly enrolment and site cost were not part of the spec §7
+   audit. This decides whether the quote builder can read feasibility results
+   or the rep re-keys them.
+2. What exactly does ops need that reps currently under-supply? That list is
+   what the form should be built to guarantee — it is the whole point of the
+   tool and is not yet written down.
+3. Can a feasibility be run speculatively against a design with no sponsor?

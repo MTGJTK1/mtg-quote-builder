@@ -107,9 +107,9 @@ work, ordered so that nothing gets built twice.
 The real form is now in `docs/MTG_Feasibility_Request_Form.docx` and mapped
 field by field in `docs/FEASIBILITY_spec_draft.md`. Summary:
 
-- **Internal only**, so the sponsor-facing docx work in spec §3 is not shared.
-  The request form does go out to **sites** though, so there may still be a
-  document to generate — just without the letterhead treatment.
+- **Internal only**, and it generates no site-facing document either — ops
+  sends the request through their own fillable form. So none of the docx work
+  in spec §3 is shared.
 - **One feasibility informs many studies.** Results are reused on later studies
   that look the same. Snapshot-on-copy is therefore required, not optional.
 - **A quote never depends on feasibility.** It can be completed without one
@@ -119,40 +119,40 @@ field by field in `docs/FEASIBILITY_spec_draft.md`. Summary:
   monthly enrolment, site costs — which roll up into average site cost,
   expected aggregate enrolment, and batched shipping cost.
 
-## The two findings that change the model
+## What the feasibility builder is actually for
 
-**1. The current form is only half the process.** Every field in it is
-something sent *out* to sites. The answers coming back — participation,
-enrolment, cost — have nowhere to live, and those answers are exactly what
-feeds a quote. So a feasibility is two halves:
+Ops already sends the request to sites as a fillable form, and responses flow
+back into HubSpot. Nothing is missing at that end.
 
-    Request    the study design, sent to sites      ← the existing Word form
-    Responses  one row per site, coming back        ← currently nowhere
+The weak point is the front: the Word form is what a **sales rep** fills in, and
+it is unfriendly enough that reps under-supply it and ops chases them. So:
 
-Building only the request half would produce a nicer Word file. The responses
-half is what turns feasibility into the quote's pricing input.
+> A form a sales rep finds easy to complete, that produces everything ops needs
+> to send out to sites.
 
-**2. The durable asset is site knowledge, not the document.** Reuse works
-because knowledge about sites accumulates — this site does this kind of
-collection, enrols at this rate, charges this much. Feasibilities collect it;
-it outlives them, and it ages. So the model needs sites and site responses as
-first-class records, and anything offered for reuse should carry its age:
+That is the whole brief. It is a better front door onto an existing process, not
+a replacement for it.
 
-    Site         { id, name, country, capabilities }
-    SiteResponse { id, feasibilityId, siteId, willParticipate,
-                   monthlyEnrollment, perSubjectCost, notes, respondedAt }
+Responses living in HubSpot is also what makes "feasibility feeds the quote"
+work technically — the quote builder reads them rather than the rep re-keying.
+**Unverified:** whether those response fields exist as HubSpot deal properties.
+The spec §7 audit covered study-design fields only.
 
-This is the same idea as the `CostLogEntry` and `FreshTissueRate` tables the
-schema already has — cross-quote knowledge that grows — except site responses
-would populate much of it as a by-product rather than by hand.
+## Resist structuring the inclusion/exclusion criteria
 
-## Still open
+The I/E criteria carry far more than they appear to: geography ("where we are
+collecting"), treatment history, washout periods, disease severity, and one-off
+requirements. Reps write them as prose because that is what the sponsor sends
+and what a site needs to read.
 
-1. Does the site request go out as a generated document, or as an email or
-   form link? Decides whether docx work is needed for feasibility at all.
-2. Is there an existing site list to seed from, or does it accumulate?
-3. What are the options for "treatment status"?
-4. Can a feasibility be run speculatively against a design with no sponsor?
+The feasibility form's naive/treated dropdown is the cautionary example — it
+captures a fraction of the population definition while implying it captured all
+of it, and it is the reason the form is described as weak. Lifting geography or
+treatment status out into their own fields in the quote builder would repeat
+that mistake.
+
+Same lesson as spec §4's reverted approaches. Keep I/E as free text, one
+criterion per line, rendered as real bullets.
 
 ## What is not changing
 
