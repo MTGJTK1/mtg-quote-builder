@@ -702,6 +702,21 @@
       mtNumber: 'MT9920',
       cohorts: [{ name: 'Multi-tumor, mixed', subjects: 400 }],
       header: { validity: '30 Day Quote', serviceTypes: ['Prospective'] } },
+    // Two sponsors under the umbrella MT9920, one of them already on extension #2.
+    // A Merck extension must still come out as #1 — see the numbering note below.
+    { client: 'Elsevier Biobank', sponsorAcronym: 'ELS', quoteName: 'NSCLC - fresh tissue',
+      preparedBy: 'Heather Shahzade', quoteDate: '2026-08-14', status: 'won', totalCost: '204000.00',
+      specimenTypes: ['Fresh tissue'], isExtension: false,
+      hubspotDealName: 'ELS: NSCLC - Fresh Tissue (MT9920)', mtNumber: 'MT9920',
+      cohorts: [{ name: 'NSCLC', subjects: 60 }],
+      header: { validity: '30 Day Quote', serviceTypes: ['Prospective'] } },
+    { client: 'Elsevier Biobank', sponsorAcronym: 'ELS', quoteName: 'NSCLC - fresh tissue (MT9920 extension #2)',
+      preparedBy: 'Heather Shahzade', quoteDate: '2026-08-18', status: 'sent', totalCost: '68000.00',
+      specimenTypes: ['Fresh tissue'], isExtension: true,
+      hubspotDealName: 'ELS: NSCLC - Fresh Tissue (MT9920 extension #2)',
+      cohorts: [{ name: 'NSCLC', subjects: 60, additionalSubjects: 20 }],
+      header: { validity: '30 Day Quote', serviceTypes: ['Prospective'],
+        parentMtNumber: 'MT9920', extensionNumber: '2', designChanged: false } },
     { client: 'Regeneron', sponsorAcronym: 'RGN', quoteName: 'Atopic dermatitis - biopsy & serum',
       preparedBy: 'Karen Krantz', quoteDate: '2026-07-30', status: 'lost', totalCost: '175000.00',
       specimenTypes: ['Frozen tissue', 'Serum'], isExtension: false, hubspotDealName: '',
@@ -1060,12 +1075,21 @@
       draft.cohorts = (parent.cohorts || []).map(function (c) {
         return { name: c.name, subjects: c.subjects, additionalSubjects: 0 };
       });
+      // Count this study's own extensions, not everything sharing the MT number.
+      // A few MT numbers are umbrellas covering many sponsors' orders — MT9920
+      // spans at least eight — so each sponsor runs its own extension sequence
+      // under the same number. Counting by MT alone would number a sponsor's
+      // first extension after somebody else's sixth.
       var next = 1;
       quotes.forEach(function (q) {
-        if (q.isExtension && (q.header || {}).parentMtNumber === draft.header.parentMtNumber) {
-          var n = parseInt((q.header || {}).extensionNumber, 10);
-          if (!isNaN(n) && n >= next) next = n + 1;
-        }
+        if (!q.isExtension) return;
+        var h = q.header || {};
+        var sameStudy = h.parentQuoteId
+          ? h.parentQuoteId === parent.id
+          : (h.parentMtNumber === draft.header.parentMtNumber && q.client === parent.client);
+        if (!sameStudy) return;
+        var n = parseInt(h.extensionNumber, 10);
+        if (!isNaN(n) && n >= next) next = n + 1;
       });
       draft.header.extensionNumber = draft.header.extensionNumber || String(next);
     }

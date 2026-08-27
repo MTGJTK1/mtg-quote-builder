@@ -348,8 +348,35 @@ extract-from-the-title technique §5 already uses for client-code prefixes.
 Prefer the quote register itself as the source once parent quotes live in it;
 treat HubSpot as the fallback for studies quoted before this tool existed.
 
-Note that `MT9920` appears on deals for two different sponsors (EMC and ELS),
-so an MT number is not a unique key on its own — match on sponsor as well.
+### Umbrella MT numbers
+
+Most MT numbers identify one sponsor's study and are unique. A small number are
+**umbrella numbers covering a whole category of work**, shared across many
+sponsors — confirmed by the team, not inferred. Two are visible in the data:
+
+| Number | Covers | Scale | Shape |
+|---|---|---|---|
+| `MT9920` | all fresh tumor tissue orders | 166 deals; ≥8 sponsors (ELS, EMC, GNT, JNJ, MRK, PHT, TRB, YTP) | bare number, no suffix |
+| `MT0893` | FFPE block orders | 17 deals; ≥4 sponsors (AGT, RGN, TFS, XRA) | suffixed per order: `MT0893-AL2603`, `MT0893-TF2602` |
+
+In a 200-deal sample, 33 of 42 distinct MT numbers appeared exactly once. Every
+other repeat stayed within a single sponsor — `MT2234` (NTA ×2), `MT0466`
+(MRK ×2), `MT4090` (BMS ×2) — which is ordinary study-plus-extension lineage,
+not an umbrella. **Spanning multiple sponsors is the signature of an umbrella
+number.**
+
+Two rules follow, and the first one bites:
+
+1. **Never derive an extension number by counting the MT number.** Each sponsor
+   runs its own extension sequence under an umbrella. Real deal names include
+   both `MRK: Solid tumors - tissue (MT9920 extension #6)` and
+   `PHT: CRC - fresh tissue (MT9920 extension #2)`. Counting by MT number alone
+   numbers a sponsor's first extension after someone else's sixth. Scope the
+   count to the parent quote, falling back to MT number **and** client.
+2. **Never use an MT number as a lookup key.** It is a reference to display,
+   not an identifier to match on. Link an extension to the specific parent
+   quote. Where a suffix is present (`MT0893-AL2603`) the full suffixed string
+   *is* unique, so parse `MT\d+(-[A-Z0-9]+)?` and keep the suffix.
 
 ---
 
