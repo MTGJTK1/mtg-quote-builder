@@ -12,7 +12,8 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.10.0",
@@ -29,8 +30,10 @@
     "dotenv": "17.2.3",
     "eslint": "^9",
     "eslint-config-next": "16.3.3",
+    "playwright": "1.56.1",
     "prisma": "7.10.0",
     "tailwindcss": "^4",
+    "tsx": "4.20.6",
     "typescript": "^5"
   }
 }

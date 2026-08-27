@@ -56,6 +56,7 @@ deployment is wired up correctly.
 | `npm run db:migrate` | Create and apply a migration (development) |
 | `npm run db:deploy` | Apply existing migrations (production/CI) |
 | `npm run db:studio` | Browse the database |
+| `npm run db:seed` | Create the four reps (idempotent) |
 
 `prisma generate` runs on `postinstall`; the generated client lives in
 `lib/generated/prisma` and is not committed.
@@ -68,8 +69,8 @@ actually works, not just compiles. Full detail in build brief §8.
 | | Phase | Status |
 |---|---|---|
 | 1 | Scaffold — Next.js + TypeScript + Tailwind + Prisma | **Done** |
-| 2 | Quote CRUD — schema migrated, save/load, register list | Next |
-| 3 | Intake form — the eleven sections, ported from the prototype | |
+| 2 | Quote CRUD — schema migrated, save/load, register list | **Done** |
+| 3 | Intake form — the eleven sections, ported from the prototype | Next |
 | 4 | Pricing & validation — as pure, unit-tested functions | |
 | 5 | HubSpot — deal pre-fill, live population options, quote-code cron | |
 | 6 | Docx generation — internal draft and sponsor quote | |

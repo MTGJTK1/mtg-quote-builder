@@ -1,6 +1,8 @@
+import Link from "next/link";
+
 const PHASES = [
-  { n: 1, name: "Scaffold", detail: "Next.js + TypeScript + Tailwind + Prisma, deployed", done: true },
-  { n: 2, name: "Quote CRUD", detail: "Schema migrated; create/save/load a quote; register list" },
+  { n: 1, name: "Scaffold", detail: "Next.js + TypeScript + Tailwind + Prisma", done: true },
+  { n: 2, name: "Quote CRUD", detail: "Schema migrated; create/save/load a quote; register list", done: true },
   { n: 3, name: "Intake form", detail: "The eleven sections, ported from the prototype" },
   { n: 4, name: "Pricing & validation", detail: "computeShipping, updateSummary, validateQuote" },
   { n: 5, name: "HubSpot", detail: "Deal pre-fill, live population options, quote-code cron" },
@@ -53,6 +55,15 @@ export default function Home() {
           ))}
         </ol>
       </section>
+
+      <div>
+        <Link
+          href="/quotes"
+          className="inline-block rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background"
+        >
+          Open the quote register
+        </Link>
+      </div>
 
       <footer className="text-xs opacity-40">
         <a href="/api/health" className="underline underline-offset-4">
