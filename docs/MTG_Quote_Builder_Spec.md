@@ -438,3 +438,82 @@ The additional-subjects-per-cohort table is new; §01 previously said only that
 the generated output is minimal. It is the one thing an unchanged-design
 extension actually changes, so it deserves to be the centre of that form rather
 than something recovered from a free-text note.
+
+---
+
+## 9. Form revisions — rep review, 2026-08-27 (second pass)
+
+Supersedes parts of §01, §05, §06 and §10.
+
+### Section order
+
+Quote name moves to the **end**, after pricing, because it drafts itself from
+everything above it. Study summary sits with it, and a free-text notes section
+closes the form:
+
+    01 Quote header → 03 Population & cohorts → 05 Biospecimens →
+    10 Pricing → 06 Study summary & quote name → 11 Additional quote details
+
+### §05 Biospecimens — three columns, revised list
+
+Replaces the single ordered dropdown. **The §10 pricing blocks numbered to match
+§05's order must follow this grouping.**
+
+| Tissue | Blood products | Everything else |
+|---|---|---|
+| Fresh tissue | Whole blood | Fresh bone marrow aspirate |
+| Flash frozen tissue | Plasma | Frozen bone marrow aspirate |
+| Frozen tissue in media | Serum | BMMCs |
+| FFPE | Buffy coat | Urine |
+| Slides | PBMCs | Saliva |
+| | | Buccal swab |
+| | | Nasal swab |
+| | | Stool |
+| | | Synovial fluid |
+| | | Synovial tissue |
+| | | Other |
+
+Changes from the old list: "Frozen tissue" splits into flash-frozen and
+frozen-in-media; "FFPE block" becomes "FFPE"; Slides, Synovial fluid and
+Synovial tissue are new; "Fresh marrow"/"BMMC" become "Fresh/Frozen bone marrow
+aspirate" and "BMMCs". **"Nasopharyngeal swab" was dropped** — deliberate per
+the rep, but flagged here because the COVID-era deals use NP swabs heavily.
+
+### Auto-fill
+
+- **Sponsor acronym** fills from the sponsor name, and stops auto-filling once
+  the rep types over it — a new sponsor may not have an acronym assigned yet.
+- **Sponsor contact email** fills from the contact name via HubSpot, same
+  override rule. Needs `crm.objects.contacts.read` added to the Private App
+  scope, which build brief §4 left out until a phase required it.
+- **Quote name and study summary** draft from the cohorts and specimens, and
+  each stops rewriting itself once edited (§06's existing rule). A "redraft
+  both" control re-enables it deliberately.
+
+### Extension path
+
+- **Original study quote is free text**, not a picker. It is ultimately
+  cross-referenced against OneDrive; nothing in this tool should assume the
+  parent quote already lives in the register.
+- **The PO number and/or parent MT number drive the lookup** that populates the
+  study design. Order of preference: the quote register, then OneDrive for
+  pre-tool studies, then HubSpot. §7's measurements constrain this — `po_number`
+  is filled on ~20% of deals, `mt_study_id_number` on none, and an MT number
+  under an umbrella matches several studies. So: a PO match wins; a bare MT
+  match only counts when unique; ambiguity says so and asks for the PO rather
+  than guessing.
+- **Cohorts always show**, whether or not the design changed. The lookup fills
+  them when it can; the rep types them in when it cannot. Rows are addable and
+  removable in both modes — never a dead end when the lookup misses.
+- **Pricing flows from the cohorts**: additional subjects × the per-subject
+  "Biospecimens & data" rate, carried over from the parent quote, giving the
+  total. This is §10's extension-minimal mode made computed rather than typed.
+- **Study summary appears in the extension path**, auto-drafted in the real
+  extension phrasing from §06 and overwritable.
+
+### Implementation note
+
+The lookup must not re-render the fields it reads from. An earlier build
+rebuilt the whole extension block on blur, which destroyed the input mid-typing
+and left stale results on screen. Update values in place and swap only the
+result banner.

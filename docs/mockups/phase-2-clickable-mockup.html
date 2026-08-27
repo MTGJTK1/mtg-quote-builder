@@ -481,7 +481,7 @@
     padding: 1px 6px;
   }
 
-  /* ---------- carried-over parent detail ---------- */
+  /* ---------- lookup / carried-over detail ---------- */
 
   .carried {
     background: var(--accent-soft);
@@ -490,6 +490,7 @@
     margin-bottom: 18px;
   }
   .carried-head {
+    display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap;
     font-size: 10.5px; text-transform: uppercase; letter-spacing: .12em;
     color: var(--accent); font-weight: 600; margin-bottom: 11px;
   }
@@ -501,33 +502,112 @@
   .carried-list dd { margin: 0; font-size: 13.5px; }
   .carried .hint { margin-top: 0; }
 
-  /* ---------- cohort additional-subjects table ---------- */
+  .lookup-idle {
+    border: 1px dashed var(--rule-strong);
+    border-radius: 9px;
+    padding: 13px 15px;
+    margin-bottom: 18px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+  }
+
+  .autofilled {
+    font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .1em;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border-radius: 4px;
+    padding: 1px 6px;
+    margin-left: 7px;
+    vertical-align: 1px;
+  }
+
+  /* ---------- cohort rows ---------- */
 
   .cohorts { display: flex; flex-direction: column; }
 
   .cohort-row {
     display: grid;
-    grid-template-columns: 1fr 110px 110px 90px;
-    gap: 12px;
+    gap: 10px;
     align-items: center;
-    padding: 9px 0;
+    padding: 8px 0;
     border-bottom: 1px solid var(--rule);
   }
+  .cohort-row.full   { grid-template-columns: 1fr 120px 40px; }
+  .cohort-row.ext    { grid-template-columns: 1fr 110px 110px 80px 40px; }
+
   .cohort-row .ca { text-align: right; font-variant-numeric: tabular-nums; }
-  .cohort-row input { text-align: right; padding: 7px 9px; }
+  .cohort-row input[type="text"] { padding: 7px 9px; }
+  .cohort-row .ca input { text-align: right; }
 
   .cohort-head {
     font-size: 10.5px; text-transform: uppercase; letter-spacing: .1em;
     color: var(--ink-faint); padding-bottom: 7px;
   }
-  .cohort-name { font-size: 14px; }
   .cohort-row .dim { color: var(--ink-soft); }
   .cohort-total { border-bottom: 0; font-weight: 600; padding-top: 12px; }
   .cohort-total .strong { font-size: 15px; }
 
-  @media (max-width: 560px) {
-    .cohort-row { grid-template-columns: 1fr 70px 90px 70px; gap: 8px; font-size: 13px; }
+  .row-x {
+    background: none; border: 0; cursor: pointer;
+    color: var(--ink-faint); font-size: 17px; line-height: 1;
+    padding: 4px 6px; border-radius: 6px;
   }
+  .row-x:hover { color: var(--danger); background: var(--danger-bg); }
+
+  .add-row {
+    align-self: flex-start;
+    margin-top: 12px;
+    font: inherit; font-size: 13px;
+    background: none; border: 1px dashed var(--rule-strong);
+    border-radius: 7px; padding: 7px 13px;
+    color: var(--ink-soft); cursor: pointer;
+  }
+  .add-row:hover { border-color: var(--accent); color: var(--accent); }
+
+  @media (max-width: 620px) {
+    .cohort-row.ext  { grid-template-columns: 1fr 64px 78px 60px 32px; gap: 6px; font-size: 12.5px; }
+    .cohort-row.full { grid-template-columns: 1fr 84px 32px; }
+  }
+
+  /* ---------- biospecimen columns ---------- */
+
+  .spec-cols {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
+  }
+  @media (max-width: 760px) { .spec-cols { grid-template-columns: 1fr; gap: 18px; } }
+
+  .spec-col-title {
+    font-size: 10.5px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .11em;
+    color: var(--ink-faint);
+    padding-bottom: 7px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .spec-col .check { margin-bottom: 8px; }
+
+  /* ---------- computed pricing ---------- */
+
+  .calc {
+    background: var(--surface-sunk);
+    border-radius: 9px;
+    padding: 14px 16px;
+    margin-top: 16px;
+  }
+  .calc-row {
+    display: flex; justify-content: space-between; gap: 14px;
+    padding: 5px 0; font-size: 13.5px;
+  }
+  .calc-row .v { font-variant-numeric: tabular-nums; font-family: var(--mono); font-size: 13px; }
+  .calc-total {
+    border-top: 1px solid var(--rule-strong);
+    margin-top: 7px; padding-top: 10px;
+    font-weight: 600; font-size: 15px;
+  }
+  .calc-total .v { font-size: 15px; font-weight: 600; }
 
   /* ---------- register filter ---------- */
 
@@ -600,9 +680,7 @@
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-  @media (prefers-reduced-motion: reduce) {
-    .toast { transition: none; }
-  }
+  @media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
 
   @media (max-width: 640px) {
     main { padding: 26px 18px 80px; }
@@ -632,16 +710,25 @@
 
 <main id="view"></main>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-
 <script>
 (function () {
   'use strict';
 
-  // ---------------------------------------------------------------- data
+  // ---------------------------------------------------------------- vocabulary
 
-  var SPECIMEN_TYPES = ['Fresh tissue', 'Frozen tissue', 'FFPE block', 'Whole blood',
-    'Plasma', 'Serum', 'Buffy coat', 'PBMC', 'Fresh marrow', 'BMMC', 'Urine',
-    'Saliva', 'Buccal swab', 'Nasal swab', 'Nasopharyngeal swab', 'Stool', 'Other'];
+  // Three columns, per rep review 2026-08-27. Replaces the single ordered list
+  // in spec §05. Note: Nasopharyngeal swab was in the old list and is not here.
+  var SPECIMEN_GROUPS = [
+    { title: 'Tissue', items: ['Fresh tissue', 'Flash frozen tissue',
+        'Frozen tissue in media', 'FFPE', 'Slides'] },
+    { title: 'Blood products', items: ['Whole blood', 'Plasma', 'Serum',
+        'Buffy coat', 'PBMCs'] },
+    { title: 'Everything else', items: ['Fresh bone marrow aspirate',
+        'Frozen bone marrow aspirate', 'BMMCs', 'Urine', 'Saliva', 'Buccal swab',
+        'Nasal swab', 'Stool', 'Synovial fluid', 'Synovial tissue', 'Other'] }
+  ];
+
+  var ALL_SPECIMENS = SPECIMEN_GROUPS.reduce(function (a, g) { return a.concat(g.items); }, []);
 
   var REPS = ['John Kibler', 'Heather Shahzade', 'Joshua Taylor', 'Karen Krantz'];
   var VALIDITY = ['30 Day Quote', '60 Day Quote'];
@@ -655,23 +742,64 @@
     { value: 'lost', label: 'Lost' }
   ];
 
-  // Sections that arrive in Phase 3, shown so the numbering tells the whole story.
-  var PENDING_SECTIONS = [
-    ['02', 'Quote approach', 'Phase 3'], ['03', 'Population & cohorts', 'Phase 3'],
-    ['04', 'Collection timepoints', 'Phase 3'], ['07', 'Clinical data', 'Phase 3'],
-    ['08', 'Reports', 'Phase 3'], ['09', 'Timeline & logistics', 'Phase 3'],
-    // The section exists in Phase 3, but generating the two documents is Phase 6.
-    ['11', 'Review & generate', 'Phase 6']
+  // Sponsor → acronym. In the real app this comes from the quote register plus
+  // the code prefixes learned nightly from HubSpot deal titles (spec §6).
+  var ACRONYMS = {
+    'natera': 'NTA', 'exact sciences': 'EXS', 'merck': 'MRK', 'regeneron': 'RGN',
+    'guardant health': 'GHI', 'guardant': 'GHI', 'bristol myers squibb': 'BMS',
+    'johnson & johnson': 'JNJ', 'johnson and johnson': 'JNJ', 'pfizer': 'PFZ',
+    'amgen': 'AMG', 'gilead': 'GIL', 'eli lilly': 'LLY', 'lilly': 'LLY',
+    'astrazeneca': 'AZA', 'genentech': 'GNT', 'takeda': 'TKD', 'novartis': 'NVT',
+    'abbvie': 'ABV', 'elsevier biobank': 'ELS', 'iovance': 'IOV', 'qiagen': 'QIA',
+    'illumina': 'ILM', 'roche': 'RCH', 'kite pharma': 'KTE', 'kite': 'KTE'
+  };
+
+  // Stand-in for the HubSpot contact lookup (needs crm.objects.contacts.read).
+  var CONTACTS = [
+    { name: 'Dana Whitfield', email: 'dwhitfield@guardanthealth.com', client: 'Guardant Health' },
+    { name: 'Marcus Reyes', email: 'mreyes@natera.com', client: 'Natera' },
+    { name: 'Priya Raman', email: 'praman@merck.com', client: 'Merck' },
+    { name: 'Tom Alderton', email: 'talderton@exactsciences.com', client: 'Exact Sciences' },
+    { name: 'Sofia Lindqvist', email: 'slindqvist@regeneron.com', client: 'Regeneron' }
   ];
+
+  // Stand-in for the PO# / MT# lookup. Real sources, in order of preference:
+  // the quote register, then OneDrive for pre-tool studies, then HubSpot.
+  // Measured caveat: po_number is filled on ~20% of deals and
+  // mt_study_id_number on none — the MT number lives in the deal title.
+  var STUDY_INDEX = [
+    { po: 'PO-88214', mt: 'MT2291', quote: 'QTE NTA20260826 Pan-cancer - blood',
+      client: 'Natera', acronym: 'NTA', preparedBy: 'John Kibler',
+      contactName: 'Marcus Reyes', contactEmail: 'mreyes@natera.com',
+      dealName: 'NTA: 500 healthies - blood',
+      specimens: ['Whole blood', 'Plasma', 'Buffy coat'], perSubject: '1225.00',
+      cohorts: [{ name: 'Colorectal cancer', subjects: 200 },
+                { name: 'Pancreatic cancer', subjects: 150 },
+                { name: 'Healthy controls', subjects: 150 }] },
+    { po: 'PO15216', mt: 'MT9920', quote: 'QTE ELS20260814 NSCLC - fresh tissue',
+      client: 'Elsevier Biobank', acronym: 'ELS', preparedBy: 'Heather Shahzade',
+      contactName: '', contactEmail: '',
+      dealName: 'ELS: NSCLC - Fresh Tissue (MT9920)',
+      specimens: ['Fresh tissue'], perSubject: '3400.00',
+      cohorts: [{ name: 'NSCLC', subjects: 60 }] },
+    { po: 'EM1706', mt: 'MT9920', quote: 'QTE EMC20260813 PDAC - fresh tissue',
+      client: 'EMC Biosciences', acronym: 'EMC', preparedBy: 'Joshua Taylor',
+      contactName: '', contactEmail: '',
+      dealName: 'EMC: PDAC - Fresh Tissue (MT9920)',
+      specimens: ['Fresh tissue'], perSubject: '3650.00',
+      cohorts: [{ name: 'PDAC', subjects: 40 }] }
+  ];
+
+  // ---------------------------------------------------------------- samples
 
   var SAMPLES = [
     { client: 'Guardant Health', sponsorAcronym: 'GHI', quoteName: 'NSCLC - FFPE & plasma',
       preparedBy: 'Joshua Taylor', quoteDate: '2026-08-27', status: 'draft', totalCost: '342750.00',
-      specimenTypes: ['FFPE block', 'Plasma'], isExtension: false,
+      specimenTypes: ['FFPE', 'Plasma'], isExtension: false,
       hubspotDealName: 'GHI: NSCLC tissue + plasma',
       cohorts: [{ name: 'NSCLC, stage III-IV', subjects: 90 }, { name: 'Normal adjacent', subjects: 52 }],
       header: { validity: '60 Day Quote', serviceTypes: ['Retrospective', 'Prospective'],
-        sponsorContactName: 'Dana Whitfield', sponsorContactEmail: 'dwhitfield@example.com',
+        sponsorContactName: 'Dana Whitfield', sponsorContactEmail: 'dwhitfield@guardanthealth.com',
         sponsorSelectedCases: 'Case list GHI-2026-08 (142 cases)' } },
     { client: 'Natera', sponsorAcronym: 'NTA', quoteName: 'Pan-cancer - blood',
       preparedBy: 'John Kibler', quoteDate: '2026-08-26', status: 'sent', totalCost: '612500.00',
@@ -680,9 +808,10 @@
       cohorts: [{ name: 'Colorectal cancer', subjects: 200 },
                 { name: 'Pancreatic cancer', subjects: 150 },
                 { name: 'Healthy controls', subjects: 150 }],
-      header: { validity: '30 Day Quote', serviceTypes: ['Prospective'] } },
+      header: { validity: '30 Day Quote', serviceTypes: ['Prospective'],
+        sponsorContactName: 'Marcus Reyes', sponsorContactEmail: 'mreyes@natera.com' } },
     { client: 'Natera', sponsorAcronym: 'NTA', quoteName: 'Pan-cancer - blood (MT2291 extension #1)',
-      preparedBy: 'John Kibler', quoteDate: '2026-08-25', status: 'draft', totalCost: '96250.00',
+      preparedBy: 'John Kibler', quoteDate: '2026-08-25', status: 'draft', totalCost: '122500.00',
       specimenTypes: ['Whole blood'], isExtension: true,
       hubspotDealName: 'NTA: Multi-cancer - blood (MT2291 extension #1)',
       cohorts: [{ name: 'Colorectal cancer', subjects: 200, additionalSubjects: 60 },
@@ -691,19 +820,7 @@
       header: { validity: '30 Day Quote', serviceTypes: ['Prospective'],
         originalStudyQuote: 'QTE NTA20260826 Pan-cancer - blood',
         originalStudyPo: 'PO-88214', parentMtNumber: 'MT2291', extensionNumber: '1',
-        designChanged: false } },
-    { client: 'Exact Sciences', sponsorAcronym: 'EXS', quoteName: 'CRC - plasma & buffy',
-      preparedBy: 'Heather Shahzade', quoteDate: '2026-08-19', status: 'internal_reviewed',
-      totalCost: '288400.00', specimenTypes: ['Plasma', 'Buffy coat'], isExtension: false,
-      hubspotDealName: '', header: { validity: '60 Day Quote', serviceTypes: ['Prospective'] } },
-    { client: 'Merck', sponsorAcronym: 'MRK', quoteName: 'Multi-tumor fresh tissue',
-      preparedBy: 'John Kibler', quoteDate: '2026-08-12', status: 'won', totalCost: '1140000.00',
-      specimenTypes: ['Fresh tissue', 'Whole blood'], isExtension: false, hubspotDealName: '',
-      mtNumber: 'MT9920',
-      cohorts: [{ name: 'Multi-tumor, mixed', subjects: 400 }],
-      header: { validity: '30 Day Quote', serviceTypes: ['Prospective'] } },
-    // Two sponsors under the umbrella MT9920, one of them already on extension #2.
-    // A Merck extension must still come out as #1 — see the numbering note below.
+        designChanged: false, perSubject: '1225.00' } },
     { client: 'Elsevier Biobank', sponsorAcronym: 'ELS', quoteName: 'NSCLC - fresh tissue',
       preparedBy: 'Heather Shahzade', quoteDate: '2026-08-14', status: 'won', totalCost: '204000.00',
       specimenTypes: ['Fresh tissue'], isExtension: false,
@@ -716,17 +833,29 @@
       hubspotDealName: 'ELS: NSCLC - Fresh Tissue (MT9920 extension #2)',
       cohorts: [{ name: 'NSCLC', subjects: 60, additionalSubjects: 20 }],
       header: { validity: '30 Day Quote', serviceTypes: ['Prospective'],
-        parentMtNumber: 'MT9920', extensionNumber: '2', designChanged: false } },
+        parentMtNumber: 'MT9920', extensionNumber: '2', designChanged: false,
+        perSubject: '3400.00' } },
+    { client: 'Exact Sciences', sponsorAcronym: 'EXS', quoteName: 'CRC - plasma & buffy',
+      preparedBy: 'Heather Shahzade', quoteDate: '2026-08-19', status: 'internal_reviewed',
+      totalCost: '288400.00', specimenTypes: ['Plasma', 'Buffy coat'], isExtension: false,
+      hubspotDealName: '', cohorts: [{ name: 'Colorectal cancer', subjects: 260 }],
+      header: { validity: '60 Day Quote', serviceTypes: ['Prospective'] } },
+    { client: 'Merck', sponsorAcronym: 'MRK', quoteName: 'Multi-tumor fresh tissue',
+      preparedBy: 'John Kibler', quoteDate: '2026-08-12', status: 'won', totalCost: '1140000.00',
+      specimenTypes: ['Fresh tissue', 'Whole blood'], isExtension: false, hubspotDealName: '',
+      mtNumber: 'MT9920', cohorts: [{ name: 'Multi-tumor, mixed', subjects: 400 }],
+      header: { validity: '30 Day Quote', serviceTypes: ['Prospective'] } },
     { client: 'Regeneron', sponsorAcronym: 'RGN', quoteName: 'Atopic dermatitis - biopsy & serum',
       preparedBy: 'Karen Krantz', quoteDate: '2026-07-30', status: 'lost', totalCost: '175000.00',
-      specimenTypes: ['Frozen tissue', 'Serum'], isExtension: false, hubspotDealName: '',
+      specimenTypes: ['Flash frozen tissue', 'Serum'], isExtension: false, hubspotDealName: '',
+      cohorts: [{ name: 'Atopic dermatitis', subjects: 70 }],
       header: { validity: '30 Day Quote', serviceTypes: ['Retrospective'],
         sponsorSelectedCases: 'RGN AD cohort, 60 archived biopsies' } }
   ];
 
   // ---------------------------------------------------------------- storage
 
-  var KEY = 'mtg-quote-builder-mockup-v1';
+  var KEY = 'mtg-quote-builder-mockup-v2';
   var quotes = [];
   var storageWorks = true;
 
@@ -737,9 +866,6 @@
       var raw = window.localStorage.getItem(KEY);
       if (raw) { quotes = JSON.parse(raw); return; }
     } catch (e) {
-      // Private window, or the browser blocks site data. Everything still works
-      // for this visit, but nothing survives a reload — say so rather than
-      // silently resetting and looking like the quotes vanished on their own.
       storageWorks = false;
     }
     quotes = SAMPLES.map(function (s) { return finalize(Object.assign({ id: uid() }, s)); });
@@ -756,7 +882,6 @@
 
   // ---------------------------------------------------------------- helpers
 
-  /** Mirrors buildQuoteNumber() in the real app: "QTE NTA20260826 Pan-cancer - blood". */
   function quoteNumber(q) {
     var prefix = String(q.sponsorAcronym || q.client || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
     var d = String(q.quoteDate || '').replace(/-/g, '');
@@ -765,6 +890,11 @@
   }
 
   function finalize(q) { q.quoteNumber = quoteNumber(q); return q; }
+
+  function num(v) {
+    var n = Number(String(v == null ? '' : v).replace(/[$,\s]/g, ''));
+    return isNaN(n) ? 0 : n;
+  }
 
   function money(v) {
     if (v === '' || v === null || v === undefined) return '—';
@@ -810,6 +940,93 @@
     toastTimer = setTimeout(function () { t.classList.remove('show'); }, 2600);
   }
 
+  // ---------------------------------------------------------------- auto-fill
+
+  /** Sponsor name → acronym, for the cases we already know. */
+  function acronymFor(client) {
+    var k = String(client || '').trim().toLowerCase();
+    if (!k) return '';
+    if (ACRONYMS[k]) return ACRONYMS[k];
+    for (var name in ACRONYMS) {
+      if (k.indexOf(name) === 0 || name.indexOf(k) === 0) return ACRONYMS[name];
+    }
+    return '';
+  }
+
+  /** Contact name → email, scoped to the sponsor when we know it. */
+  function emailFor(contactName, client) {
+    var k = String(contactName || '').trim().toLowerCase();
+    if (!k) return '';
+    var hit = CONTACTS.filter(function (c) {
+      return c.name.toLowerCase() === k && (!client || c.client === client);
+    })[0] || CONTACTS.filter(function (c) { return c.name.toLowerCase() === k; })[0];
+    return hit ? hit.email : '';
+  }
+
+  /**
+   * Finds the parent study from a PO number and/or MT number.
+   * Looks at quotes already in the register first, then the stand-in index.
+   * An MT number alone can be ambiguous under an umbrella number like MT9920,
+   * so a PO number wins and a bare MT match only counts when it is unique.
+   */
+  function findStudy(po, mt) {
+    po = String(po || '').trim().toLowerCase();
+    mt = String(mt || '').trim().toUpperCase();
+
+    if (po) {
+      var byPo = STUDY_INDEX.filter(function (s) { return s.po.toLowerCase() === po; });
+      if (byPo.length === 1) return { study: byPo[0], via: 'PO number' };
+      if (byPo.length > 1) return { ambiguous: byPo.length, via: 'PO number' };
+    }
+    if (mt) {
+      var byMt = STUDY_INDEX.filter(function (s) { return s.mt.toUpperCase() === mt; });
+      if (byMt.length === 1) return { study: byMt[0], via: 'MT number' };
+      if (byMt.length > 1) return { ambiguous: byMt.length, via: 'MT number', mt: mt };
+    }
+    return null;
+  }
+
+  /** Quote name drafts from the cohorts and specimens (spec §06). */
+  function draftQuoteName(d) {
+    var indication = (d.cohorts || [])
+      .map(function (c) { return String(c.name || '').trim(); })
+      .filter(Boolean)[0] || '';
+    var specs = (d.specimenTypes || []).map(function (s) { return s.toLowerCase(); });
+    var specPart = specs.length > 2
+      ? specs.slice(0, -1).join(', ') + ' & ' + specs[specs.length - 1]
+      : specs.join(' & ');
+    var base = [indication, specPart].filter(Boolean).join(' - ');
+    if (!base) return '';
+    if (d.isExtension && d.header.parentMtNumber) {
+      base += ' (' + d.header.parentMtNumber + ' extension #' +
+        (d.header.extensionNumber || '?') + ')';
+    }
+    return base;
+  }
+
+  /** Study summary drafts in the real quotes' phrasing (spec §06). */
+  function draftSummary(d) {
+    var specs = (d.specimenTypes || []).map(function (s) { return s.toLowerCase(); });
+    var specPart = specs.length > 2
+      ? specs.slice(0, -1).join(', ') + ' and ' + specs[specs.length - 1]
+      : specs.join(' and ');
+    var pop = (d.cohorts || [])
+      .map(function (c) { return String(c.name || '').trim(); })
+      .filter(Boolean).join(', ');
+
+    if (d.isExtension && d.header.designChanged === false) {
+      var q = d.header.originalStudyQuote || 'the original quote';
+      var po = d.header.originalStudyPo;
+      return 'This study is an extension to that quoted under "' + q + '"' +
+        (po ? ' and ordered under "' + po + '."' : '.') +
+        ' All study design elements remain the same except as noted below ' +
+        '(pricing repeated for clarity).';
+    }
+    if (!specPart && !pop) return '';
+    return 'The goal of this study is to collect and evaluate ' +
+      (specPart || 'biospecimens') + ' from ' + (pop || 'study') + ' subjects.';
+  }
+
   // ---------------------------------------------------------------- routing
 
   var view = document.getElementById('view');
@@ -833,8 +1050,7 @@
 
   function render() {
     view.replaceChildren();
-    if (route.name === 'register') view.appendChild(renderRegister());
-    else view.appendChild(renderForm(route.id));
+    view.appendChild(route.name === 'register' ? renderRegister() : renderForm(route.id));
   }
 
   // ---------------------------------------------------------------- register
@@ -842,28 +1058,20 @@
   function sorted() {
     return quotes.slice()
       .filter(function (q) { return statusFilter === 'all' || q.status === statusFilter; })
-      .sort(function (a, b) {
-        return String(b.quoteDate).localeCompare(String(a.quoteDate));
-      });
-  }
-
-  function countByStatus(v) {
-    return quotes.filter(function (q) { return q.status === v; }).length;
+      .sort(function (a, b) { return String(b.quoteDate).localeCompare(String(a.quoteDate)); });
   }
 
   function filterBar() {
     var bar = el('div', { class: 'filters' }, [el('span', { class: 'flabel', text: 'Show' })]);
-    var opts = [{ value: 'all', label: 'All' }].concat(STATUSES.map(function (s) {
-      return { value: s.value, label: s.label };
-    }));
+    var opts = [{ value: 'all', label: 'All' }].concat(STATUSES);
     opts.forEach(function (o) {
-      var n = o.value === 'all' ? quotes.length : countByStatus(o.value);
-      var b = el('button', {
+      var n = o.value === 'all' ? quotes.length
+        : quotes.filter(function (q) { return q.status === o.value; }).length;
+      bar.appendChild(el('button', {
         class: 'pill', type: 'button',
         'aria-pressed': statusFilter === o.value ? 'true' : 'false',
         onclick: function () { statusFilter = o.value; render(); }
-      }, [o.label + ' (' + n + ')']);
-      bar.appendChild(b);
+      }, [o.label + ' (' + n + ')']));
     });
     return bar;
   }
@@ -874,9 +1082,8 @@
     if (!storageWorks) {
       frag.appendChild(el('div', { class: 'warn' }, [
         el('strong', { text: 'This browser is not saving your changes. ' }),
-        el('span', { text: 'Quotes you create will work now but disappear when you reload — ' +
-          'site data is blocked, which usually means a private window or a browser privacy setting. ' +
-          'Try a normal window if you want your test quotes to stick around.' })
+        el('span', { text: 'Quotes you create work now but disappear when you reload — site data is ' +
+          'blocked, usually a private window or a browser privacy setting.' })
       ]));
     }
 
@@ -893,9 +1100,7 @@
     var visible = sorted();
     if (!visible.length) {
       frag.appendChild(el('div', { class: 'empty' }, [
-        el('p', { text: quotes.length
-          ? 'No quotes with that status.'
-          : 'No quotes yet.' }),
+        el('p', { text: quotes.length ? 'No quotes with that status.' : 'No quotes yet.' }),
         quotes.length
           ? el('button', { class: 'link-btn', type: 'button',
               onclick: function () { statusFilter = 'all'; render(); } }, ['Show all quotes'])
@@ -914,9 +1119,10 @@
     var body = el('tbody', {}, visible.map(function (q) {
       return el('tr', {}, [
         el('td', {}, [
-          el('button', { class: 'q-name', type: 'button', onclick: function () { go('edit', q.id); } }, [q.quoteName || '(untitled)']),
+          el('button', { class: 'q-name', type: 'button', onclick: function () { go('edit', q.id); } },
+            [q.quoteName || '(untitled)']),
           el('div', { class: 'q-number', text: q.quoteNumber || '—' }),
-          q.specimenTypes && q.specimenTypes.length
+          (q.specimenTypes && q.specimenTypes.length)
             ? el('div', { class: 'q-specimens', text: q.specimenTypes.join(', ') }) : null
         ]),
         el('td', {}, [
@@ -938,11 +1144,7 @@
   }
 
   function footRow() {
-    var total = quotes.reduce(function (sum, q) {
-      var n = Number(String(q.totalCost || '').replace(/[$,]/g, ''));
-      return sum + (isNaN(n) ? 0 : n);
-    }, 0);
-
+    var total = quotes.reduce(function (sum, q) { return sum + num(q.totalCost); }, 0);
     return el('div', { class: 'table-foot' }, [
       el('span', { text: quotes.length + (quotes.length === 1 ? ' quote' : ' quotes') +
         (quotes.length ? ' · ' + money(total) + ' quoted' : '') }),
@@ -963,7 +1165,9 @@
     return {
       id: null, client: '', sponsorAcronym: '', quoteName: '', preparedBy: REPS[0],
       quoteDate: new Date().toISOString().slice(0, 10), status: 'draft', totalCost: '',
-      specimenTypes: [], isExtension: false, hubspotDealName: '', cohorts: [],
+      specimenTypes: [], isExtension: false, hubspotDealName: '',
+      cohorts: [{ name: '', subjects: '' }], notes: '', summary: '',
+      nameEdited: false, summaryEdited: false,
       header: { validity: VALIDITY[0], serviceTypes: [] }
     };
   }
@@ -975,6 +1179,7 @@
     draft.header.serviceTypes = draft.header.serviceTypes || [];
     draft.specimenTypes = draft.specimenTypes || [];
     draft.cohorts = draft.cohorts || [];
+    if (existing) { draft.nameEdited = true; draft.summaryEdited = true; }
 
     var frag = document.createDocumentFragment();
     var wrap = el('div', { class: 'form-wrap' });
@@ -1000,11 +1205,9 @@
     var errorBox = el('div');
     wrap.appendChild(errorBox);
 
-    function refreshNumber() {
-      numVal.textContent = quoteNumber(draft) || 'Fills in as you type';
-    }
+    function refreshNumber() { numVal.textContent = quoteNumber(draft) || 'Fills in as you type'; }
 
-    // ---- text/select field helper
+    // ---- field helper -------------------------------------------------
     var idc = 0;
     function field(label, opts) {
       opts = opts || {};
@@ -1012,7 +1215,7 @@
       var input;
 
       if (opts.type === 'select') {
-        input = el('select', { id: fid, onchange: function () { opts.set(input.value); refreshNumber(); } });
+        input = el('select', { id: fid, onchange: function () { opts.set(input.value); after(); } });
         opts.options.forEach(function (o) {
           var v = typeof o === 'string' ? o : o.value;
           var l = typeof o === 'string' ? o : o.label;
@@ -1020,22 +1223,28 @@
         });
         input.value = opts.get();
       } else if (opts.type === 'textarea') {
-        input = el('textarea', { id: fid, rows: opts.rows || 2, placeholder: opts.placeholder || '',
-          oninput: function () { opts.set(input.value); } });
+        input = el('textarea', { id: fid, rows: opts.rows || 3, placeholder: opts.placeholder || '',
+          oninput: function () { opts.set(input.value); after(); } });
         input.value = opts.get() || '';
       } else {
         input = el('input', { id: fid, type: opts.type || 'text', placeholder: opts.placeholder || '',
           inputmode: opts.inputmode || false,
-          oninput: function () { opts.set(input.value); refreshNumber(); } });
+          oninput: function () { opts.set(input.value); after(); },
+          onblur: opts.onblur || null });
         input.value = opts.get() || '';
       }
 
+      function after() { refreshNumber(); if (opts.then) opts.then(); }
+
       var lbl = el('label', { for: fid }, [label]);
       if (opts.required) lbl.appendChild(el('span', { class: 'req', text: ' *' }));
+      if (opts.autofilled) lbl.appendChild(el('span', { class: 'autofilled', text: 'auto' }));
 
       var kids = [lbl, input];
       if (opts.hint) kids.push(el('div', { class: 'hint', text: opts.hint }));
-      return el('div', { class: 'fld' + (opts.full ? ' full' : '') }, kids);
+      var box = el('div', { class: 'fld' + (opts.full ? ' full' : '') }, kids);
+      box._input = input;
+      return box;
     }
 
     function checkbox(label, get, set, onToggle) {
@@ -1046,113 +1255,169 @@
       return el('label', { class: 'check' }, [box, el('span', {}, [label])]);
     }
 
-    // ---- section 01
+    // ---- section 01 ---------------------------------------------------
     var sec01 = el('section', { class: 'sec' });
     sec01.appendChild(secHead('01', 'Quote header'));
 
-    // ---- extension identification
-    // Quote reference comes before the PO number: the rep looks the study up by
-    // its quote, and the PO may not exist yet. Picking the parent quote here is
-    // what carries the client, rep, contacts and cohorts forward.
     var extBox = el('div');
 
-    function parentQuote() {
-      if (!draft.header.parentQuoteId) return null;
-      return quotes.filter(function (q) { return q.id === draft.header.parentQuoteId; })[0] || null;
-    }
-
-    function adoptParent(parent) {
-      if (!parent) return;
-      draft.client = parent.client;
-      draft.sponsorAcronym = parent.sponsorAcronym;
-      draft.preparedBy = parent.preparedBy;
-      draft.specimenTypes = (parent.specimenTypes || []).slice();
-      draft.header.parentMtNumber = parent.mtNumber || draft.header.parentMtNumber || '';
-      draft.header.originalStudyQuote = parent.quoteNumber;
-      draft.header.sponsorContactName = (parent.header || {}).sponsorContactName || '';
-      draft.header.sponsorContactEmail = (parent.header || {}).sponsorContactEmail || '';
-      // Carry the cohorts across with their original sizes; the rep adds to them.
-      draft.cohorts = (parent.cohorts || []).map(function (c) {
+    function applyStudy(study, via) {
+      draft.client = study.client;
+      draft.sponsorAcronym = study.acronym;
+      draft.preparedBy = study.preparedBy || draft.preparedBy;
+      draft.specimenTypes = (study.specimens || []).slice();
+      draft.header.parentMtNumber = study.mt;
+      draft.header.originalStudyQuote = draft.header.originalStudyQuote || study.quote;
+      draft.header.originalStudyPo = draft.header.originalStudyPo || study.po;
+      draft.header.sponsorContactName = study.contactName || '';
+      draft.header.sponsorContactEmail = study.contactEmail || '';
+      draft.header.perSubject = draft.header.perSubject || study.perSubject;
+      draft.hubspotDealName = draft.hubspotDealName || study.dealName || '';
+      draft.cohorts = (study.cohorts || []).map(function (c) {
         return { name: c.name, subjects: c.subjects, additionalSubjects: 0 };
       });
-      // Count this study's own extensions, not everything sharing the MT number.
-      // A few MT numbers are umbrellas covering many sponsors' orders — MT9920
-      // spans at least eight — so each sponsor runs its own extension sequence
-      // under the same number. Counting by MT alone would number a sponsor's
-      // first extension after somebody else's sixth.
+      draft.header.matchedVia = via;
+      draft.header.matchedStudy = study.quote;
+
+      // Extension number continues this sponsor's own thread, never the
+      // umbrella's — MT9920 alone carries 37 separate threads.
       var next = 1;
       quotes.forEach(function (q) {
         if (!q.isExtension) return;
         var h = q.header || {};
-        var sameStudy = h.parentQuoteId
-          ? h.parentQuoteId === parent.id
-          : (h.parentMtNumber === draft.header.parentMtNumber && q.client === parent.client);
-        if (!sameStudy) return;
-        var n = parseInt(h.extensionNumber, 10);
-        if (!isNaN(n) && n >= next) next = n + 1;
+        if (h.parentMtNumber === study.mt && q.client === study.client) {
+          var n = parseInt(h.extensionNumber, 10);
+          if (!isNaN(n) && n >= next) next = n + 1;
+        }
       });
       draft.header.extensionNumber = draft.header.extensionNumber || String(next);
     }
 
-    function renderExtBox() {
-      extBox.replaceChildren();
-      if (!draft.isExtension) return;
+    function runLookup() {
+      var hit = findStudy(draft.header.originalStudyPo, draft.header.parentMtNumber);
+      if (hit && hit.study) {
+        applyStudy(hit.study, hit.via);
+        draft.header.ambiguous = null;
+        if (extFields) {
+          extFields.mt._input.value = draft.header.parentMtNumber || '';
+          extFields.extNo._input.value = draft.header.extensionNumber || '';
+          extFields.quote._input.value = draft.header.originalStudyQuote || '';
+          extFields.po._input.value = draft.header.originalStudyPo || '';
+        }
+      } else {
+        draft.header.matchedVia = null;
+        draft.header.matchedStudy = null;
+        draft.header.ambiguous = (hit && hit.ambiguous) ? hit : null;
+      }
+      renderLookupResult();
+      renderBody();
+      refreshNumber();
+    }
 
-      var candidates = quotes.filter(function (q) { return !q.isExtension && q.id !== (existing || {}).id; });
+    // The extension fields are built once and kept. A lookup updates their
+    // values and swaps only the result banner — rebuilding the whole block on
+    // blur destroyed the input the rep was typing into, which lost keystrokes
+    // and left stale results on screen.
+    var extFields = null;
+    var lookupBox = el('div');
 
-      var picker = el('select', { id: 'parent-pick', onchange: function () {
-        draft.header.parentQuoteId = picker.value || '';
-        adoptParent(parentQuote());
-        renderExtBox();
-        renderBody();
-        refreshNumber();
-      } });
-      picker.appendChild(el('option', { value: '', text: candidates.length ? 'Choose a quote…' : 'No earlier quotes on file' }));
-      candidates.forEach(function (q) {
-        picker.appendChild(el('option', { value: q.id,
-          text: q.quoteName + (q.mtNumber ? ' (' + q.mtNumber + ')' : '') }));
-      });
-      picker.value = draft.header.parentQuoteId || '';
+    function buildExtFields() {
+      var quoteFld = field('Original study quote', { full: true,
+        placeholder: 'QTE NTA20260826 Pan-cancer - blood',
+        hint: 'Free text. Cross-referencing this against OneDrive is a later phase — for now the PO or MT number below drives the lookup.',
+        get: function () { return draft.header.originalStudyQuote; },
+        set: function (v) { draft.header.originalStudyQuote = v; } });
 
-      var pickField = el('div', { class: 'fld full' }, [
-        el('label', { for: 'parent-pick' }, ['Original study quote']),
-        picker,
-        el('div', { class: 'hint', text: parentQuote()
-          ? 'Client, rep, contacts and cohorts carried over from this quote.'
-          : 'Pick the study this extends and its details carry over automatically.' })
-      ]);
+      var poFld = field('Original study PO #', {
+        placeholder: 'PO-88214',
+        hint: 'Blank if the sponsor has not issued one yet.',
+        get: function () { return draft.header.originalStudyPo; },
+        set: function (v) { draft.header.originalStudyPo = v; },
+        onblur: runLookup });
 
-      var g = el('div', { class: 'grid' }, [
-        pickField,
-        field('Original study PO #', {
-          hint: 'Blank if the sponsor has not issued one yet.',
-          get: function () { return draft.header.originalStudyPo; },
-          set: function (v) { draft.header.originalStudyPo = v; }, placeholder: 'PO-88214' }),
-        field('Parent MT number', { get: function () { return draft.header.parentMtNumber; },
-          set: function (v) { draft.header.parentMtNumber = v; }, placeholder: 'MT2291' }),
-        field('Extension #', { get: function () { return draft.header.extensionNumber; },
-          set: function (v) { draft.header.extensionNumber = v; }, placeholder: '1' })
-      ]);
+      var mtFld = field('Parent MT number', { placeholder: 'MT2291',
+        get: function () { return draft.header.parentMtNumber; },
+        set: function (v) { draft.header.parentMtNumber = v.toUpperCase(); },
+        onblur: runLookup });
+
+      var extNoFld = field('Extension #', { placeholder: '1',
+        get: function () { return draft.header.extensionNumber; },
+        set: function (v) { draft.header.extensionNumber = v; } });
 
       var changed = checkbox('The study design has changed',
         function () { return draft.header.designChanged !== false; },
         function (v) { draft.header.designChanged = v; },
-        function () { renderBody(); });
+        function () { renderBody(); renderHelp(); });
       changed.style.marginTop = '15px';
 
-      extBox.appendChild(el('div', { class: 'toggle-box' }, [g, changed,
-        el('div', { class: 'hint', text: draft.header.designChanged === false
+      var help = el('div', { class: 'hint' });
+      function renderHelp() {
+        help.textContent = draft.header.designChanged === false
           ? 'Design unchanged — the form collapses to what actually differs, and the quote generates in the short extension format.'
-          : 'Uncheck this when the study design is unchanged and only the subject count grows.' })
-      ]));
+          : 'Uncheck this when the study design is unchanged and only the subject count grows.';
+      }
+      renderHelp();
+
+      extFields = {
+        quote: quoteFld, po: poFld, mt: mtFld, extNo: extNoFld,
+        box: el('div', { class: 'toggle-box' }, [
+          el('div', { class: 'grid' }, [quoteFld, poFld, mtFld, extNoFld]),
+          changed, help
+        ])
+      };
+    }
+
+    function renderExtBox() {
+      extBox.replaceChildren();
+      if (!draft.isExtension) { extFields = null; return; }
+      if (!extFields) buildExtFields();
+      extBox.appendChild(extFields.box);
+      extBox.appendChild(lookupBox);
+      renderLookupResult();
+    }
+
+    function renderLookupResult() {
+      lookupBox.replaceChildren();
+
+      if (draft.header.matchedStudy) {
+        lookupBox.appendChild(el('div', { class: 'carried' }, [
+          el('div', { class: 'carried-head' }, [
+            'Found via ' + draft.header.matchedVia,
+            el('span', { class: 'autofilled', text: 'auto-filled' })
+          ]),
+          el('dl', { class: 'carried-list' }, [
+            el('dt', { text: 'Study' }), el('dd', { text: draft.header.matchedStudy }),
+            el('dt', { text: 'Client' }), el('dd', { text: draft.client || '—' }),
+            el('dt', { text: 'Prepared by' }), el('dd', { text: draft.preparedBy || '—' }),
+            el('dt', { text: 'Specimens' }),
+            el('dd', { text: (draft.specimenTypes || []).join(', ') || '—' })
+          ]),
+          el('div', { class: 'hint', text: 'Everything it filled in stays editable below.' })
+        ]));
+        return;
+      }
+
+      var a = draft.header.ambiguous;
+      if (a) {
+        lookupBox.appendChild(el('div', { class: 'lookup-idle' }, [
+          el('strong', { text: a.mt + ' matches ' + a.ambiguous + ' studies. ' }),
+          el('span', { text: 'That number is shared across sponsors, so it cannot identify one study on its own — add the PO number, or fill the details in by hand.' })
+        ]));
+      } else if (draft.header.originalStudyPo || draft.header.parentMtNumber) {
+        lookupBox.appendChild(el('div', { class: 'lookup-idle' }, [
+          el('span', { text: 'No match for that PO or MT number. Fill the details in by hand — nothing below is blocked.' })
+        ]));
+      } else {
+        lookupBox.appendChild(el('div', { class: 'lookup-idle' }, [
+          el('span', { text: 'Enter the PO number or the parent MT number and the study details fill themselves in.' })
+        ]));
+      }
     }
 
     var extCheck = checkbox('This is a study extension',
       function () { return draft.isExtension; },
       function (v) {
         draft.isExtension = v;
-        // A new extension defaults to "design has changed" — the rep opts into
-        // the short form rather than having fields vanish unexpectedly.
         if (v && draft.header.designChanged === undefined) draft.header.designChanged = true;
       },
       function () { renderExtBox(); renderBody(); });
@@ -1160,8 +1425,6 @@
     sec01.appendChild(extCheck);
     sec01.appendChild(extBox);
 
-    // Everything past the extension block depends on the mode: a full quote,
-    // or an extension whose design is unchanged and only needs what differs.
     var headerBody = el('div');
     sec01.appendChild(headerBody);
     wrap.appendChild(sec01);
@@ -1169,25 +1432,69 @@
     var restBox = el('div');
     wrap.appendChild(restBox);
 
-    function isMinimal() {
-      return draft.isExtension && draft.header.designChanged === false;
-    }
+    function isMinimal() { return draft.isExtension && draft.header.designChanged === false; }
 
     function renderBody() {
       headerBody.replaceChildren();
       restBox.replaceChildren();
-      if (isMinimal()) renderMinimal(); else renderFull();
+      if (isMinimal()) renderMinimalHeader(); else renderFullHeader();
+      restBox.appendChild(sectionCohorts());
+      if (!isMinimal()) restBox.appendChild(sectionSpecimens());
+      restBox.appendChild(sectionPricing());
+      restBox.appendChild(sectionSummaryAndName());
+      restBox.appendChild(sectionNotes());
     }
 
-    // ---------- full quote ----------
+    // ---- header variants ---------------------------------------------
 
-    function renderFull() {
+    function sponsorFields() {
+      var acronymFld, emailFld;
+
+      var clientFld = field('Client / sponsor', { required: true, placeholder: 'Natera',
+        get: function () { return draft.client; },
+        set: function (v) { draft.client = v; },
+        then: function () {
+          var a = acronymFor(draft.client);
+          if (a && !draft.header.acronymEdited) {
+            draft.sponsorAcronym = a;
+            acronymFld._input.value = a;
+          }
+        } });
+
+      acronymFld = field('Sponsor acronym', { placeholder: 'NTA', autofilled: true,
+        hint: 'Fills in from the sponsor name when we know it. Type over it — a new sponsor may not have one yet.',
+        get: function () { return draft.sponsorAcronym; },
+        set: function (v) {
+          draft.sponsorAcronym = v.toUpperCase();
+          draft.header.acronymEdited = true;
+        } });
+
+      var contactFld = field('Sponsor contact name', {
+        get: function () { return draft.header.sponsorContactName; },
+        set: function (v) { draft.header.sponsorContactName = v; },
+        then: function () {
+          var e = emailFor(draft.header.sponsorContactName, draft.client);
+          if (e && !draft.header.emailEdited) {
+            draft.header.sponsorContactEmail = e;
+            emailFld._input.value = e;
+          }
+        } });
+
+      emailFld = field('Sponsor contact email', { type: 'email', autofilled: true,
+        hint: 'Looked up from the contact name in HubSpot. Always editable.',
+        get: function () { return draft.header.sponsorContactEmail; },
+        set: function (v) {
+          draft.header.sponsorContactEmail = v;
+          draft.header.emailEdited = true;
+        } });
+
+      return { client: clientFld, acronym: acronymFld, contact: contactFld, email: emailFld };
+    }
+
+    function renderFullHeader() {
+      var f = sponsorFields();
       headerBody.appendChild(el('div', { class: 'grid' }, [
-        field('Client / sponsor', { required: true, placeholder: 'Natera',
-          get: function () { return draft.client; }, set: function (v) { draft.client = v; } }),
-        field('Sponsor acronym', { placeholder: 'NTA',
-          get: function () { return draft.sponsorAcronym; },
-          set: function (v) { draft.sponsorAcronym = v.toUpperCase(); } }),
+        f.client, f.acronym,
         field('Prepared by', { type: 'select', required: true, options: REPS,
           get: function () { return draft.preparedBy; }, set: function (v) { draft.preparedBy = v; } }),
         field('Quote date', { type: 'date', required: true,
@@ -1198,23 +1505,19 @@
         field('HubSpot deal name', { placeholder: 'NTA: 500 healthies - blood',
           get: function () { return draft.hubspotDealName; },
           set: function (v) { draft.hubspotDealName = v; } }),
-        field('Sponsor contact name', { get: function () { return draft.header.sponsorContactName; },
-          set: function (v) { draft.header.sponsorContactName = v; } }),
-        field('Sponsor contact email', { type: 'email',
-          get: function () { return draft.header.sponsorContactEmail; },
-          set: function (v) { draft.header.sponsorContactEmail = v; } })
+        f.contact, f.email
       ]));
 
       var casesBox = el('div');
       function renderCases() {
         casesBox.replaceChildren();
         if (draft.header.serviceTypes.indexOf('Retrospective') === -1) return;
-        var f = field('Sponsor-selected cases', { type: 'textarea',
+        var fl = field('Sponsor-selected cases', { type: 'textarea', rows: 2,
           placeholder: 'Document name, or case / biospecimen numbers',
           get: function () { return draft.header.sponsorSelectedCases; },
           set: function (v) { draft.header.sponsorSelectedCases = v; } });
-        f.style.marginTop = '17px';
-        casesBox.appendChild(f);
+        fl.style.marginTop = '17px';
+        casesBox.appendChild(fl);
       }
 
       var svc = el('fieldset', {}, [el('legend', { text: 'Service type' })]);
@@ -1225,66 +1528,17 @@
             var i = draft.header.serviceTypes.indexOf(t);
             if (on && i === -1) draft.header.serviceTypes.push(t);
             if (!on && i > -1) draft.header.serviceTypes.splice(i, 1);
-          },
-          renderCases);
+          }, renderCases);
       })));
       headerBody.appendChild(svc);
       headerBody.appendChild(casesBox);
       renderCases();
-
-      restBox.appendChild(pendingRow('02'));
-      restBox.appendChild(pendingRow('03'));
-      restBox.appendChild(pendingRow('04'));
-
-      var sec05 = el('section', { class: 'sec' });
-      sec05.appendChild(secHead('05', 'Biospecimens'));
-      sec05.appendChild(partialNote(
-        'Which specimen types this quote covers — that is all this captures today. ' +
-        'Storage state, media, tube type, volumes, aliquots and FFPE specs are Phase 3.'));
-      sec05.appendChild(el('div', { class: 'specimen-grid' }, SPECIMEN_TYPES.map(function (t) {
-        return checkbox(t,
-          function () { return draft.specimenTypes.indexOf(t) > -1; },
-          function (on) {
-            var i = draft.specimenTypes.indexOf(t);
-            if (on && i === -1) draft.specimenTypes.push(t);
-            if (!on && i > -1) draft.specimenTypes.splice(i, 1);
-          });
-      })));
-      restBox.appendChild(sec05);
-
-      restBox.appendChild(sectionQuoteName());
-
-      restBox.appendChild(pendingRow('07'));
-      restBox.appendChild(pendingRow('08'));
-      restBox.appendChild(pendingRow('09'));
-      restBox.appendChild(sectionPricing(true));
-      restBox.appendChild(pendingRow('11'));
     }
 
-    // ---------- extension, design unchanged ----------
-
-    function renderMinimal() {
-      var parent = parentQuote();
-
-      if (parent) {
-        headerBody.appendChild(el('div', { class: 'carried' }, [
-          el('div', { class: 'carried-head' }, ['Carried over from ' + parent.quoteNumber]),
-          el('dl', { class: 'carried-list' }, [
-            el('dt', { text: 'Client' }), el('dd', { text: parent.client }),
-            el('dt', { text: 'Prepared by' }), el('dd', { text: parent.preparedBy }),
-            el('dt', { text: 'Specimens' }),
-            el('dd', { text: (parent.specimenTypes || []).join(', ') || '—' }),
-            el('dt', { text: 'Contact' }),
-            el('dd', { text: (parent.header || {}).sponsorContactName || '—' })
-          ]),
-          el('div', { class: 'hint', text: 'The design is unchanged, so these stay as quoted. Tick "the study design has changed" to edit them.' })
-        ]));
-      } else {
-        headerBody.appendChild(partialNote(
-          'Pick the original study quote above and its client, rep, contacts and cohorts carry over here.'));
-      }
-
+    function renderMinimalHeader() {
+      var f = sponsorFields();
       headerBody.appendChild(el('div', { class: 'grid' }, [
+        f.client, f.acronym,
         field('Validity', { type: 'select', options: VALIDITY,
           get: function () { return draft.header.validity || VALIDITY[0]; },
           set: function (v) { draft.header.validity = v; } }),
@@ -1292,120 +1546,261 @@
           get: function () { return draft.hubspotDealName; },
           set: function (v) { draft.hubspotDealName = v; } }),
         field('Quote date', { type: 'date', required: true,
-          get: function () { return draft.quoteDate; }, set: function (v) { draft.quoteDate = v; } })
+          get: function () { return draft.quoteDate; }, set: function (v) { draft.quoteDate = v; } }),
+        field('Prepared by', { type: 'select', required: true, options: REPS,
+          get: function () { return draft.preparedBy; }, set: function (v) { draft.preparedBy = v; } })
       ]));
-
-      // ---- cohorts: the one thing an unchanged-design extension actually changes
-      var sec03 = el('section', { class: 'sec' });
-      sec03.appendChild(secHead('03', 'Additional subjects'));
-
-      if (!draft.cohorts || !draft.cohorts.length) {
-        sec03.appendChild(partialNote('No cohorts yet — pick the original study quote above.'));
-      } else {
-        var rows = el('div', { class: 'cohorts' });
-        rows.appendChild(el('div', { class: 'cohort-row cohort-head' }, [
-          el('span', { text: 'Cohort' }),
-          el('span', { class: 'ca', text: 'Already quoted' }),
-          el('span', { class: 'ca', text: 'Additional' }),
-          el('span', { class: 'ca', text: 'New total' })
-        ]));
-
-        var totalEl = el('span', { class: 'ca strong' });
-
-        function recomputeTotals() {
-          var was = 0, add = 0;
-          draft.cohorts.forEach(function (c) {
-            was += Number(c.subjects) || 0;
-            add += Number(c.additionalSubjects) || 0;
-          });
-          totalEl.textContent = String(was + add);
-          return { was: was, add: add };
-        }
-
-        draft.cohorts.forEach(function (c, i) {
-          var newTotal = el('span', { class: 'ca',
-            text: String((Number(c.subjects) || 0) + (Number(c.additionalSubjects) || 0)) });
-          var input = el('input', {
-            type: 'text', inputmode: 'numeric', value: c.additionalSubjects || 0,
-            'aria-label': 'Additional subjects for ' + c.name,
-            oninput: function () {
-              var n = parseInt(String(input.value).replace(/[^0-9-]/g, ''), 10);
-              draft.cohorts[i].additionalSubjects = isNaN(n) ? 0 : n;
-              newTotal.textContent = String((Number(c.subjects) || 0) + (isNaN(n) ? 0 : n));
-              recomputeTotals();
-            }
-          });
-          input.value = String(c.additionalSubjects || 0);
-          rows.appendChild(el('div', { class: 'cohort-row' }, [
-            el('span', { class: 'cohort-name', text: c.name }),
-            el('span', { class: 'ca dim', text: String(c.subjects || 0) }),
-            el('span', { class: 'ca' }, [input]),
-            newTotal
-          ]));
-        });
-
-        rows.appendChild(el('div', { class: 'cohort-row cohort-total' }, [
-          el('span', { text: 'Total subjects' }),
-          el('span', { class: 'ca' }), el('span', { class: 'ca' }), totalEl
-        ]));
-        sec03.appendChild(rows);
-        recomputeTotals();
-      }
-      restBox.appendChild(sec03);
-
-      restBox.appendChild(sectionQuoteName());
-      restBox.appendChild(sectionPricing(false));
     }
 
-    // ---------- shared sections ----------
+    // ---- 03 cohorts ---------------------------------------------------
 
-    function sectionQuoteName() {
+    function sectionCohorts() {
+      var ext = isMinimal();
       var sec = el('section', { class: 'sec' });
-      sec.appendChild(secHead('06', 'Quote name'));
-      sec.appendChild(field('Quote name', { required: true, full: true,
-        placeholder: 'CRC - plasma & buffy',
-        hint: 'Drafts itself from the population and specimens once Phase 3 lands.',
-        get: function () { return draft.quoteName; }, set: function (v) { draft.quoteName = v; } }));
+      sec.appendChild(secHead('03', ext ? 'Cohorts & additional subjects' : 'Population & cohorts'));
+
+      var rows = el('div', { class: 'cohorts' });
+      var totalEl = el('span', { class: 'ca strong' });
+
+      function recompute() {
+        var was = 0, add = 0;
+        draft.cohorts.forEach(function (c) { was += num(c.subjects); add += num(c.additionalSubjects); });
+        totalEl.textContent = String(ext ? was + add : was);
+        if (pricingRefresh) pricingRefresh();
+      }
+
+      function paint() {
+        rows.replaceChildren();
+        rows.appendChild(el('div', { class: 'cohort-row ' + (ext ? 'ext' : 'full') + ' cohort-head' },
+          ext
+            ? [el('span', { text: 'Cohort' }), el('span', { class: 'ca', text: 'Already quoted' }),
+               el('span', { class: 'ca', text: 'Additional' }), el('span', { class: 'ca', text: 'New total' }),
+               el('span', {})]
+            : [el('span', { text: 'Cohort' }), el('span', { class: 'ca', text: '# subjects' }), el('span', {})]));
+
+        draft.cohorts.forEach(function (c, i) {
+          var nameIn = el('input', { type: 'text', value: c.name || '',
+            'aria-label': 'Cohort ' + (i + 1) + ' name', placeholder: 'Colorectal cancer',
+            oninput: function () { draft.cohorts[i].name = nameIn.value; if (!draft.nameEdited) refreshDrafts(); } });
+          nameIn.value = c.name || '';
+
+          var subIn = el('input', { type: 'text', inputmode: 'numeric',
+            'aria-label': (ext ? 'Subjects already quoted for ' : 'Subjects for ') + (c.name || 'cohort ' + (i + 1)),
+            oninput: function () { draft.cohorts[i].subjects = subIn.value; recompute(); newTotal && paint2(); } });
+          subIn.value = c.subjects == null ? '' : String(c.subjects);
+
+          var newTotal = null, addIn = null;
+          if (ext) {
+            newTotal = el('span', { class: 'ca', text: String(num(c.subjects) + num(c.additionalSubjects)) });
+            addIn = el('input', { type: 'text', inputmode: 'numeric',
+              'aria-label': 'Additional subjects for ' + (c.name || 'cohort ' + (i + 1)),
+              oninput: function () {
+                draft.cohorts[i].additionalSubjects = addIn.value;
+                newTotal.textContent = String(num(subIn.value) + num(addIn.value));
+                recompute();
+              } });
+            addIn.value = c.additionalSubjects == null ? '' : String(c.additionalSubjects);
+          }
+          function paint2() { if (newTotal) newTotal.textContent = String(num(subIn.value) + num(addIn ? addIn.value : 0)); }
+
+          var x = el('button', { class: 'row-x', type: 'button', title: 'Remove cohort',
+            'aria-label': 'Remove ' + (c.name || 'cohort ' + (i + 1)),
+            onclick: function () { draft.cohorts.splice(i, 1); paint(); recompute(); } }, ['×']);
+
+          rows.appendChild(el('div', { class: 'cohort-row ' + (ext ? 'ext' : 'full') },
+            ext ? [nameIn, el('span', { class: 'ca' }, [subIn]), el('span', { class: 'ca' }, [addIn]), newTotal, x]
+                : [nameIn, el('span', { class: 'ca' }, [subIn]), x]));
+        });
+
+        rows.appendChild(el('div', { class: 'cohort-row ' + (ext ? 'ext' : 'full') + ' cohort-total' },
+          ext ? [el('span', { text: 'Total subjects' }), el('span', { class: 'ca' }),
+                 el('span', { class: 'ca' }), totalEl, el('span', {})]
+              : [el('span', { text: 'Total subjects' }), totalEl, el('span', {})]));
+        recompute();
+      }
+
+      paint();
+      sec.appendChild(rows);
+      sec.appendChild(el('button', { class: 'add-row', type: 'button', onclick: function () {
+        draft.cohorts.push({ name: '', subjects: '', additionalSubjects: '' });
+        paint();
+      } }, ['+ Add cohort']));
+
+      if (ext) {
+        sec.appendChild(el('div', { class: 'hint',
+          text: 'Filled from the original study when the lookup finds it — otherwise type them in.' }));
+      }
       return sec;
     }
 
-    function sectionPricing(full) {
+    // ---- 05 biospecimens ----------------------------------------------
+
+    function sectionSpecimens() {
+      var sec = el('section', { class: 'sec' });
+      sec.appendChild(secHead('05', 'Biospecimens'));
+      sec.appendChild(partialNote(
+        'Which specimen types this quote covers. Storage state, media, tube type, ' +
+        'volumes, aliquots and FFPE specs are still to come.'));
+
+      sec.appendChild(el('div', { class: 'spec-cols' }, SPECIMEN_GROUPS.map(function (g) {
+        return el('div', { class: 'spec-col' }, [
+          el('div', { class: 'spec-col-title', text: g.title })
+        ].concat(g.items.map(function (t) {
+          return checkbox(t,
+            function () { return draft.specimenTypes.indexOf(t) > -1; },
+            function (on) {
+              var i = draft.specimenTypes.indexOf(t);
+              if (on && i === -1) draft.specimenTypes.push(t);
+              if (!on && i > -1) draft.specimenTypes.splice(i, 1);
+            },
+            function () { refreshDrafts(); });
+        })));
+      })));
+      return sec;
+    }
+
+    // ---- 10 pricing ----------------------------------------------------
+
+    var pricingRefresh = null;
+
+    function sectionPricing() {
+      var ext = isMinimal();
       var sec = el('section', { class: 'sec' });
       sec.appendChild(secHead('10', 'Pricing'));
-      sec.appendChild(partialNote(full
-        ? 'One total for the whole study — that is all this captures today. Per-specimen pricing, ' +
-          'shipping, screenfails, historical comparables and internal pricing notes are Phase 4.'
-        : 'Extensions repeat the original pricing for clarity. Per-subject rates and the ' +
-          'recalculated total are Phase 4.'));
+      sec.appendChild(partialNote(ext
+        ? 'Extensions repeat the original per-subject price. Shipping, screenfails and ' +
+          'per-specimen breakdowns are still to come.'
+        : 'One total for the whole study. Per-specimen pricing, shipping, screenfails, ' +
+          'historical comparables and internal pricing notes are still to come.'));
+
+      if (!ext) {
+        sec.appendChild(el('div', { class: 'grid' }, [
+          field('Total study cost', { placeholder: '125000.00', inputmode: 'decimal',
+            get: function () { return draft.totalCost; }, set: function (v) { draft.totalCost = v; } }),
+          field('Status', { type: 'select', options: STATUSES,
+            get: function () { return draft.status; }, set: function (v) { draft.status = v; } })
+        ]));
+        pricingRefresh = null;
+        return sec;
+      }
+
+      var calc = el('div', { class: 'calc' });
+      var subjectsRow = el('span', { class: 'v' });
+      var rateRow = el('span', { class: 'v' });
+      var totalRow = el('span', { class: 'v' });
+
+      function recalcPricing() {
+        var add = draft.cohorts.reduce(function (s, c) { return s + num(c.additionalSubjects); }, 0);
+        var rate = num(draft.header.perSubject);
+        var total = add * rate;
+        subjectsRow.textContent = String(add);
+        rateRow.textContent = money(rate);
+        totalRow.textContent = money(total);
+        draft.totalCost = total ? total.toFixed(2) : '';
+      }
+      pricingRefresh = recalcPricing;
+
       sec.appendChild(el('div', { class: 'grid' }, [
-        field('Total study cost', { placeholder: '125000.00', inputmode: 'decimal',
-          get: function () { return draft.totalCost; }, set: function (v) { draft.totalCost = v; } }),
+        field('Biospecimens & data ($ per subject)', { placeholder: '1225.00', inputmode: 'decimal',
+          hint: 'Carried over from the original quote when the lookup finds it.',
+          get: function () { return draft.header.perSubject; },
+          set: function (v) { draft.header.perSubject = v; },
+          then: recalcPricing }),
         field('Status', { type: 'select', options: STATUSES,
           get: function () { return draft.status; }, set: function (v) { draft.status = v; } })
       ]));
+
+      calc.appendChild(el('div', { class: 'calc-row' }, [
+        el('span', { text: 'Additional subjects' }), subjectsRow]));
+      calc.appendChild(el('div', { class: 'calc-row' }, [
+        el('span', { text: 'Per subject' }), rateRow]));
+      calc.appendChild(el('div', { class: 'calc-row calc-total' }, [
+        el('span', { text: 'Total study cost' }), totalRow]));
+      sec.appendChild(calc);
+      recalcPricing();
       return sec;
     }
 
-    // First paint of the extension block and the body.
+    // ---- 06 summary + quote name (after pricing) -----------------------
+
+    var summaryInput = null, nameInput = null;
+
+    function refreshDrafts() {
+      if (!draft.summaryEdited && summaryInput) {
+        var s = draftSummary(draft);
+        if (s) { draft.summary = s; summaryInput.value = s; }
+      }
+      if (!draft.nameEdited && nameInput) {
+        var n = draftQuoteName(draft);
+        if (n) { draft.quoteName = n; nameInput.value = n; refreshNumber(); }
+      }
+    }
+
+    function sectionSummaryAndName() {
+      var sec = el('section', { class: 'sec' });
+      sec.appendChild(secHead('06', 'Study summary & quote name'));
+
+      var sFld = field('Study summary', { type: 'textarea', rows: 4, full: true,
+        autofilled: true,
+        hint: 'Drafts itself from the entries above. Once you edit it, it stops rewriting itself.',
+        get: function () { return draft.summary; },
+        set: function (v) { draft.summary = v; draft.summaryEdited = true; } });
+      summaryInput = sFld._input;
+
+      var nFld = field('Quote name', { required: true, full: true, autofilled: true,
+        placeholder: 'CRC - plasma & buffy',
+        hint: 'Drafts itself from the cohorts and specimens. Editing it stops the rewriting.',
+        get: function () { return draft.quoteName; },
+        set: function (v) { draft.quoteName = v; draft.nameEdited = true; } });
+      nameInput = nFld._input;
+
+      sec.appendChild(el('div', { class: 'grid' }, [sFld, nFld]));
+
+      var redo = el('button', { class: 'add-row', type: 'button', onclick: function () {
+        draft.summaryEdited = false; draft.nameEdited = false;
+        var s = draftSummary(draft), n = draftQuoteName(draft);
+        draft.summary = s; summaryInput.value = s;
+        draft.quoteName = n; nameInput.value = n;
+        refreshNumber();
+        toast('Redrafted from your entries');
+      } }, ['↻ Redraft both from the entries above']);
+      sec.appendChild(redo);
+
+      refreshDrafts();
+      return sec;
+    }
+
+    // ---- 11 notes ------------------------------------------------------
+
+    function sectionNotes() {
+      var sec = el('section', { class: 'sec' });
+      sec.appendChild(secHead('11', 'Additional quote details'));
+      sec.appendChild(el('div', { class: 'hint',
+        text: 'Anything else the quote should say. Appears on both the internal draft and the sponsor quote.' }));
+      sec.appendChild(field('Notes', { type: 'textarea', rows: 4, full: true,
+        placeholder: 'Delivery expectations, sponsor-specific terms, anything the sections above did not cover.',
+        get: function () { return draft.notes; }, set: function (v) { draft.notes = v; } }));
+      return sec;
+    }
+
+    // ---- actions -------------------------------------------------------
+
     renderExtBox();
     renderBody();
 
-    // ---- actions
     var actions = el('div', { class: 'actions' });
     actions.style.marginTop = '30px';
-
     actions.appendChild(el('button', { class: 'btn btn-primary', type: 'button',
       onclick: function () { submit(); } }, [existing ? 'Save changes' : 'Create quote']));
     actions.appendChild(el('button', { class: 'btn', type: 'button',
       onclick: function () { go('register'); } }, ['Cancel']));
 
     if (existing) {
-      var del = el('button', { class: 'btn btn-danger spacer', type: 'button', onclick: function () {
+      actions.appendChild(el('button', { class: 'btn btn-danger spacer', type: 'button', onclick: function () {
         if (!confirm('Delete this quote? This cannot be undone.')) return;
         quotes = quotes.filter(function (q) { return q.id !== existing.id; });
         save(); go('register'); toast('Quote deleted');
-      } }, ['Delete quote']);
-      actions.appendChild(del);
+      } }, ['Delete quote']));
     }
     wrap.appendChild(actions);
 
@@ -1414,10 +1809,10 @@
       if (!String(draft.client).trim()) errs.push('Client / sponsor is required (§01).');
       if (!String(draft.quoteName).trim()) errs.push('Quote name is required (§06).');
       if (!String(draft.quoteDate).trim()) errs.push('Quote date is required (§01).');
-      if (String(draft.totalCost).trim() !== '') {
-        var n = Number(String(draft.totalCost).replace(/[$,]/g, ''));
-        if (isNaN(n)) errs.push('Total cost must be a number (§10).');
-        else if (n < 0) errs.push('Total cost cannot be negative (§10).');
+      if (String(draft.totalCost).trim() !== '' && isNaN(Number(String(draft.totalCost).replace(/[$,]/g, '')))) {
+        errs.push('Total cost must be a number (§10).');
+      } else if (num(draft.totalCost) < 0) {
+        errs.push('Total cost cannot be negative (§10).');
       }
 
       errorBox.replaceChildren();
@@ -1444,7 +1839,6 @@
     return frag;
   }
 
-  /** Marks a section that exists but only captures part of what it eventually will. */
   function partialNote(text) {
     return el('div', { class: 'partial-note' }, [
       el('span', { class: 'partial-tag', text: 'Partial' }),
@@ -1457,16 +1851,6 @@
       el('span', { class: 'sec-num', text: num }),
       el('span', { class: 'sec-title', text: title }),
       note ? el('span', { class: 'sec-note', text: note }) : null
-    ]);
-  }
-
-  function pendingRow(num) {
-    var match = PENDING_SECTIONS.filter(function (p) { return p[0] === num; })[0];
-    if (!match) return null;
-    return el('div', { class: 'sec-pending' }, [
-      el('span', { class: 'sec-num', text: match[0] }),
-      el('span', { text: match[1] }),
-      el('span', { class: 'phase', text: match[2] })
     ]);
   }
 
