@@ -124,14 +124,21 @@ field by field in `docs/FEASIBILITY_spec_draft.md`. Summary:
 Ops already sends the request to sites as a fillable form, and responses flow
 back into HubSpot. Nothing is missing at that end.
 
-The weak point is the front: the Word form is what a **sales rep** fills in, and
-it is unfriendly enough that reps under-supply it and ops chases them. So:
+The weak point is the front. The failure is not reps leaving fields blank —
+blanks are usually correct, since most elements do not apply to a given study.
+It is reps omitting something critical because it never occurred to them it
+mattered: a plasma processing protocol many sites cannot perform, say, which
+decides whether a site can participate at all.
 
-> A form a sales rep finds easy to complete, that produces everything ops needs
-> to send out to sites.
+> A form a sales rep finds easy to complete, that makes them **consider** every
+> element that could invalidate a feasibility — and lets them dismiss the ones
+> that do not apply.
 
-That is the whole brief. It is a better front door onto an existing process, not
-a replacement for it.
+The prompting is the product. Two mechanisms follow, detailed in
+`FEASIBILITY_spec_draft.md`: dismissal becomes an explicit action rather than an
+empty box, so "considered and not applicable" is distinguishable from "never
+looked at"; and each prompt carries why it matters, naming the consequence that
+makes a rep stop and think.
 
 Responses living in HubSpot is also what makes "feasibility feeds the quote"
 work technically — the quote builder reads them rather than the rep re-keying.

@@ -11,17 +11,73 @@ Ops already sends the request to sites as a fillable form, and the responses
 flow back into HubSpot. The responses are not missing and this tool does not
 need to capture them.
 
-**The problem is the front of the process, not the back.** The Word form is
-what a sales rep has to fill in, and it is unfriendly: free-text boxes with
-"Click or tap here to enter text", no structure, no guidance about what ops
-actually needs. So reps under-fill it and ops chases them.
+**The problem is the front of the process, not the back.** The Word form is what
+a sales rep fills in, and it is hard to complete well.
 
-So the feasibility builder's job is narrow and clear:
+Note what the failure is *not*. Blank fields are mostly correct — those elements
+genuinely do not apply to that study. The failure is narrower and worse:
 
-> A form a sales rep finds easy to complete, that produces everything ops needs
-> to send out to sites.
+> Sales omits something critical because it did not occur to them it mattered.
 
-Nothing more. It is a better front door onto an existing process.
+John's example: a specific plasma processing protocol that many sites cannot
+perform. Nobody withheld it. The rep did not know it was the kind of thing that
+decides whether a site can participate, so it never got written down — and the
+feasibility went out wrong.
+
+So the feasibility builder's job:
+
+> A form a sales rep finds easy to complete, that makes them **consider** every
+> element that could invalidate a feasibility — and lets them dismiss the ones
+> that do not apply.
+
+The prompting is the product. A prettier version of the same boxes would not
+fix anything.
+
+## The design move: dismissal must be explicit
+
+Today a blank field is ambiguous. It means either:
+
+- "I considered processing requirements; this study has none", or
+- "I never looked at that field."
+
+Ops cannot tell those apart, and neither can the rep reviewing their own work.
+The first is complete information. The second is the failure mode above.
+
+**So make dismissal an action, not an absence.** Each element gets a considered
+state:
+
+    ( ) Not applicable        ← an answer, and a record that it was considered
+    ( ) Details: ___________  ← an answer
+
+Nothing is *required* in the sense of blocking — that would push reps to type
+"n/a" to get past it, which is the same blank wearing a disguise. But an
+un-touched element is visibly un-touched, and the form can say so before
+submission: "3 elements not yet considered."
+
+This is what turns the form from a container into a checklist, and it is the
+one mechanism that addresses the actual failure.
+
+### Each prompt must carry why it matters
+
+"Processing requirements" as a bare label does not prompt anyone. The rep who
+omitted the plasma protocol would omit it again.
+
+What catches it is the question naming its own consequence:
+
+> **Processing requirements** — e.g. double-spin plasma, specific centrifuge
+> speeds, on-site aliquoting. *Non-standard processing is one of the most
+> common reasons a site declines.*
+
+Every element carries a short line like this. Writing them is most of the
+design work in this tool, and it wants ops's input rather than guesswork —
+they know which omissions have actually cost a re-run.
+
+### Weight the elements by risk
+
+If ops can name the handful of omissions that most often invalidate a
+feasibility, those get the strongest treatment — surfaced first, prompted
+hardest, flagged loudest when untouched. The rest can stay quiet. A form that
+shouts equally about everything trains people to ignore it.
 
 ## Where the site responses fit
 
@@ -127,7 +183,9 @@ one criterion per line, rendering as real bullets.
    participation, monthly enrolment and site cost were not part of the spec §7
    audit. This decides whether the quote builder can read feasibility results
    or the rep re-keys them.
-2. What exactly does ops need that reps currently under-supply? That list is
-   what the form should be built to guarantee — it is the whole point of the
-   tool and is not yet written down.
+2. **Which omissions have actually cost a re-run?** Not "which fields are
+   blank" — blanks are usually correct. The list worth having is the study
+   elements that, when missed, invalidated a feasibility: the plasma protocol
+   case and its siblings. That list decides which prompts get written, how
+   hard, and in what order. Ops holds it; it is not written down anywhere.
 3. Can a feasibility be run speculatively against a design with no sponsor?
