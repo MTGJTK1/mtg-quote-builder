@@ -79,6 +79,109 @@ feasibility, those get the strongest treatment — surfaced first, prompted
 hardest, flagged loudest when untouched. The rest can stay quiet. A form that
 shouts equally about everything trains people to ignore it.
 
+## The prompt catalogue
+
+Eight omissions named by John, 2026-08-27, that have gone out wrong. This is the
+seed list the form is built around. **Most are prompts attached to sections that
+already exist, not new fields** — consistent with not structuring the I/E
+criteria.
+
+### 1. Processing protocol
+
+> **Processing requirements** — double-spin plasma, specific centrifuge speeds,
+> on-site aliquoting, time-to-process limits.
+> *Non-standard processing is a common reason a site declines.*
+
+Lives in §05. Missed → sites accept, then cannot perform the protocol.
+
+### 2. A lab value used as an inclusion
+
+> If a lab result gates enrolment: **which assay**, and **how recent must the
+> result be** to still count?
+> *A site with the right patients may run a different assay, or only hold
+> results older than your window.*
+
+Lives in the inclusion criteria. Missed → sites over-report eligible patients
+against a test you will not accept.
+
+### 3. Which therapies are excluded, and any washout
+
+> Name the excluded therapies individually, and say whether any become
+> acceptable after a washout period — and how long.
+> *"Treatment-naive" over-excludes; sites screen out patients you would have
+> taken.*
+
+Lives in the exclusion criteria. This is the detail the old form's
+naive/treated dropdown destroys.
+
+### 4. Which days fresh cases can be received
+
+> Can the sponsor receive fresh collections **every day of the week, including
+> Saturday and Sunday?**
+> *Fresh collection is surgery-driven and surgery does not stop for weekends.
+> A weekday-only receiver silently discards a share of eligible cases.*
+
+Lives in §09. Related to the existing delivery-restrictions field but distinct:
+this is about the receiving end, and it changes the enrolment estimate, not just
+logistics.
+
+### 5. Maximum subjects deliverable per day
+
+> Is there a cap on how many subjects can be delivered in a single day?
+> *A site enrolling in bursts will exceed a downstream processing limit nobody
+> stated.*
+
+Lives in §09, alongside the existing cadence cap.
+
+### 6. Clinical data format or EDC
+
+> Must data be entered in a specific format, or into the sponsor's EDC?
+> *EDC entry is real site burden. Some sites decline outright; others need it
+> priced.*
+
+Lives in §07, which has a delivery-method field — the EDC case needs naming
+explicitly rather than hiding under "Other".
+
+### 7. Timeframe blackouts
+
+> Any period when subjects cannot be accepted — a closed month, a holiday
+> shutdown, an instrument down for service?
+> *An unstated blackout makes every enrolment projection wrong.*
+
+Lives in §09. New; the spec has no equivalent.
+
+### 8. Is the design possible under standard of care?
+
+The different one. Not a missing field — a check on whether the study can exist.
+
+> **At the moment of collection, will the site actually know this about the
+> subject?**
+
+John's example: you cannot enrol treatment-naive **stage II** CRC subjects into a
+blood study, because staging happens at surgery. At diagnosis — the only moment
+a treatment-naive subject exists — nobody is staged yet. The design asks for a
+subject who cannot be identified at the time you need them.
+
+This class of error survives every other check: each criterion is individually
+reasonable, and only their combination is impossible. It is also the most
+expensive to miss, because feasibility goes out and burns site goodwill proving
+something unenrollable.
+
+**#2 and #8 share a root** — does the information exist at the moment it is
+needed? A lab value nobody has yet, and a stage nobody has assigned yet, are the
+same failure. That makes the timing question worth asking once, prominently,
+over the whole population definition rather than field by field:
+
+> Walk through the moment of collection. Does the site know each of these
+> things about the subject *at that point* — not eventually, but then?
+
+### Where this list needs to go next
+
+Eight is a seed, not a catalogue. It came from one person's recall. Ops holds
+more, and the ones they can name from recent re-runs are the ones worth adding
+first. Each entry needs the same three parts: the question, the consequence, and
+the section it attaches to.
+
 ## Where the site responses fit
 
 Responses landing in HubSpot is what makes "feasibility results feed the quote"
@@ -183,9 +286,11 @@ one criterion per line, rendering as real bullets.
    participation, monthly enrolment and site cost were not part of the spec §7
    audit. This decides whether the quote builder can read feasibility results
    or the rep re-keys them.
-2. **Which omissions have actually cost a re-run?** Not "which fields are
-   blank" — blanks are usually correct. The list worth having is the study
-   elements that, when missed, invalidated a feasibility: the plasma protocol
-   case and its siblings. That list decides which prompts get written, how
-   hard, and in what order. Ops holds it; it is not written down anywhere.
-3. Can a feasibility be run speculatively against a design with no sponsor?
+2. **More entries for the prompt catalogue.** Eight are recorded above from
+   John's recall. Ops will hold others — particularly from recent re-runs.
+   Each wants the question, the consequence, and the section it attaches to.
+3. **Should the standard-of-care check (#8) be a step of its own?** It is not a
+   field, and burying it among field prompts may waste it. A single review
+   step — "walk through the moment of collection" — before submission might
+   serve better than a prompt attached to §03.
+4. Can a feasibility be run speculatively against a design with no sponsor?

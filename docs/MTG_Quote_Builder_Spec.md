@@ -532,3 +532,28 @@ The lookup must not re-render the fields it reads from. An earlier build
 rebuilt the whole extension block on blur, which destroyed the input mid-typing
 and left stale results on screen. Update values in place and swap only the
 result banner.
+
+
+---
+
+## 10. Gaps found via the feasibility review, 2026-08-27
+
+Working through what reps omit from a feasibility surfaced three study-design
+elements the quote builder has no home for either. Full reasoning in
+`docs/FEASIBILITY_spec_draft.md`; recorded here so §09 gains them.
+
+- **Which days fresh cases can be received**, weekends included. §09 has
+  delivery restrictions, but that is the shipping end. This is the receiving
+  end, and it changes the enrolment estimate rather than the logistics: fresh
+  collection is surgery-driven, and surgery does not stop for weekends.
+- **Timeframe blackouts** — periods when subjects cannot be accepted at all
+  (a closed month, a holiday shutdown, an instrument out for service). No
+  equivalent exists today, and an unstated blackout makes every enrolment
+  projection wrong.
+- **EDC as a named data-delivery method.** §07 lists Excel / Paper CRF / EMR
+  entry / Other. Sponsor EDC entry hides under "Other" and it should not — it
+  is real site burden that gets priced, and some sites decline over it.
+
+The remaining feasibility prompts (processing protocol, lab-value assay and
+recency, therapy exclusions and washout, per-day delivery cap) map onto fields
+the quote builder already has. They need better prompting, not new fields.
