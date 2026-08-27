@@ -557,3 +557,46 @@ elements the quote builder has no home for either. Full reasoning in
 The remaining feasibility prompts (processing protocol, lab-value assay and
 recency, therapy exclusions and washout, per-day delivery cap) map onto fields
 the quote builder already has. They need better prompting, not new fields.
+
+---
+
+## 11. Extension revisions — rep review, 2026-08-27 (third pass)
+
+- **The quote number is editable.** It builds itself from acronym, date and
+  name, but a typed value sticks and stops following the fields. A "back to
+  automatic" control restores the link. Same rule as quote name and summary.
+- **The original-study-quote text is itself a lookup key.** Typing or pasting
+  the reference fills the study in — the register first, then the standing
+  index, then the sponsor acronym embedded in the number (`QTE NTA20260826…`)
+  when nothing matches exactly. OneDrive becomes the real source. The PO and MT
+  fields still work; the reference is simply tried first, being what the rep
+  actually has to hand.
+- **Cohorts carry over from the original quote** on any of those matches.
+- **The extension cohort table shows the cohort and the additional subjects,
+  nothing else.** The "already quoted" and "new total" columns were removed —
+  three numbers per row read as confusing rather than informative. Only the
+  total of additional subjects remains, because pricing derives from it.
+- **Reps type the cohort description, not "Cohort 1".** The tool owns the
+  numbering, so a typed `Cohort 1 - CRC` renders as "Cohort 1: Cohort 1 - CRC".
+  A leading `Cohort N` is stripped on entry.
+
+### §10 built properly, for both modes
+
+Pricing was a single total; it is now the engine spec §2 describes, and the
+extension path gets the same options as a full quote rather than a stripped one.
+
+- **Extension:** one price for every cohort, or a price per cohort with its own
+  subtotal. Per-cohort is the default, since cohorts rarely cost the same.
+- **Full quote:** one block per specimen type, numbered `05.n` to match §05's
+  order, each with price to quote, site cost as reference only, source, and
+  internal pricing notes that never reach the sponsor document.
+- **Screenfails:** rate, cap, applicable cohorts, explanation — and "are
+  screenfails shipped?" inside that block only, never floating unconditionally.
+- **Outcome data fee** appears only when §07 turns outcome data on.
+- **Other costs:** repeatable label and amount.
+- **Shipping:** lump sum or per line, with the frozen batch calculator appearing
+  only when a frozen specimen exists. The calculator shows sites × batches as
+  reference; the rep enters the price being quoted. No markup multiplier and no
+  auto-cap — spec §4 records that as built and reverted.
+- A running total lists every component and sums them, matching the "list each
+  addend, then the grand total" convention in §3.
