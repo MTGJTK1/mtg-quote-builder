@@ -163,16 +163,6 @@ export function QuoteForm({
 
         {values.isExtension && (
           <div className="mb-5 grid gap-4 rounded-md border border-black/10 p-4 sm:grid-cols-2 dark:border-white/15">
-            <Field label="Original study PO #">
-              {(id) => (
-                <input
-                  id={id}
-                  className={field}
-                  value={header.originalStudyPo ?? ''}
-                  onChange={(e) => setHeader('originalStudyPo', e.target.value)}
-                />
-              )}
-            </Field>
             <Field label="Original study quote">
               {(id) => (
                 <input
@@ -180,6 +170,16 @@ export function QuoteForm({
                   className={field}
                   value={header.originalStudyQuote ?? ''}
                   onChange={(e) => setHeader('originalStudyQuote', e.target.value)}
+                />
+              )}
+            </Field>
+            <Field label="Original study PO #">
+              {(id) => (
+                <input
+                  id={id}
+                  className={field}
+                  value={header.originalStudyPo ?? ''}
+                  onChange={(e) => setHeader('originalStudyPo', e.target.value)}
                 />
               )}
             </Field>
@@ -206,7 +206,7 @@ export function QuoteForm({
             <label className="flex items-center gap-2.5 text-sm sm:col-span-2">
               <input
                 type="checkbox"
-                checked={header.designChanged ?? false}
+                checked={header.designChanged ?? true}
                 onChange={(e) => setHeader('designChanged', e.target.checked)}
                 className="size-4"
               />
@@ -347,10 +347,11 @@ export function QuoteForm({
       </Section>
 
       <Section number="05" title="Biospecimens">
-        <p className="mb-3 text-sm opacity-60">
-          Which specimen types this quote covers. Full per-specimen detail
-          arrives in Phase 3.
-        </p>
+        <PartialNote>
+          Which specimen types this quote covers — that is all this captures
+          today. Storage state, media, tube type, volumes, aliquots and FFPE
+          specs arrive in Phase 3.
+        </PartialNote>
         <div className="grid gap-2 sm:grid-cols-3">
           {SPECIMEN_TYPES.map((type) => (
             <label key={type} className="flex items-center gap-2.5 text-sm">
@@ -385,10 +386,14 @@ export function QuoteForm({
       </Section>
 
       <Section number="10" title="Pricing">
+        <PartialNote>
+          One total for the whole study — that is all this captures today.
+          Per-specimen pricing, shipping, screenfails, historical comparables
+          and internal pricing notes arrive in Phase 4.
+        </PartialNote>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field
             label="Total study cost"
-            hint="Entered directly for now; computed from the pricing engine in Phase 4."
           >
             {(id) => (
               <input
@@ -446,6 +451,21 @@ export function QuoteForm({
         )}
       </div>
     </form>
+  )
+}
+
+/**
+ * Marks a section that renders but only captures part of what it eventually
+ * will. Without this the stubs read as broken rather than unfinished.
+ */
+function PartialNote({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mb-4 flex flex-wrap items-baseline gap-2 rounded-r-md border-l-[3px] border-black/20 bg-black/[.03] px-3 py-2.5 text-xs opacity-70 dark:border-white/25 dark:bg-white/[.04]">
+      <span className="rounded border border-black/20 px-1.5 py-px text-[10px] font-semibold tracking-widest uppercase dark:border-white/25">
+        Partial
+      </span>
+      <span className="flex-1">{children}</span>
+    </div>
   )
 }
 

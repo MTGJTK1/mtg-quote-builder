@@ -459,6 +459,111 @@
   fieldset { border: 0; padding: 0; margin: 18px 0 0; }
   legend { font-size: 13px; font-weight: 500; margin-bottom: 8px; padding: 0; }
 
+  /* ---------- partial-section marker ---------- */
+
+  .partial-note {
+    display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap;
+    background: var(--surface-sunk);
+    border-left: 3px solid var(--rule-strong);
+    border-radius: 0 7px 7px 0;
+    padding: 10px 13px;
+    margin-bottom: 16px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+  }
+  .partial-tag {
+    flex: none;
+    font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .11em;
+    color: var(--ink-faint);
+    border: 1px solid var(--rule-strong);
+    border-radius: 4px;
+    padding: 1px 6px;
+  }
+
+  /* ---------- carried-over parent detail ---------- */
+
+  .carried {
+    background: var(--accent-soft);
+    border-radius: 9px;
+    padding: 15px 17px;
+    margin-bottom: 18px;
+  }
+  .carried-head {
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: .12em;
+    color: var(--accent); font-weight: 600; margin-bottom: 11px;
+  }
+  .carried-list {
+    display: grid; grid-template-columns: auto 1fr; gap: 5px 16px;
+    margin: 0 0 10px;
+  }
+  .carried-list dt { font-size: 12.5px; color: var(--ink-soft); }
+  .carried-list dd { margin: 0; font-size: 13.5px; }
+  .carried .hint { margin-top: 0; }
+
+  /* ---------- cohort additional-subjects table ---------- */
+
+  .cohorts { display: flex; flex-direction: column; }
+
+  .cohort-row {
+    display: grid;
+    grid-template-columns: 1fr 110px 110px 90px;
+    gap: 12px;
+    align-items: center;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .cohort-row .ca { text-align: right; font-variant-numeric: tabular-nums; }
+  .cohort-row input { text-align: right; padding: 7px 9px; }
+
+  .cohort-head {
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: .1em;
+    color: var(--ink-faint); padding-bottom: 7px;
+  }
+  .cohort-name { font-size: 14px; }
+  .cohort-row .dim { color: var(--ink-soft); }
+  .cohort-total { border-bottom: 0; font-weight: 600; padding-top: 12px; }
+  .cohort-total .strong { font-size: 15px; }
+
+  @media (max-width: 560px) {
+    .cohort-row { grid-template-columns: 1fr 70px 90px 70px; gap: 8px; font-size: 13px; }
+  }
+
+  /* ---------- register filter ---------- */
+
+  .filters {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .filters .flabel {
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: .11em;
+    color: var(--ink-faint);
+  }
+  .pill {
+    font: inherit; font-size: 13px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--rule-strong);
+    background: var(--surface);
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+  .pill:hover { border-color: var(--ink-faint); color: var(--ink); }
+  .pill[aria-pressed="true"] {
+    background: var(--accent); border-color: var(--accent);
+    color: var(--accent-ink); font-weight: 500;
+  }
+
+  .warn {
+    background: var(--danger-bg);
+    border: 1px solid var(--danger);
+    border-radius: 9px;
+    padding: 12px 15px;
+    margin-bottom: 20px;
+    font-size: 13px;
+  }
+  .warn strong { color: var(--danger); }
+
   .errors {
     background: var(--danger-bg);
     border: 1px solid var(--danger);
@@ -564,18 +669,27 @@
       preparedBy: 'Joshua Taylor', quoteDate: '2026-08-27', status: 'draft', totalCost: '342750.00',
       specimenTypes: ['FFPE block', 'Plasma'], isExtension: false,
       hubspotDealName: 'GHI: NSCLC tissue + plasma',
+      cohorts: [{ name: 'NSCLC, stage III-IV', subjects: 90 }, { name: 'Normal adjacent', subjects: 52 }],
       header: { validity: '60 Day Quote', serviceTypes: ['Retrospective', 'Prospective'],
         sponsorContactName: 'Dana Whitfield', sponsorContactEmail: 'dwhitfield@example.com',
         sponsorSelectedCases: 'Case list GHI-2026-08 (142 cases)' } },
     { client: 'Natera', sponsorAcronym: 'NTA', quoteName: 'Pan-cancer - blood',
       preparedBy: 'John Kibler', quoteDate: '2026-08-26', status: 'sent', totalCost: '612500.00',
       specimenTypes: ['Whole blood', 'Plasma', 'Buffy coat'], isExtension: false,
-      hubspotDealName: 'NTA: 500 healthies - blood',
+      hubspotDealName: 'NTA: 500 healthies - blood', mtNumber: 'MT2291',
+      cohorts: [{ name: 'Colorectal cancer', subjects: 200 },
+                { name: 'Pancreatic cancer', subjects: 150 },
+                { name: 'Healthy controls', subjects: 150 }],
       header: { validity: '30 Day Quote', serviceTypes: ['Prospective'] } },
     { client: 'Natera', sponsorAcronym: 'NTA', quoteName: 'Pan-cancer - blood (MT2291 extension #1)',
       preparedBy: 'John Kibler', quoteDate: '2026-08-25', status: 'draft', totalCost: '96250.00',
-      specimenTypes: ['Whole blood'], isExtension: true, hubspotDealName: '',
+      specimenTypes: ['Whole blood'], isExtension: true,
+      hubspotDealName: 'NTA: Multi-cancer - blood (MT2291 extension #1)',
+      cohorts: [{ name: 'Colorectal cancer', subjects: 200, additionalSubjects: 60 },
+                { name: 'Pancreatic cancer', subjects: 150, additionalSubjects: 40 },
+                { name: 'Healthy controls', subjects: 150, additionalSubjects: 0 }],
       header: { validity: '30 Day Quote', serviceTypes: ['Prospective'],
+        originalStudyQuote: 'QTE NTA20260826 Pan-cancer - blood',
         originalStudyPo: 'PO-88214', parentMtNumber: 'MT2291', extensionNumber: '1',
         designChanged: false } },
     { client: 'Exact Sciences', sponsorAcronym: 'EXS', quoteName: 'CRC - plasma & buffy',
@@ -585,6 +699,8 @@
     { client: 'Merck', sponsorAcronym: 'MRK', quoteName: 'Multi-tumor fresh tissue',
       preparedBy: 'John Kibler', quoteDate: '2026-08-12', status: 'won', totalCost: '1140000.00',
       specimenTypes: ['Fresh tissue', 'Whole blood'], isExtension: false, hubspotDealName: '',
+      mtNumber: 'MT9920',
+      cohorts: [{ name: 'Multi-tumor, mixed', subjects: 400 }],
       header: { validity: '30 Day Quote', serviceTypes: ['Prospective'] } },
     { client: 'Regeneron', sponsorAcronym: 'RGN', quoteName: 'Atopic dermatitis - biopsy & serum',
       preparedBy: 'Karen Krantz', quoteDate: '2026-07-30', status: 'lost', totalCost: '175000.00',
@@ -597,19 +713,28 @@
 
   var KEY = 'mtg-quote-builder-mockup-v1';
   var quotes = [];
+  var storageWorks = true;
 
   function load() {
     try {
+      window.localStorage.setItem(KEY + '-probe', '1');
+      window.localStorage.removeItem(KEY + '-probe');
       var raw = window.localStorage.getItem(KEY);
       if (raw) { quotes = JSON.parse(raw); return; }
-    } catch (e) { /* private window, blocked storage — fall through to samples */ }
+    } catch (e) {
+      // Private window, or the browser blocks site data. Everything still works
+      // for this visit, but nothing survives a reload — say so rather than
+      // silently resetting and looking like the quotes vanished on their own.
+      storageWorks = false;
+    }
     quotes = SAMPLES.map(function (s) { return finalize(Object.assign({ id: uid() }, s)); });
     save();
   }
 
   function save() {
+    if (!storageWorks) return;
     try { window.localStorage.setItem(KEY, JSON.stringify(quotes)); }
-    catch (e) { /* storage unavailable; the session still works in memory */ }
+    catch (e) { storageWorks = false; }
   }
 
   function uid() { return 'q' + Math.random().toString(36).slice(2, 10); }
@@ -674,6 +799,7 @@
 
   var view = document.getElementById('view');
   var route = { name: 'register', id: null };
+  var statusFilter = 'all';
 
   function go(name, id) {
     route = { name: name, id: id || null };
@@ -699,13 +825,45 @@
   // ---------------------------------------------------------------- register
 
   function sorted() {
-    return quotes.slice().sort(function (a, b) {
-      return String(b.quoteDate).localeCompare(String(a.quoteDate));
+    return quotes.slice()
+      .filter(function (q) { return statusFilter === 'all' || q.status === statusFilter; })
+      .sort(function (a, b) {
+        return String(b.quoteDate).localeCompare(String(a.quoteDate));
+      });
+  }
+
+  function countByStatus(v) {
+    return quotes.filter(function (q) { return q.status === v; }).length;
+  }
+
+  function filterBar() {
+    var bar = el('div', { class: 'filters' }, [el('span', { class: 'flabel', text: 'Show' })]);
+    var opts = [{ value: 'all', label: 'All' }].concat(STATUSES.map(function (s) {
+      return { value: s.value, label: s.label };
+    }));
+    opts.forEach(function (o) {
+      var n = o.value === 'all' ? quotes.length : countByStatus(o.value);
+      var b = el('button', {
+        class: 'pill', type: 'button',
+        'aria-pressed': statusFilter === o.value ? 'true' : 'false',
+        onclick: function () { statusFilter = o.value; render(); }
+      }, [o.label + ' (' + n + ')']);
+      bar.appendChild(b);
     });
+    return bar;
   }
 
   function renderRegister() {
     var frag = document.createDocumentFragment();
+
+    if (!storageWorks) {
+      frag.appendChild(el('div', { class: 'warn' }, [
+        el('strong', { text: 'This browser is not saving your changes. ' }),
+        el('span', { text: 'Quotes you create will work now but disappear when you reload — ' +
+          'site data is blocked, which usually means a private window or a browser privacy setting. ' +
+          'Try a normal window if you want your test quotes to stick around.' })
+      ]));
+    }
 
     frag.appendChild(el('div', { class: 'page-head' }, [
       el('div', {}, [
@@ -715,10 +873,19 @@
       el('button', { class: 'btn btn-primary', type: 'button', onclick: function () { go('new'); } }, ['New quote'])
     ]));
 
-    if (!quotes.length) {
+    frag.appendChild(filterBar());
+
+    var visible = sorted();
+    if (!visible.length) {
       frag.appendChild(el('div', { class: 'empty' }, [
-        el('p', { text: 'No quotes yet.' }),
-        el('button', { class: 'link-btn', type: 'button', onclick: function () { go('new'); } }, ['Create the first one'])
+        el('p', { text: quotes.length
+          ? 'No quotes with that status.'
+          : 'No quotes yet.' }),
+        quotes.length
+          ? el('button', { class: 'link-btn', type: 'button',
+              onclick: function () { statusFilter = 'all'; render(); } }, ['Show all quotes'])
+          : el('button', { class: 'link-btn', type: 'button',
+              onclick: function () { go('new'); } }, ['Create the first one'])
       ]));
       frag.appendChild(footRow());
       return frag;
@@ -729,7 +896,7 @@
       el('th', { text: 'Date' }), el('th', { class: 'num', text: 'Total' }), el('th', { text: 'Status' })
     ]);
 
-    var body = el('tbody', {}, sorted().map(function (q) {
+    var body = el('tbody', {}, visible.map(function (q) {
       return el('tr', {}, [
         el('td', {}, [
           el('button', { class: 'q-name', type: 'button', onclick: function () { go('edit', q.id); } }, [q.quoteName || '(untitled)']),
@@ -781,7 +948,7 @@
     return {
       id: null, client: '', sponsorAcronym: '', quoteName: '', preparedBy: REPS[0],
       quoteDate: new Date().toISOString().slice(0, 10), status: 'draft', totalCost: '',
-      specimenTypes: [], isExtension: false, hubspotDealName: '',
+      specimenTypes: [], isExtension: false, hubspotDealName: '', cohorts: [],
       header: { validity: VALIDITY[0], serviceTypes: [] }
     };
   }
@@ -792,6 +959,7 @@
     draft.header = draft.header || {};
     draft.header.serviceTypes = draft.header.serviceTypes || [];
     draft.specimenTypes = draft.specimenTypes || [];
+    draft.cohorts = draft.cohorts || [];
 
     var frag = document.createDocumentFragment();
     var wrap = el('div', { class: 'form-wrap' });
@@ -867,133 +1035,336 @@
     var sec01 = el('section', { class: 'sec' });
     sec01.appendChild(secHead('01', 'Quote header'));
 
+    // ---- extension identification
+    // Quote reference comes before the PO number: the rep looks the study up by
+    // its quote, and the PO may not exist yet. Picking the parent quote here is
+    // what carries the client, rep, contacts and cohorts forward.
     var extBox = el('div');
+
+    function parentQuote() {
+      if (!draft.header.parentQuoteId) return null;
+      return quotes.filter(function (q) { return q.id === draft.header.parentQuoteId; })[0] || null;
+    }
+
+    function adoptParent(parent) {
+      if (!parent) return;
+      draft.client = parent.client;
+      draft.sponsorAcronym = parent.sponsorAcronym;
+      draft.preparedBy = parent.preparedBy;
+      draft.specimenTypes = (parent.specimenTypes || []).slice();
+      draft.header.parentMtNumber = parent.mtNumber || draft.header.parentMtNumber || '';
+      draft.header.originalStudyQuote = parent.quoteNumber;
+      draft.header.sponsorContactName = (parent.header || {}).sponsorContactName || '';
+      draft.header.sponsorContactEmail = (parent.header || {}).sponsorContactEmail || '';
+      // Carry the cohorts across with their original sizes; the rep adds to them.
+      draft.cohorts = (parent.cohorts || []).map(function (c) {
+        return { name: c.name, subjects: c.subjects, additionalSubjects: 0 };
+      });
+      var next = 1;
+      quotes.forEach(function (q) {
+        if (q.isExtension && (q.header || {}).parentMtNumber === draft.header.parentMtNumber) {
+          var n = parseInt((q.header || {}).extensionNumber, 10);
+          if (!isNaN(n) && n >= next) next = n + 1;
+        }
+      });
+      draft.header.extensionNumber = draft.header.extensionNumber || String(next);
+    }
+
     function renderExtBox() {
       extBox.replaceChildren();
       if (!draft.isExtension) return;
+
+      var candidates = quotes.filter(function (q) { return !q.isExtension && q.id !== (existing || {}).id; });
+
+      var picker = el('select', { id: 'parent-pick', onchange: function () {
+        draft.header.parentQuoteId = picker.value || '';
+        adoptParent(parentQuote());
+        renderExtBox();
+        renderBody();
+        refreshNumber();
+      } });
+      picker.appendChild(el('option', { value: '', text: candidates.length ? 'Choose a quote…' : 'No earlier quotes on file' }));
+      candidates.forEach(function (q) {
+        picker.appendChild(el('option', { value: q.id,
+          text: q.quoteName + (q.mtNumber ? ' (' + q.mtNumber + ')' : '') }));
+      });
+      picker.value = draft.header.parentQuoteId || '';
+
+      var pickField = el('div', { class: 'fld full' }, [
+        el('label', { for: 'parent-pick' }, ['Original study quote']),
+        picker,
+        el('div', { class: 'hint', text: parentQuote()
+          ? 'Client, rep, contacts and cohorts carried over from this quote.'
+          : 'Pick the study this extends and its details carry over automatically.' })
+      ]);
+
       var g = el('div', { class: 'grid' }, [
-        field('Original study PO #', { get: function () { return draft.header.originalStudyPo; },
-          set: function (v) { draft.header.originalStudyPo = v; } }),
-        field('Original study quote', { get: function () { return draft.header.originalStudyQuote; },
-          set: function (v) { draft.header.originalStudyQuote = v; } }),
+        pickField,
+        field('Original study PO #', {
+          hint: 'Blank if the sponsor has not issued one yet.',
+          get: function () { return draft.header.originalStudyPo; },
+          set: function (v) { draft.header.originalStudyPo = v; }, placeholder: 'PO-88214' }),
         field('Parent MT number', { get: function () { return draft.header.parentMtNumber; },
           set: function (v) { draft.header.parentMtNumber = v; }, placeholder: 'MT2291' }),
         field('Extension #', { get: function () { return draft.header.extensionNumber; },
           set: function (v) { draft.header.extensionNumber = v; }, placeholder: '1' })
       ]);
+
       var changed = checkbox('The study design has changed',
-        function () { return draft.header.designChanged; },
-        function (v) { draft.header.designChanged = v; });
+        function () { return draft.header.designChanged !== false; },
+        function (v) { draft.header.designChanged = v; },
+        function () { renderBody(); });
       changed.style.marginTop = '15px';
+
       extBox.appendChild(el('div', { class: 'toggle-box' }, [g, changed,
-        el('div', { class: 'hint', text: 'Left unchecked, the generated quote stays minimal — summary, population, costs and terms only.' })
+        el('div', { class: 'hint', text: draft.header.designChanged === false
+          ? 'Design unchanged — the form collapses to what actually differs, and the quote generates in the short extension format.'
+          : 'Uncheck this when the study design is unchanged and only the subject count grows.' })
       ]));
     }
 
     var extCheck = checkbox('This is a study extension',
       function () { return draft.isExtension; },
-      function (v) { draft.isExtension = v; },
-      renderExtBox);
+      function (v) {
+        draft.isExtension = v;
+        // A new extension defaults to "design has changed" — the rep opts into
+        // the short form rather than having fields vanish unexpectedly.
+        if (v && draft.header.designChanged === undefined) draft.header.designChanged = true;
+      },
+      function () { renderExtBox(); renderBody(); });
     extCheck.style.marginBottom = '15px';
     sec01.appendChild(extCheck);
     sec01.appendChild(extBox);
-    renderExtBox();
 
-    sec01.appendChild(el('div', { class: 'grid' }, [
-      field('Client / sponsor', { required: true, placeholder: 'Natera',
-        get: function () { return draft.client; }, set: function (v) { draft.client = v; } }),
-      field('Sponsor acronym', { placeholder: 'NTA',
-        get: function () { return draft.sponsorAcronym; },
-        set: function (v) { draft.sponsorAcronym = v.toUpperCase(); } }),
-      field('Prepared by', { type: 'select', required: true, options: REPS,
-        get: function () { return draft.preparedBy; }, set: function (v) { draft.preparedBy = v; } }),
-      field('Quote date', { type: 'date', required: true,
-        get: function () { return draft.quoteDate; }, set: function (v) { draft.quoteDate = v; } }),
-      field('Validity', { type: 'select', options: VALIDITY,
-        get: function () { return draft.header.validity || VALIDITY[0]; },
-        set: function (v) { draft.header.validity = v; } }),
-      field('HubSpot deal name', { placeholder: 'NTA: 500 healthies - blood',
-        get: function () { return draft.hubspotDealName; },
-        set: function (v) { draft.hubspotDealName = v; } }),
-      field('Sponsor contact name', { get: function () { return draft.header.sponsorContactName; },
-        set: function (v) { draft.header.sponsorContactName = v; } }),
-      field('Sponsor contact email', { type: 'email',
-        get: function () { return draft.header.sponsorContactEmail; },
-        set: function (v) { draft.header.sponsorContactEmail = v; } })
-    ]));
-
-    var casesBox = el('div');
-    function renderCases() {
-      casesBox.replaceChildren();
-      if (draft.header.serviceTypes.indexOf('Retrospective') === -1) return;
-      var f = field('Sponsor-selected cases', { type: 'textarea',
-        placeholder: 'Document name, or case / biospecimen numbers',
-        get: function () { return draft.header.sponsorSelectedCases; },
-        set: function (v) { draft.header.sponsorSelectedCases = v; } });
-      f.style.marginTop = '17px';
-      casesBox.appendChild(f);
-    }
-
-    var svc = el('fieldset', {}, [el('legend', { text: 'Service type' })]);
-    svc.appendChild(el('div', { class: 'check-row' }, SERVICE_TYPES.map(function (t) {
-      return checkbox(t,
-        function () { return draft.header.serviceTypes.indexOf(t) > -1; },
-        function (on) {
-          var i = draft.header.serviceTypes.indexOf(t);
-          if (on && i === -1) draft.header.serviceTypes.push(t);
-          if (!on && i > -1) draft.header.serviceTypes.splice(i, 1);
-        },
-        renderCases);
-    })));
-    sec01.appendChild(svc);
-    sec01.appendChild(casesBox);
-    renderCases();
+    // Everything past the extension block depends on the mode: a full quote,
+    // or an extension whose design is unchanged and only needs what differs.
+    var headerBody = el('div');
+    sec01.appendChild(headerBody);
     wrap.appendChild(sec01);
 
-    wrap.appendChild(pendingRow('02'));
-    wrap.appendChild(pendingRow('03'));
-    wrap.appendChild(pendingRow('04'));
+    var restBox = el('div');
+    wrap.appendChild(restBox);
 
-    // ---- section 05
-    var sec05 = el('section', { class: 'sec' });
-    sec05.appendChild(secHead('05', 'Biospecimens', 'Per-specimen detail in Phase 3'));
-    sec05.appendChild(el('div', { class: 'specimen-grid' }, SPECIMEN_TYPES.map(function (t) {
-      return checkbox(t,
-        function () { return draft.specimenTypes.indexOf(t) > -1; },
-        function (on) {
-          var i = draft.specimenTypes.indexOf(t);
-          if (on && i === -1) draft.specimenTypes.push(t);
-          if (!on && i > -1) draft.specimenTypes.splice(i, 1);
+    function isMinimal() {
+      return draft.isExtension && draft.header.designChanged === false;
+    }
+
+    function renderBody() {
+      headerBody.replaceChildren();
+      restBox.replaceChildren();
+      if (isMinimal()) renderMinimal(); else renderFull();
+    }
+
+    // ---------- full quote ----------
+
+    function renderFull() {
+      headerBody.appendChild(el('div', { class: 'grid' }, [
+        field('Client / sponsor', { required: true, placeholder: 'Natera',
+          get: function () { return draft.client; }, set: function (v) { draft.client = v; } }),
+        field('Sponsor acronym', { placeholder: 'NTA',
+          get: function () { return draft.sponsorAcronym; },
+          set: function (v) { draft.sponsorAcronym = v.toUpperCase(); } }),
+        field('Prepared by', { type: 'select', required: true, options: REPS,
+          get: function () { return draft.preparedBy; }, set: function (v) { draft.preparedBy = v; } }),
+        field('Quote date', { type: 'date', required: true,
+          get: function () { return draft.quoteDate; }, set: function (v) { draft.quoteDate = v; } }),
+        field('Validity', { type: 'select', options: VALIDITY,
+          get: function () { return draft.header.validity || VALIDITY[0]; },
+          set: function (v) { draft.header.validity = v; } }),
+        field('HubSpot deal name', { placeholder: 'NTA: 500 healthies - blood',
+          get: function () { return draft.hubspotDealName; },
+          set: function (v) { draft.hubspotDealName = v; } }),
+        field('Sponsor contact name', { get: function () { return draft.header.sponsorContactName; },
+          set: function (v) { draft.header.sponsorContactName = v; } }),
+        field('Sponsor contact email', { type: 'email',
+          get: function () { return draft.header.sponsorContactEmail; },
+          set: function (v) { draft.header.sponsorContactEmail = v; } })
+      ]));
+
+      var casesBox = el('div');
+      function renderCases() {
+        casesBox.replaceChildren();
+        if (draft.header.serviceTypes.indexOf('Retrospective') === -1) return;
+        var f = field('Sponsor-selected cases', { type: 'textarea',
+          placeholder: 'Document name, or case / biospecimen numbers',
+          get: function () { return draft.header.sponsorSelectedCases; },
+          set: function (v) { draft.header.sponsorSelectedCases = v; } });
+        f.style.marginTop = '17px';
+        casesBox.appendChild(f);
+      }
+
+      var svc = el('fieldset', {}, [el('legend', { text: 'Service type' })]);
+      svc.appendChild(el('div', { class: 'check-row' }, SERVICE_TYPES.map(function (t) {
+        return checkbox(t,
+          function () { return draft.header.serviceTypes.indexOf(t) > -1; },
+          function (on) {
+            var i = draft.header.serviceTypes.indexOf(t);
+            if (on && i === -1) draft.header.serviceTypes.push(t);
+            if (!on && i > -1) draft.header.serviceTypes.splice(i, 1);
+          },
+          renderCases);
+      })));
+      headerBody.appendChild(svc);
+      headerBody.appendChild(casesBox);
+      renderCases();
+
+      restBox.appendChild(pendingRow('02'));
+      restBox.appendChild(pendingRow('03'));
+      restBox.appendChild(pendingRow('04'));
+
+      var sec05 = el('section', { class: 'sec' });
+      sec05.appendChild(secHead('05', 'Biospecimens'));
+      sec05.appendChild(partialNote(
+        'Which specimen types this quote covers — that is all this captures today. ' +
+        'Storage state, media, tube type, volumes, aliquots and FFPE specs are Phase 3.'));
+      sec05.appendChild(el('div', { class: 'specimen-grid' }, SPECIMEN_TYPES.map(function (t) {
+        return checkbox(t,
+          function () { return draft.specimenTypes.indexOf(t) > -1; },
+          function (on) {
+            var i = draft.specimenTypes.indexOf(t);
+            if (on && i === -1) draft.specimenTypes.push(t);
+            if (!on && i > -1) draft.specimenTypes.splice(i, 1);
+          });
+      })));
+      restBox.appendChild(sec05);
+
+      restBox.appendChild(sectionQuoteName());
+
+      restBox.appendChild(pendingRow('07'));
+      restBox.appendChild(pendingRow('08'));
+      restBox.appendChild(pendingRow('09'));
+      restBox.appendChild(sectionPricing(true));
+      restBox.appendChild(pendingRow('11'));
+    }
+
+    // ---------- extension, design unchanged ----------
+
+    function renderMinimal() {
+      var parent = parentQuote();
+
+      if (parent) {
+        headerBody.appendChild(el('div', { class: 'carried' }, [
+          el('div', { class: 'carried-head' }, ['Carried over from ' + parent.quoteNumber]),
+          el('dl', { class: 'carried-list' }, [
+            el('dt', { text: 'Client' }), el('dd', { text: parent.client }),
+            el('dt', { text: 'Prepared by' }), el('dd', { text: parent.preparedBy }),
+            el('dt', { text: 'Specimens' }),
+            el('dd', { text: (parent.specimenTypes || []).join(', ') || '—' }),
+            el('dt', { text: 'Contact' }),
+            el('dd', { text: (parent.header || {}).sponsorContactName || '—' })
+          ]),
+          el('div', { class: 'hint', text: 'The design is unchanged, so these stay as quoted. Tick "the study design has changed" to edit them.' })
+        ]));
+      } else {
+        headerBody.appendChild(partialNote(
+          'Pick the original study quote above and its client, rep, contacts and cohorts carry over here.'));
+      }
+
+      headerBody.appendChild(el('div', { class: 'grid' }, [
+        field('Validity', { type: 'select', options: VALIDITY,
+          get: function () { return draft.header.validity || VALIDITY[0]; },
+          set: function (v) { draft.header.validity = v; } }),
+        field('HubSpot deal name', { placeholder: 'NTA: Multi-cancer - blood (MT2291 extension #1)',
+          get: function () { return draft.hubspotDealName; },
+          set: function (v) { draft.hubspotDealName = v; } }),
+        field('Quote date', { type: 'date', required: true,
+          get: function () { return draft.quoteDate; }, set: function (v) { draft.quoteDate = v; } })
+      ]));
+
+      // ---- cohorts: the one thing an unchanged-design extension actually changes
+      var sec03 = el('section', { class: 'sec' });
+      sec03.appendChild(secHead('03', 'Additional subjects'));
+
+      if (!draft.cohorts || !draft.cohorts.length) {
+        sec03.appendChild(partialNote('No cohorts yet — pick the original study quote above.'));
+      } else {
+        var rows = el('div', { class: 'cohorts' });
+        rows.appendChild(el('div', { class: 'cohort-row cohort-head' }, [
+          el('span', { text: 'Cohort' }),
+          el('span', { class: 'ca', text: 'Already quoted' }),
+          el('span', { class: 'ca', text: 'Additional' }),
+          el('span', { class: 'ca', text: 'New total' })
+        ]));
+
+        var totalEl = el('span', { class: 'ca strong' });
+
+        function recomputeTotals() {
+          var was = 0, add = 0;
+          draft.cohorts.forEach(function (c) {
+            was += Number(c.subjects) || 0;
+            add += Number(c.additionalSubjects) || 0;
+          });
+          totalEl.textContent = String(was + add);
+          return { was: was, add: add };
+        }
+
+        draft.cohorts.forEach(function (c, i) {
+          var newTotal = el('span', { class: 'ca',
+            text: String((Number(c.subjects) || 0) + (Number(c.additionalSubjects) || 0)) });
+          var input = el('input', {
+            type: 'text', inputmode: 'numeric', value: c.additionalSubjects || 0,
+            'aria-label': 'Additional subjects for ' + c.name,
+            oninput: function () {
+              var n = parseInt(String(input.value).replace(/[^0-9-]/g, ''), 10);
+              draft.cohorts[i].additionalSubjects = isNaN(n) ? 0 : n;
+              newTotal.textContent = String((Number(c.subjects) || 0) + (isNaN(n) ? 0 : n));
+              recomputeTotals();
+            }
+          });
+          input.value = String(c.additionalSubjects || 0);
+          rows.appendChild(el('div', { class: 'cohort-row' }, [
+            el('span', { class: 'cohort-name', text: c.name }),
+            el('span', { class: 'ca dim', text: String(c.subjects || 0) }),
+            el('span', { class: 'ca' }, [input]),
+            newTotal
+          ]));
         });
-    })));
-    wrap.appendChild(sec05);
 
-    // ---- section 06
-    var sec06 = el('section', { class: 'sec' });
-    sec06.appendChild(secHead('06', 'Quote name'));
-    sec06.appendChild(field('Quote name', { required: true, full: true,
-      placeholder: 'CRC - plasma & buffy',
-      hint: 'Drafts itself from the population and specimens once Phase 3 lands.',
-      get: function () { return draft.quoteName; }, set: function (v) { draft.quoteName = v; } }));
-    wrap.appendChild(sec06);
+        rows.appendChild(el('div', { class: 'cohort-row cohort-total' }, [
+          el('span', { text: 'Total subjects' }),
+          el('span', { class: 'ca' }), el('span', { class: 'ca' }), totalEl
+        ]));
+        sec03.appendChild(rows);
+        recomputeTotals();
+      }
+      restBox.appendChild(sec03);
 
-    wrap.appendChild(pendingRow('07'));
-    wrap.appendChild(pendingRow('08'));
-    wrap.appendChild(pendingRow('09'));
+      restBox.appendChild(sectionQuoteName());
+      restBox.appendChild(sectionPricing(false));
+    }
 
-    // ---- section 10
-    var sec10 = el('section', { class: 'sec' });
-    sec10.appendChild(secHead('10', 'Pricing'));
-    sec10.appendChild(el('div', { class: 'grid' }, [
-      field('Total study cost', { placeholder: '125000.00', inputmode: 'decimal',
-        hint: 'Typed in for now; the pricing engine computes it in Phase 4.',
-        get: function () { return draft.totalCost; }, set: function (v) { draft.totalCost = v; } }),
-      field('Status', { type: 'select', options: STATUSES,
-        get: function () { return draft.status; }, set: function (v) { draft.status = v; } })
-    ]));
-    wrap.appendChild(sec10);
+    // ---------- shared sections ----------
 
-    wrap.appendChild(pendingRow('11'));
+    function sectionQuoteName() {
+      var sec = el('section', { class: 'sec' });
+      sec.appendChild(secHead('06', 'Quote name'));
+      sec.appendChild(field('Quote name', { required: true, full: true,
+        placeholder: 'CRC - plasma & buffy',
+        hint: 'Drafts itself from the population and specimens once Phase 3 lands.',
+        get: function () { return draft.quoteName; }, set: function (v) { draft.quoteName = v; } }));
+      return sec;
+    }
+
+    function sectionPricing(full) {
+      var sec = el('section', { class: 'sec' });
+      sec.appendChild(secHead('10', 'Pricing'));
+      sec.appendChild(partialNote(full
+        ? 'One total for the whole study — that is all this captures today. Per-specimen pricing, ' +
+          'shipping, screenfails, historical comparables and internal pricing notes are Phase 4.'
+        : 'Extensions repeat the original pricing for clarity. Per-subject rates and the ' +
+          'recalculated total are Phase 4.'));
+      sec.appendChild(el('div', { class: 'grid' }, [
+        field('Total study cost', { placeholder: '125000.00', inputmode: 'decimal',
+          get: function () { return draft.totalCost; }, set: function (v) { draft.totalCost = v; } }),
+        field('Status', { type: 'select', options: STATUSES,
+          get: function () { return draft.status; }, set: function (v) { draft.status = v; } })
+      ]));
+      return sec;
+    }
+
+    // First paint of the extension block and the body.
+    renderExtBox();
+    renderBody();
 
     // ---- actions
     var actions = el('div', { class: 'actions' });
@@ -1047,6 +1418,14 @@
     }
 
     return frag;
+  }
+
+  /** Marks a section that exists but only captures part of what it eventually will. */
+  function partialNote(text) {
+    return el('div', { class: 'partial-note' }, [
+      el('span', { class: 'partial-tag', text: 'Partial' }),
+      el('span', { text: text })
+    ]);
   }
 
   function secHead(num, title, note) {

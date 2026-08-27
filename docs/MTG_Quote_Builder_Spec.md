@@ -316,3 +316,80 @@ quote before considering formatting "done."** Rules below were derived that way.
 Heather → once field logic is stable, build the real app (a good fit for Claude
 Code against this spec, as a proper repo with version control) → soft-launch to
 the same three testers before wider rollout.
+
+---
+
+## 7. HubSpot field audit (portal 7423331) — measured 2026-08-27
+
+Adds to §5. Field *definitions* existing is not the same as fields being
+*filled in*, so these were counted across all 2,843 deals rather than sampled.
+
+| Field | Filled | Verdict for pre-fill |
+|---|---|---|
+| `population_2` | 2,821 / 2,843 (99%) | **Reliable.** Pre-fill from it. |
+| `sub_population` | ~99% | **Reliable.** Semicolon-separated multi-value, e.g. `Normal;Colorectal cancer;Crohn's disease`. Split on `;`. |
+| `po_number` | 558 / 2,843 (20%) | **Partly usable.** Present mainly on deals that reached an order, which is exactly the extension case. Values are inconsistent: `PO15216`, `EM1706`. |
+| `mt_study_id_number` | **0 / 2,843** | **Unusable.** The property exists but has never been populated. |
+| `cohort_1..5_indication` | 0 in a 12-deal sample | Defined but unused. |
+| `cohort_1..5_amount` | 0 in a 12-deal sample | Defined but unused. Not previously documented — noted here in case it gets adopted. |
+| `multiple_cohorts_` | 0 in a 12-deal sample | Defined but unused. |
+| `quote_date` | ~25% in sample | Occasional. |
+| `total_number_of_patients` | ~8% in sample | Occasional. |
+
+**The MT number lives in the deal name, not in its field.** Real examples:
+
+    EMC: PDAC - Fresh Tissue (MT9920)
+    ELS: NSCLC - Fresh Tissue (MT9920)
+    NTA: Multi-cancer - blood (MT2234 extension #2)
+
+So extension lineage is recoverable by regex on `dealname` — `\(MT(\d+)` for the
+parent study, and `extension #(\d+)` for the sequence — the same
+extract-from-the-title technique §5 already uses for client-code prefixes.
+Prefer the quote register itself as the source once parent quotes live in it;
+treat HubSpot as the fallback for studies quoted before this tool existed.
+
+Note that `MT9920` appears on deals for two different sponsors (EMC and ELS),
+so an MT number is not a unique key on its own — match on sponsor as well.
+
+---
+
+## 8. Extension path — revised 2026-08-27
+
+Supersedes the extension behavior in §01 and §02, from rep review of the
+Phase 2 mockup. The change is that an unchanged-design extension is a
+*different, much shorter form*, not the full form with sections hidden.
+
+**Order.** Original study quote comes **before** the PO number. The rep
+identifies the study by its quote; the PO may not exist yet, which is also why
+the PO field is optional with an explicit "blank if none issued yet" hint.
+
+**Linking carries detail forward.** Picking the original study quote populates
+client, sponsor acronym, prepared-by, sponsor contacts, specimen types, parent
+MT number, and the cohorts with their quoted sizes. The extension number is
+derived by counting existing extensions of the same parent MT number and adding
+one. The quote register is the source for this, not HubSpot — see §7: PO number
+is filled on only ~20% of deals and `mt_study_id_number` on none at all.
+
+**"The study design has changed" defaults to CHECKED.** The rep opts *into* the
+short form. Defaulting the other way makes fields vanish from under someone who
+has just ticked "this is an extension", which reads as a malfunction.
+
+**Unchecked (design unchanged) collapses the form to:**
+
+- the extension identifiers (quote, PO, MT number, extension #)
+- a read-only summary of what carried over from the parent quote
+- Validity, HubSpot deal name, Quote date — the only header fields still
+  genuinely per-extension
+- **§03 Additional subjects**: each parent cohort listed with its already-quoted
+  count, an editable "additional" box, and a computed new total, plus a total
+  across all cohorts
+- §06 Quote name
+- §10 the repeated cost
+
+Everything else hides — client, rep, contacts, service type, biospecimens, and
+the §02/04/07/08/09/11 sections.
+
+The additional-subjects-per-cohort table is new; §01 previously said only that
+the generated output is minimal. It is the one thing an unchanged-design
+extension actually changes, so it deserves to be the centre of that form rather
+than something recovered from a free-text note.
