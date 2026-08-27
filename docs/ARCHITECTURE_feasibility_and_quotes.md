@@ -60,10 +60,11 @@ things already built want it:
   actually mean is "another quote against the same study." A Study row makes
   that direct, and makes "show me everything under MT2291" a query rather than
   a scan.
-- **Umbrella MT numbers.** Spec §7 established that MT9920 covers 166 orders
-  across 43 sponsors, so an MT number is not a key. A Study row gives each of
-  those orders a real identity while still recording the umbrella number it sits
-  under.
+- **Umbrella MT numbers.** The MT number *is* the study key — `MT9920` is the
+  sole exception, covering 166 orders across 43 sponsors (spec §7). A Study row
+  makes that exception cheap: each of those orders gets its own identity while
+  still recording the umbrella number it sits under, instead of the key rule
+  having to bend everywhere it is used.
 
 **3. Copy forward, don't live-link.**
 
@@ -101,21 +102,57 @@ first in the real business process, and it exercises the shared sections before
 pricing complexity lands on top of them. It is not a detour — it is the same
 work, ordered so that nothing gets built twice.
 
-## Open questions
+## Answered, 2026-08-27
 
-These change the model, so they want answering before Phase 3 starts.
+The real form is now in `docs/MTG_Feasibility_Request_Form.docx` and mapped
+field by field in `docs/FEASIBILITY_spec_draft.md`. Summary:
 
-1. **Does feasibility produce a sponsor-facing document**, or is it internal
-   only? If it is sponsor-facing, the docx work in §3 of the spec is shared
-   too, and should be built once.
-2. **Can one feasibility lead to more than one quote?** (Different scenarios,
-   revised scope, a second sponsor request against the same assessment.) If
-   yes, the snapshot model above is required rather than merely preferable.
-3. **What does feasibility capture that a quote does not?** Site counts,
-   specimen availability, site responses, turnaround estimates — this is the
-   part with no equivalent in the quote builder, and it is unspecified.
-4. **Can a quote start from a feasibility that is still in progress**, or only
-   from a completed one?
+- **Internal only**, so the sponsor-facing docx work in spec §3 is not shared.
+  The request form does go out to **sites** though, so there may still be a
+  document to generate — just without the letterhead treatment.
+- **One feasibility informs many studies.** Results are reused on later studies
+  that look the same. Snapshot-on-copy is therefore required, not optional.
+- **A quote never depends on feasibility.** It can be completed without one
+  ever starting or finishing. Feasibility is an input when present, never a
+  precondition.
+- **Feasibility captures site-level data** — which sites will participate,
+  monthly enrolment, site costs — which roll up into average site cost,
+  expected aggregate enrolment, and batched shipping cost.
+
+## The two findings that change the model
+
+**1. The current form is only half the process.** Every field in it is
+something sent *out* to sites. The answers coming back — participation,
+enrolment, cost — have nowhere to live, and those answers are exactly what
+feeds a quote. So a feasibility is two halves:
+
+    Request    the study design, sent to sites      ← the existing Word form
+    Responses  one row per site, coming back        ← currently nowhere
+
+Building only the request half would produce a nicer Word file. The responses
+half is what turns feasibility into the quote's pricing input.
+
+**2. The durable asset is site knowledge, not the document.** Reuse works
+because knowledge about sites accumulates — this site does this kind of
+collection, enrols at this rate, charges this much. Feasibilities collect it;
+it outlives them, and it ages. So the model needs sites and site responses as
+first-class records, and anything offered for reuse should carry its age:
+
+    Site         { id, name, country, capabilities }
+    SiteResponse { id, feasibilityId, siteId, willParticipate,
+                   monthlyEnrollment, perSubjectCost, notes, respondedAt }
+
+This is the same idea as the `CostLogEntry` and `FreshTissueRate` tables the
+schema already has — cross-quote knowledge that grows — except site responses
+would populate much of it as a by-product rather than by hand.
+
+## Still open
+
+1. Does the site request go out as a generated document, or as an email or
+   form link? Decides whether docx work is needed for feasibility at all.
+2. Is there an existing site list to seed from, or does it accumulate?
+3. What are the options for "treatment status"?
+4. Can a feasibility be run speculatively against a design with no sponsor?
 
 ## What is not changing
 

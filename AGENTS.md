@@ -19,6 +19,9 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   coming and shares nine of the eleven sections. Study design belongs in its
   own record, not inside a quote, and the section components must be built to
   serve both documents. This revises the build order in brief §8.
+- `docs/FEASIBILITY_spec_draft.md` — the feasibility form mapped against the
+  quote sections, and why feasibility is two halves (request out, responses
+  back) with only the first half existing today.
 
 Both are the source of truth. When the spec and an assumption disagree, the
 spec wins.

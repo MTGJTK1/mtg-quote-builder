@@ -380,17 +380,32 @@ Three deals carry a placeholder instead of a number — `(MTXNEW)` twice and
 `(MT WHAT IS IT)` once. Treat an unparseable MT number as absent, not as an
 error.
 
-Two rules follow, and the first one bites:
+### The rule, after review
 
-1. **Never derive an extension number by counting the MT number.** Each sponsor
+Confirmed by the team: **the MT number is a key — `MT9920` is the exception.**
+
+That reconciles with the measurements above once suffixes are counted as part
+of the number. `MT0893-AL2603` and `MT9923-XXNNNN` are unique strings; it is
+only the bare family number that repeats. `MT9920` is the sole umbrella that
+carries no suffix, so it is the only value that cannot identify one study.
+
+    Key            = MT number including any suffix
+    Sole exception = a bare MT9920
+
+`MT0424` (10 MRK, 1 TRB) and `MT0291` (CNH, SVA) are therefore data-entry slips
+rather than umbrellas, and worth correcting in HubSpot.
+
+So:
+
+1. **Treat the full MT reference as the key, and special-case MT9920.** Under
+   MT9920, disambiguate by sponsor — and where that is still not enough, by PO
+   number.
+2. **Never derive an extension number by counting the MT number.** Each sponsor
    runs its own sequence under an umbrella. MT9920 alone carries 37 distinct
-   extension threads — MRK is on #6, BMS on #4, IOV on #6, ATC on #4, all under
-   the same number. Counting by MT number numbers a sponsor's first extension
-   after someone else's sixth. Scope the count to the parent quote, falling
-   back to MT number **and** client.
-2. **Never use an MT number as a lookup key.** It is a reference to display.
-   Link an extension to the specific parent quote. Where a suffix is present
-   the full string *is* unique, so parse `MT\d+(-[A-Z0-9]+)?` and keep it.
+   extension threads — MRK on #6, BMS on #4, IOV on #6, ATC on #4, all under the
+   same number. Counting by MT number numbers a sponsor's first extension after
+   someone else's sixth. Scope the count to the study, falling back to MT number
+   **and** client.
 
 Coverage note: all 2,843 titles were scanned. 2,662 were machine-aggregated;
 the final 243 were read directly and the 63 carrying MT numbers transcribed, so
