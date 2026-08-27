@@ -592,6 +592,19 @@
 
   /* ---------- biospecimen columns ---------- */
 
+  .cohort-row.ship {
+    grid-template-columns: 1.4fr 1.4fr 90px 110px 100px 34px;
+    align-items: center;
+  }
+  .ship-intl {
+    margin: -4px 0 12px;
+    padding-left: 2px;
+  }
+  .ship-intl span { font-size: 12.5px; color: var(--ink-soft); }
+  @media (max-width: 760px) {
+    .cohort-row.ship { grid-template-columns: 1fr; gap: 6px; }
+  }
+
   .spec-cols {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -827,60 +840,12 @@
 
 
   // ---------------------------------------------------------------- §03 vocabulary
-  // Population groups and subpopulations are the live HubSpot enum values for
-  // `population_2` and `sub_population`, read from portal 7423331 on 2026-08-27.
-  // Phase 5 should read them live rather than keeping this copy.
+  // The HubSpot population enums (`population_2`, `sub_population`), the stage
+  // and severity lists and the clinical scoring map used to live here, feeding
+  // controls on every cohort card. Removed on rep review — cohorts are free
+  // text and the I/E criteria carry the rest. The measured enum values are
+  // recorded in the spec if a push back to HubSpot ever needs them.
 
-  var POPULATION_GROUPS = ['Normal', 'Solid tumor', 'Blood cancer', 'Autoimmune disorder',
-    'Cardiovascular disease', 'Infectious disease', 'Inflammatory bowel disease',
-    'Metabolic disorder', 'Neurological disease', 'Ophthalmological', 'Other'];
-
-  // HubSpot stores group and subpopulation as independent fields — it has no
-  // mapping between them. This grouping is ours, so it can be wrong; the form
-  // offers "show all" as the escape hatch rather than trapping anyone.
-  var SUBPOPULATIONS_BY_GROUP = {
-    'Normal': ['Normal'],
-    'Solid tumor': ['All cancer', 'Cancer high risk (e.g. DCIS, CIN, adenoma)',
-      'Advanced adenoma', 'Bladder cancer', 'Brain cancer', 'Breast cancer (TNBC)',
-      'Breast cancer (other)', 'Cervical cancer', 'Colorectal cancer',
-      'Endometrial cancer', 'Esophageal cancer', 'Gastric cancer',
-      'Gastro-esophageal cancer', 'Head & neck cancer', 'Liver cancer',
-      'Lung cancer (NSCLC)', 'Lung cancer (SCLC)', 'Melanoma', 'Mesothelioma',
-      'Ovarian cancer', 'Pancreatic cancer', 'Prostate cancer',
-      'Renal cell carcinoma', 'Other solid tumor'],
-    'Blood cancer': ['AML', 'Lymphoma', 'MDS', 'Multiple myeloma', 'Other leukemia'],
-    'Autoimmune disorder': ['Arthritis', 'Atopic dermatitis', 'Hidradenitis suppurativa',
-      'Lupus', 'Psoriasis', 'Scleroderma / Systemic sclerosis', "Sjogren's syndrome",
-      'Other autoimmune'],
-    'Cardiovascular disease': ['ASCVD', 'Cardiomyopathy', 'Heart failure'],
-    'Infectious disease': ['COVID-19', 'Influenza', 'RSV', 'Other infectious disease'],
-    'Inflammatory bowel disease': ["Crohn's disease", 'Ulcerative colitis'],
-    'Metabolic disorder': ['Diabetes', 'NASH', 'Chronic kidney disease', 'Liver transplant'],
-    'Neurological disease': ["Alzheimer's Disease", 'Amyotrophic Lateral Sclerosis',
-      "Parkinson's Disease"],
-    'Ophthalmological': [],
-    'Other': ['Asthma', 'COPD', 'Other']
-  };
-
-  var ALL_SUBPOPULATIONS = Object.keys(SUBPOPULATIONS_BY_GROUP)
-    .reduce(function (a, k) { return a.concat(SUBPOPULATIONS_BY_GROUP[k]); }, [])
-    .filter(function (v, i, arr) { return arr.indexOf(v) === i; })
-    .sort();
-
-  var ONCOLOGY_GROUPS = ['Solid tumor', 'Blood cancer'];
-  var STAGES = ['Stage I', 'Stage II', 'Stage III', 'Stage IV'];
-  var SEVERITIES = ['Mild', 'Moderate', 'Severe'];
-
-  // Subpopulation-specific clinical scoring systems. The exact thresholds live in
-  // the company reference doc, which this session did not have — so the form asks
-  // for the requirement as text rather than inventing cut-offs.
-  var CLINICAL_SCORES = {
-    'Psoriasis': 'PASI',
-    'Atopic dermatitis': 'EASI',
-    'Hidradenitis suppurativa': 'Hurley stage',
-    'Scleroderma / Systemic sclerosis': 'mRSS',
-    'Lupus': 'CLASI'
-  };
 
   // ---------------------------------------------------------------- §07 / §08
 
@@ -938,6 +903,142 @@
   // the quote register, then OneDrive for pre-tool studies, then HubSpot.
   // Measured caveat: po_number is filled on ~20% of deals and
   // mt_study_id_number on none — the MT number lives in the deal title.
+  // ---------------------------------------------------------------- HubSpot
+  // Every Merck deal in portal 7423331 whose name carries an MT number, read
+  // 2026-08-27 — 99 of Merck's 217 deals. Real data, so the lookup can be
+  // tested against what HubSpot actually holds rather than against fixtures.
+  //
+  // [ MT number, deal name, extension number if the name says so ]
+  //
+  // Note what is NOT here, because HubSpot does not hold it: cohorts, subject
+  // counts, specimens, timepoints, criteria, prices. A lookup fills the sponsor
+  // and the deal name and stops. That is the honest ceiling of HubSpot
+  // auto-fill, and the reason the register of past quotes matters more.
+  var HUBSPOT_DEALS = [
+    ['MT0403', 'MRK: Gastroesophageal & endometrial cancer - FFPE (MT0403)', ''],
+    ['MT0404', 'MRK: Chronic urticaria - skin tapes and skin punch biopsies (MT0404 extension #1)', '1'],
+    ['MT0404', 'MRK: Chronic urticaria, cutaneous lupus - skin punch biopsies, skin tape strips, serum (MT0404)', ''],
+    ['MT0405', 'MRK: Rheumatoid arthritis - synovial fluid (MT0405)', ''],
+    ['MT0406', 'MRK: Heart - FFPE (MT0406)', ''],
+    ['MT0407', 'MRK: Psoriasis, psoriatic arthritis, healthy - frozen tissue, blood, buffy coat (MT0407)', ''],
+    ['MT0409', 'MRK: Therapy-naive IBD - fresh pinch biopsies (MT0409)', ''],
+    ['MT0411', 'MRK: Psoriasis - skin tape and tissue (MT0411)', ''],
+    ['MT0413', 'MRK: AML & healthy - marrow & blood (MT0413)', ''],
+    ['MT0415', 'MRK: CRC/blad/ gast/lung/breast/H&N - blood (MT0415)', ''],
+    ['MT0416', 'MRK: Atherosclerotic plaques - tissue (MT0416)', ''],
+    ['MT0417', 'MRK: atopic dermatitis - tissue (MT0417)', ''],
+    ['MT0418', 'MRK: Psoriasis - whole blood (MT0418)', ''],
+    ['MT0418', 'MRK: Psoriasis - whole blood (MT0418) extension #1', '1'],
+    ['MT0419', 'MRK: Ovarian cancer - ascites (MT0419)', ''],
+    ['MT0421', 'MRK: Longitudinal psoriasis going onto Skyrizi - serum + biopsies (MT0421)', ''],
+    ['MT0422', 'MRK: Atopic Dermatitis - tissue (MT0422)', ''],
+    ['MT0423', 'MRK: AtD - tissue, skin tapes, serum (MT0423)', ''],
+    ['MT0424', 'MRK: Healthy skin - tissue  (MT0424 extension #6)', '6'],
+    ['MT0424', 'MRK: Normal - skin & blood (MT0424 extension #1)', '1'],
+    ['MT0424', 'MRK: Normal - skin & blood (MT0424 extension #2)', '2'],
+    ['MT0424', 'MRK: Normal - skin & blood (MT0424)', ''],
+    ['MT0424', 'MRK: normal skin - tissue (MT0424 extension #1)', '1'],
+    ['MT0424', 'MRK: normal skin - tissue (MT0424 extension #4)', '4'],
+    ['MT0424', 'MRK: normal skin - tissue (MT0424 extension #5)', '5'],
+    ['MT0424', 'MRK: Normal skin - tissue (MT0424 extension #6)', '6'],
+    ['MT0424', 'MRK: normal skin - tissue (MT0424 extension #7)', '7'],
+    ['MT0426', 'MRK: Ulcerative Colitis and Crohn\'s Disease - colonic biopsy MT0426 (Extension #1)', '1'],
+    ['MT0426', 'MRK: Ulcerative Colitis and Crohn\'s Disease- colonic biopsy MT0426 (Extension #2)', '2'],
+    ['MT0426', 'MRK: Ulcerative Colitis and Crohn\'s Disease - colonic biopsy (MT0426 Extension #3)', '3'],
+    ['MT0426', 'MRK: Ulcerative Colitis and Crohn\'s Disease - colonic biopsy (MT0426 Extension #4)', '4'],
+    ['MT0426', 'MRK: Ulcerative Colitis and Crohn\'s Disease - colonic biopsy (MT0426 Extension #5)', '5'],
+    ['MT0426', 'MRK: Ulcerative Colitis and Crohn\'s Disease - tissue (MT0426)', ''],
+    ['MT0428', 'MRK: Atopic dermatitis - tissue, blood (MT0428)', ''],
+    ['MT0429', 'MRK: Atopic dermatitis - tissue, skin tapes, buffy coat (MT0429)', ''],
+    ['MT0430', 'MRK: Rheumatoid Arthritis, osteoarthritis - synovium tissue, synovial fluid, serum, buffy coat (MT0430)', ''],
+    ['MT0431', 'MRK: Non-infectious uveitis - vitreous fluid and humoral fluid (MT0431)', ''],
+    ['MT0432', 'MRK: Atopic derm and healthy - frozen tissue, blood, plasma, buffy coat (MT0432)', ''],
+    ['MT0432', 'MRK: Atopic dermatitis & healthy - frozen tissue, blood, plasma, buffy coat (MT0432 extension #1)', '1'],
+    ['MT0433', 'MRK: IBD biopsies - fresh pinch biopsies MT0433', ''],
+    ['MT0436', 'MRK: Psoriasis -  serum (MT0436)', ''],
+    ['MT0437', 'MRK: Atomic Dermatitis, Normal - skin punch biopsies, serum, buffy coat (MT0437)', ''],
+    ['MT0438', 'MRK: Crohn\'s disease and ulcerative colitis - tissue biopsies MT0438', ''],
+    ['MT0438', 'MRK: Crohn\'s disease - tissue biopsies (MT0438 extension #1)', '1'],
+    ['MT0439', 'MRK: Post neoadjuvant chemoradiation CRC - FFPE (MT0439)', ''],
+    ['MT0440', 'MRK: Crohn\'s disease and ulcerative colitis - blood and serum (MT0440 extension #1)', '1'],
+    ['MT0440', 'MRK: Crohn\'s disease and ulcerative colitis - blood and serum (MT0440)', ''],
+    ['MT0441', 'MRK: Osteoarthritis and healthy - synovial tissue, synovial fluid, synovial cells, serum, PBMC (MT0441)', ''],
+    ['MT0443', 'MRK: Longitudinal autoimmune going on Humira - whole blood and  serum (MT0443)', ''],
+    ['MT0445', 'MRK: Atopic dermatis and healthy - tissue and blood (MT0445)', ''],
+    ['MT0448', 'MRK: Bladder & esophageal cancer - FFPE (MT0448)', ''],
+    ['MT0449', 'MRK: Normal - FFPE (MT0449)', ''],
+    ['MT0450', 'MRK: Normal tissue - FFPE (MT0450)', ''],
+    ['MT0452', 'MRK: AtD - tissue & blood (MT0452)', ''],
+    ['MT0456', 'MRK: Psoriasis, psoriatic arthritis, healthy- frozen tissue, serum, whole blood ( MT0456)', ''],
+    ['MT0457', 'MRK: Atopic dermatitis - skin tapes and skin punch biopsies (MT0457)', ''],
+    ['MT0459', 'MRK: Longitudinal atopic derm going on Dupi - blood & serum (MT0459)', ''],
+    ['MT0460', 'MRK: Healthy colonic biopsies - (MT0460 extension #1)', '1'],
+    ['MT0460', 'MRK: Healthy colonic biopsies - (MT0460 extension #2)', '2'],
+    ['MT0460', 'MRK: Healthy colonic biopsies - tissue (MT0460)', ''],
+    ['MT0462', 'MRK: Non-inflammation & non-cancer colonic biopsy - tissue (MT0462 extension #1)', '1'],
+    ['MT0462', 'MRK: Non-inflammation & non-cancer colonic biopsy - tissue (MT0462)', ''],
+    ['MT0465', 'MRK: Atopic derm & normal biopsies - tissue (MT0465 change order #1)', ''],
+    ['MT0465', 'MRK: Atopic derm & normal biopsies - tissue (MT0465)', ''],
+    ['MT0466', 'MRK: Psoriasis & normal - frozen and FFPE biopsies (MT0466 extension #1)', '1'],
+    ['MT0466', 'MRK: Psoriasis & normal - frozen and FFPE biopsies (MT0466)', ''],
+    ['MT0471', 'MRK: Chronic spontaneous urticaria - FFPE tissue & serum (MT0471)', ''],
+    ['MT0472', 'MRK: Ulcerative colitis & Crohn\'s disease colonic biopsies - tissue ( MT0472)', ''],
+    ['MT0480', 'MRK: Hidradenitis suppurativa - tissue (MT0480)', ''],
+    ['MT4302', 'MRK: Normal Bladder - FFPE (MT4302)', ''],
+    ['MT4303', 'MRK: Normal small intestine - FFPE (MT4303)', ''],
+    ['MT4304', 'MRK: CRPC - FFPE (MT4304)', ''],
+    ['MT4313', 'MRK: Normal - FFPE (MT4313)', ''],
+    ['MT4350', 'MRK: Normal tonsil - FFPE (MT4350)', ''],
+    ['MT9920', 'MRK: 3x500mg NSCLC - fresh tissue (MT9920)', ''],
+    ['MT9920', 'MRK: Benign prostatic hyperplasia - tissue MT9920', ''],
+    ['MT9920', 'MRK: Breast cancer - tumor cores (MT9920)', ''],
+    ['MT9920', 'MRK: CRC, RCC, lung - large tumor (MT9920)', ''],
+    ['MT9920', 'MRK: Fresh cancer tumor - tissue (MT9920)', ''],
+    ['MT9920', 'MRK: Large panc - tissue (MT9920)', ''],
+    ['MT9920', 'MRK: Melanoma - tumor (MT9920)', ''],
+    ['MT9920', 'MRK: Multi-cancer - tissue (MT9920 extension #1)', '1'],
+    ['MT9920', 'MRK: Multi-cancer - tissue (MT9920 extension #2)', '2'],
+    ['MT9920', 'MRK: Multi-cancer - tissue (MT9920 extension #3)', '3'],
+    ['MT9920', 'MRK: Multi-cancer- tissue (MT9920 extension #5)', '5'],
+    ['MT9920', 'MRK: normal colon - fresh tissue (MT9920 extension #2)', '2'],
+    ['MT9920', 'MRK: normal colon - fresh tissue (MT9920 extension #3)', '3'],
+    ['MT9920', 'MRK: normal colon - fresh tissue MT9920', ''],
+    ['MT9920', 'MRK: normal colon - fresh tissue MT9920 extension #1', '1'],
+    ['MT9920', 'MRK: Normal colon or terminal ileum resection - tissue  (MT9920 extension #1)', '1'],
+    ['MT9920', 'MRK: Normal colon resection - tissue (MT9920)', ''],
+    ['MT9920', 'MRK: Normal spleen - tissue (MT9920)', ''],
+    ['MT9920', 'MRK: NSCLC - fresh blood (MT9920)', ''],
+    ['MT9920', 'MRK: RCC, CRC, lung - large tumor extension (MT9920)', ''],
+    ['MT9920', 'MRK: Solid tumors - tissue (MT9920 extension #4)', '4'],
+    ['MT9920', 'MRK: Solid tumors - tissue (MT9920 extension #5)', '5'],
+    ['MT9920', 'MRK: Solid tumors - tissue (MT9920 extension #6)', '6'],
+    ['MT9920', 'MRK: Various cancer - tissue extension (MT9920)', ''],
+    ['MT9920', 'MRK: Various cancers - tissue (MT9920)', ''],
+  ];
+
+  // Grouped by MT number. A base deal (no extension in its name) is the study;
+  // the rest are its prior extensions, which is how the next extension number
+  // is worked out.
+  var HUBSPOT_BY_MT = (function () {
+    var by = {};
+    HUBSPOT_DEALS.forEach(function (d) {
+      var mt = d[0].split('-')[0];
+      (by[mt] = by[mt] || []).push({ mt: d[0], deal: d[1], ext: d[2] });
+    });
+    return by;
+  })();
+
+  // MT9920 covers every fresh tumour order across sponsors, so a lookup on it
+  // cannot identify one study. Named here rather than inferred from the count.
+  var UMBRELLA_MT = ['MT9920', 'MT9923', 'MT0893', 'MT0892', 'MT9925'];
+
+  function hubspotStudyLabel(dealName) {
+    return String(dealName || '')
+      .replace(/^[A-Z0-9&]{2,4}\s*[:\-]\s*/, '')
+      .replace(/\s*\(\s*MT[^)]*\)\s*$/, '')
+      .trim();
+  }
+
   var STUDY_INDEX = [
     { po: 'PO-88214', mt: 'MT2291', quote: 'QTE NTA20260826 Pan-cancer - blood',
       client: 'Natera', acronym: 'NTA', preparedBy: 'John Kibler',
@@ -1035,7 +1136,7 @@
   // drafts must survive — so a changed fixture set would otherwise sit unread in
   // the file while the browser kept serving the old one. This makes the mismatch
   // visible and offers the reset, rather than silently discarding their work.
-  var SAMPLES_VERSION = 3;
+  var SAMPLES_VERSION = 4;
   var samplesStale = false;
   var quotes = [];
   var storageWorks = true;
@@ -1264,6 +1365,30 @@
       var byMt = STUDY_INDEX.filter(function (s) { return s.mt.toUpperCase() === mt; });
       if (byMt.length === 1) return { study: byMt[0], via: 'MT number' };
       if (byMt.length > 1) return { ambiguous: byMt.length, via: 'MT number', mt: mt };
+
+      // Nothing quoted in this tool. Fall back to HubSpot, which knows the
+      // sponsor and the deal name and nothing else about the study.
+      var base = mt.split('-')[0];
+      if (UMBRELLA_MT.indexOf(base) > -1 && (HUBSPOT_BY_MT[base] || []).length > 1) {
+        return { umbrella: base, count: HUBSPOT_BY_MT[base].length, via: 'MT number' };
+      }
+      var deals = HUBSPOT_BY_MT[base] || [];
+      if (deals.length) {
+        var bases = deals.filter(function (d) { return !d.ext; });
+        var pick = bases[0] || deals[0];
+        return {
+          study: {
+            po: '', mt: pick.mt, quote: '',
+            client: 'Merck', acronym: 'MRK', preparedBy: '',
+            contactName: '', contactEmail: '',
+            dealName: pick.deal,
+            specimens: [], perSubject: '', cohorts: [],
+            fromHubspot: true,
+            priorExtensions: deals.filter(function (d) { return !!d.ext; }).length
+          },
+          via: 'MT number in HubSpot'
+        };
+      }
     }
     return null;
   }
@@ -1587,7 +1712,8 @@
         return { name: c.name, subjects: c.subjects, additionalSubjects: '' };
       });
       draft.header.matchedVia = via;
-      draft.header.matchedStudy = study.quote;
+      draft.header.matchedStudy = study.quote || study.dealName;
+      draft.header.fromHubspot = !!study.fromHubspot;
 
       // Extension number continues this sponsor's own thread, never the
       // umbrella's — MT9920 alone carries 37 separate threads.
@@ -1600,6 +1726,9 @@
           if (!isNaN(n) && n >= next) next = n + 1;
         }
       });
+      // A HubSpot hit knows how many extensions already carry this number, and
+      // the register does not — nothing in this tool quoted them.
+      if (study.fromHubspot && study.priorExtensions >= next) next = study.priorExtensions + 1;
       draft.header.extensionNumber = draft.header.extensionNumber || String(next);
     }
 
@@ -1647,6 +1776,7 @@
         draft.header.matchedVia = null;
         draft.header.matchedStudy = null;
         draft.header.ambiguous = (hit && hit.ambiguous) ? hit : null;
+        draft.header.umbrella = (hit && hit.umbrella) ? hit : null;
       }
       afterLookup();
     }
@@ -1755,7 +1885,22 @@
             el('dt', { text: 'Specimens' }),
             el('dd', { text: (draft.specimenTypes || []).join(', ') || '—' })
           ]),
-          el('div', { class: 'hint', text: 'Everything it filled in stays editable below.' })
+          el('div', { class: 'hint', text: draft.header.fromHubspot
+            ? 'From the HubSpot deal, which holds the sponsor and the deal name and '
+              + 'nothing else — cohorts, specimens and pricing are not stored there, so '
+              + 'those are yours to fill in.'
+            : 'Everything it filled in stays editable below.' })
+        ]));
+        return;
+      }
+
+      var u = draft.header.umbrella;
+      if (u) {
+        lookupBox.appendChild(el('div', { class: 'lookup-idle' }, [
+          el('strong', { text: u.umbrella + ' is an umbrella number. ' }),
+          el('span', { text: 'It covers ' + u.count + ' deals in HubSpot, so it cannot '
+            + 'identify one study. Enter the original quote reference or the PO number '
+            + 'instead, or fill the details in by hand.' })
         ]));
         return;
       }
@@ -1813,6 +1958,7 @@
         restBox.appendChild(sectionReports());
         restBox.appendChild(sectionTimeline());
       }
+      restBox.appendChild(sectionShipping());
       restBox.appendChild(sectionPricing());
       restBox.appendChild(sectionSummary());
       restBox.appendChild(sectionNotes());
@@ -1869,7 +2015,8 @@
       var f = sponsorFields();
       headerBody.appendChild(el('div', { class: 'grid' }, [
         f.client, f.acronym,
-        field('Quote date', { type: 'date', required: true,
+        field('Quote date', { type: 'date', required: true, autofilled: true,
+          hint: 'Today, unless you change it.',
           get: function () { return draft.quoteDate; }, set: function (v) { draft.quoteDate = v; } }),
         field('Validity', { type: 'select', options: VALIDITY,
           get: function () { return draft.header.validity || VALIDITY[0]; },
@@ -1917,7 +2064,8 @@
         field('HubSpot deal name', { placeholder: 'NTA: Multi-cancer - blood (MT2291 extension #1)',
           get: function () { return draft.hubspotDealName; },
           set: function (v) { draft.hubspotDealName = v; } }),
-        field('Quote date', { type: 'date', required: true,
+        field('Quote date', { type: 'date', required: true, autofilled: true,
+          hint: 'Today, unless you change it.',
           get: function () { return draft.quoteDate; }, set: function (v) { draft.quoteDate = v; } })
       ]));
     }
@@ -1990,6 +2138,8 @@
 
     // Declared up here because §03 and §05 call it as their values change.
     var pricingRefresh = null;
+    var specimensRefresh = null;
+    var shippingRefresh = null;
 
     // ---- 02 quote approach ---------------------------------------------
 
@@ -2093,6 +2243,16 @@
 
     // ---- 04 collection timepoints ---------------------------------------
 
+    /** Labelled timepoints, in order. An unlabelled row still counts as a
+     *  collection — reps fill the labels in last — so it gets a placeholder
+     *  name rather than being dropped. */
+    function timepointNames() {
+      if (draft.multipleTimepoints !== true) return [];
+      return (draft.timepoints || []).map(function (t, i) {
+        return String(t.label || '').trim() || ('Timepoint ' + (i + 1));
+      });
+    }
+
     function sectionTimepoints() {
       var sec = el('section', { class: 'sec' });
       sec.appendChild(secHead('04', 'Collection timepoints'));
@@ -2103,13 +2263,17 @@
         var multi = draft.multipleTimepoints === true;
         body.appendChild(el('div', { class: 'check-row' }, [
           radio('tps', 'Single collection', !multi, function () {
-            draft.multipleTimepoints = false; paint(); }),
+            draft.multipleTimepoints = false; paint();
+            if (specimensRefresh) specimensRefresh();
+            if (pricingRefresh) pricingRefresh(); }),
           radio('tps', 'Multiple timepoints', multi, function () {
             draft.multipleTimepoints = true;
             if (!draft.timepoints || !draft.timepoints.length) {
               draft.timepoints = [{ label: '' }, { label: '' }];
             }
-            paint(); })
+            paint();
+            if (specimensRefresh) specimensRefresh();
+            if (pricingRefresh) pricingRefresh(); })
         ]));
         if (!multi) return;
 
@@ -2121,11 +2285,19 @@
             var inp = el('input', { type: 'text',
               'aria-label': 'Timepoint ' + (i + 1),
               placeholder: i === 0 ? 'e.g. Baseline, pre-treatment' : 'e.g. 1st trimester, weeks 11-13',
-              oninput: function () { draft.timepoints[i].label = inp.value; } });
+              oninput: function () {
+                draft.timepoints[i].label = inp.value;
+                if (specimensRefresh) specimensRefresh();
+                if (pricingRefresh) pricingRefresh();
+              } });
             inp.value = t.label || '';
             var x = el('button', { class: 'row-x', type: 'button',
               'aria-label': 'Remove timepoint ' + (i + 1),
-              onclick: function () { draft.timepoints.splice(i, 1); paintRows(); } }, ['×']);
+              onclick: function () {
+                draft.timepoints.splice(i, 1); paintRows();
+                if (specimensRefresh) specimensRefresh();
+                if (pricingRefresh) pricingRefresh();
+              } }, ['×']);
             rows.appendChild(el('div', { class: 'cohort-row', style: 'grid-template-columns:1fr 40px' },
               [inp, x]));
           });
@@ -2134,6 +2306,8 @@
         body.appendChild(rows);
         body.appendChild(el('button', { class: 'add-row', type: 'button', onclick: function () {
           draft.timepoints.push({ label: '' }); paintRows();
+          if (specimensRefresh) specimensRefresh();
+          if (pricingRefresh) pricingRefresh();
         } }, ['+ Add timepoint']));
         body.appendChild(el('div', { class: 'hint',
           text: 'Labels are free text on purpose — reps write dates and windows directly rather than picking an anchor and an offset.' }));
@@ -2360,23 +2534,15 @@
         return num(c.subjects);
       }
 
-      function selectedSubpops() {
-        return draft.cohorts.reduce(function (a, c) {
-          return a.concat(c.subpopulations || []);
-        }, []);
-      }
-
       function paintCards() {
         cards.replaceChildren();
         draft.cohorts.forEach(function (c, i) { cards.appendChild(cohortCard(c, i)); });
-        // Allocation note appears only once more than one subpopulation is in play.
+        // Allocation note appears only once there is more than one cohort.
         paintAllocation();
         refreshDrafts();
       }
 
       function cohortCard(c, i) {
-        c.subpopulations = c.subpopulations || [];
-        c.severity = c.severity || [];
         c.subcohorts = c.subcohorts || [];
 
         var card = el('div', { class: 'toggle-box' });
@@ -2412,7 +2578,9 @@
               c.name = cleanCohortName(v);
               head.children[1].textContent = c.name || 'Untitled cohort';
             },
-            then: function () { refreshDrafts(); if (pricingRefresh) pricingRefresh(); } }),
+            then: function () { refreshDrafts();
+                                if (shippingRefresh) shippingRefresh();
+                                if (pricingRefresh) pricingRefresh(); } }),
           subjFld
         ]);
         card.appendChild(top);
@@ -2422,127 +2590,14 @@
         upTo.style.margin = '2px 0 14px';
         card.appendChild(upTo);
 
-        // --- population group
-        var subBox = el('div');
-        var sevBox = el('div');
-
-        // An extension inherits the parent study's population — asking for it
-        // again is work the rep should not have to redo.
-        if (!draft.isExtension) card.appendChild(el('div', { class: 'grid' }, [
-          field('Population group', { type: 'select',
-            options: [''].concat(POPULATION_GROUPS),
-            get: function () { return c.populationGroup || ''; },
-            set: function (v) {
-              c.populationGroup = v;
-              c.subpopulations = [];
-              c.severity = [];
-            },
-            then: function () { paintSubpops(); paintSeverity(); paintAllocation(); } })
-        ]));
-
-        function paintSubpops() {
-          subBox.replaceChildren();
-          var g = c.populationGroup;
-          if (!g) return;
-
-          // "Other" as a group skips the subpopulation list entirely (spec §03).
-          if (g === 'Other') {
-            subBox.appendChild(field('Population — describe', { full: true,
-              get: function () { return c.populationOther; },
-              set: function (v) { c.populationOther = v; } }));
-            return;
-          }
-
-          var list = c.showAllSubpops ? ALL_SUBPOPULATIONS : (SUBPOPULATIONS_BY_GROUP[g] || []);
-          var fs = el('fieldset', {}, [el('legend', { text: 'Subpopulation(s)' })]);
-          if (!list.length) {
-            fs.appendChild(el('div', { class: 'hint', text: 'No subpopulations listed for this group.' }));
-          }
-          fs.appendChild(el('div', { class: 'spec-cols' }, chunk(list, 3).map(function (col) {
-            return el('div', { class: 'spec-col' }, col.map(function (sp) {
-              return checkbox(sp,
-                function () { return c.subpopulations.indexOf(sp) > -1; },
-                function (on) {
-                  var k = c.subpopulations.indexOf(sp);
-                  if (on && k === -1) c.subpopulations.push(sp);
-                  if (!on && k > -1) c.subpopulations.splice(k, 1);
-                },
-                function () { paintSubpopOther(); paintSeverity(); paintAllocation(); refreshDrafts(); });
-            }));
-          })));
-
-          // HubSpot has no group→subpopulation mapping; ours can be wrong.
-          fs.appendChild(el('label', { class: 'check', style: 'margin-top:10px' }, [
-            (function () {
-              var b = el('input', { type: 'checkbox', onchange: function () {
-                c.showAllSubpops = b.checked; paintSubpops();
-              } });
-              b.checked = !!c.showAllSubpops;
-              return b;
-            })(),
-            el('span', { class: 'hint', style: 'margin:0',
-              text: 'Show all subpopulations, not just this group’s' })
-          ]));
-          subBox.appendChild(fs);
-          paintSubpopOther();
-        }
-
-        var otherBox = el('div');
-        function paintSubpopOther() {
-          otherBox.replaceChildren();
-          c.subpopulations.filter(function (sp) { return sp.indexOf('Other') === 0; })
-            .forEach(function (sp) {
-              c.subpopulationDetail = c.subpopulationDetail || {};
-              otherBox.appendChild(field(sp + ' — which', { full: true,
-                placeholder: 'e.g. Small intestine',
-                get: function () { return c.subpopulationDetail[sp]; },
-                set: function (v) { c.subpopulationDetail[sp] = v; } }));
-            });
-        }
-
-        function paintSeverity() {
-          sevBox.replaceChildren();
-          var g = c.populationGroup;
-          if (!g || g === 'Other') return;
-
-          var opts = ONCOLOGY_GROUPS.indexOf(g) > -1 ? STAGES : SEVERITIES;
-          var fs = el('fieldset', {}, [el('legend', { text: 'Severity / stage' })]);
-          fs.appendChild(el('div', { class: 'check-row' }, opts.map(function (o) {
-            return checkbox(o,
-              function () { return c.severity.indexOf(o) > -1; },
-              function (on) {
-                var k = c.severity.indexOf(o);
-                if (on && k === -1) c.severity.push(o);
-                if (!on && k > -1) c.severity.splice(k, 1);
-              });
-          })));
-          sevBox.appendChild(fs);
-
-          // Scoring systems attach to the subpopulation, and their thresholds live
-          // in the company reference doc — so ask for the requirement as text.
-          c.scores = c.scores || {};
-          c.subpopulations.forEach(function (sp) {
-            var scale = CLINICAL_SCORES[sp];
-            if (!scale) return;
-            sevBox.appendChild(field(scale + ' requirement (' + sp + ')', { full: true,
-              placeholder: 'e.g. ' + scale + ' ≥ 12 at enrollment',
-              get: function () { return c.scores[sp]; },
-              set: function (v) { c.scores[sp] = v; } }));
-          });
-
-          sevBox.appendChild(field('Additional severity detail', { full: true,
-            placeholder: 'Precision the checkboxes cannot hold — e.g. "Stage Ia only"',
-            get: function () { return c.severityDetail; },
-            set: function (v) { c.severityDetail = v; } }));
-        }
-
-        if (!draft.isExtension) {
-          card.appendChild(subBox);
-          card.appendChild(otherBox);
-          card.appendChild(sevBox);
-          paintSubpops();
-          paintSeverity();
-        }
+        // Population group, subpopulation and severity used to sit here, lifted
+        // from HubSpot's `population_2` and `sub_population` enums. Removed on
+        // rep review: a cohort is described in free text, and the I/E criteria
+        // below already carry severity and stage with the precision a checkbox
+        // list cannot. Same lesson as the feasibility form's naive/treated
+        // dropdown — structure that captures a fraction while implying it
+        // captured everything. If HubSpot's fields ever need writing back, that
+        // is one dropdown on the quote, not five controls on every cohort.
 
         // Criteria belong to the cohort, not the study — a cancer cohort and its
         // healthy controls do not share them.
@@ -2578,6 +2633,7 @@
                 sc.subjects = nIn.value;
                 subjFld._input.value = String(cohortSubjects(c));
                 refreshDrafts();
+                if (shippingRefresh) shippingRefresh();
                 if (pricingRefresh) pricingRefresh();
               } });
             nIn.value = sc.subjects == null ? '' : String(sc.subjects);
@@ -2612,16 +2668,16 @@
       paintCards();
       sec.appendChild(cards);
       sec.appendChild(el('button', { class: 'add-row', type: 'button', onclick: function () {
-        draft.cohorts.push({ name: '', subjects: '', subpopulations: [], severity: [], subcohorts: [] });
+        draft.cohorts.push({ name: '', subjects: '', subcohorts: [] });
         paintCards();
       } }, ['+ Add cohort']));
 
       function paintAllocation() {
         allocBox.replaceChildren();
-        if (selectedSubpops().length <= 1) return;
+        if (draft.cohorts.length <= 1) return;
         allocBox.appendChild(field('Allocation note', { type: 'textarea', rows: 2, full: true,
           placeholder: 'e.g. MT Group and the sponsor will mutually agree in writing on enrollment allocations per cancer type',
-          hint: 'Shown because more than one subpopulation is in play.',
+          hint: 'Shown because this quote has more than one cohort.',
           get: function () { return draft.allocationNote; },
           set: function (v) { draft.allocationNote = v; } }));
       }
@@ -2632,6 +2688,24 @@
     }
 
     function pickedSpecimens() { return orderedSpecimens(draft); }
+
+    /** A specimen with no explicit list is collected at every timepoint — the
+     *  common case, and the one a rep should not have to tick. */
+    function collectedAt(detail, name, tps) {
+      if (!detail || !detail.atTimepoints) return true;
+      return detail.atTimepoints.indexOf(name) > -1;
+    }
+
+    /** Collections per subject for one specimen. Never below 1: a single
+     *  collection study still collects it once. */
+    function collectionCount(detail, tps) {
+      if (!tps || tps.length < 2) return 1;
+      if (!detail || !detail.atTimepoints) return tps.length;
+      var n = tps.filter(function (name) {
+        return detail.atTimepoints.indexOf(name) > -1;
+      }).length;
+      return n;
+    }
 
     function chunk(arr, n) {
       var per = Math.ceil(arr.length / n), out = [];
@@ -2658,7 +2732,8 @@
             amount: '', aliquots: '', holder: spec.holder,
             store: spec.store, ship: spec.ship, processing: '',
             blockAge: '', tumourContent: '', heRequired: false,
-            thickness: '', stain: 'Unstained'
+            thickness: '', stain: 'Unstained',
+            atTimepoints: null   // null = every timepoint
           };
         }
         return d;
@@ -2732,6 +2807,30 @@
             function () { return !!d.heRequired; },
             function (on) { d.heRequired = on; }));
         }
+        // Specimens can differ by timepoint — blood at every visit, a biopsy
+        // only at baseline — and the count drives the pricing in §10.
+        var tps = timepointNames();
+        if (tps.length > 1) {
+          var fs = el('fieldset', {}, [el('legend', { text: 'Collected at' })]);
+          fs.appendChild(el('div', { class: 'check-row' }, tps.map(function (name) {
+            return checkbox(name,
+              function () { return collectedAt(d, name, tps); },
+              function (on) {
+                var list = d.atTimepoints ? d.atTimepoints.slice() : tps.slice();
+                var k = list.indexOf(name);
+                if (on && k === -1) list.push(name);
+                if (!on && k > -1) list.splice(k, 1);
+                d.atTimepoints = list;
+              },
+              function () { paintDetail(); if (pricingRefresh) pricingRefresh(); });
+          })));
+          var n = collectionCount(d, tps);
+          fs.appendChild(el('div', { class: 'hint', text: n === tps.length
+            ? 'Every timepoint — ' + n + ' collections per subject.'
+            : n + (n === 1 ? ' collection' : ' collections') + ' per subject, of ' + tps.length + '.' }));
+          card.appendChild(fs);
+        }
+
         if (spec.process) {
           card.appendChild(field('Processing requirements', { type: 'textarea', rows: 2,
             full: true,
@@ -2762,6 +2861,7 @@
       })));
 
       sec.appendChild(detailBox);
+      specimensRefresh = paintDetail;
       paintDetail();
       return sec;
     }
@@ -2770,10 +2870,261 @@
     // Numbering follows §05's specimen order (spec: "pricing blocks in §10 are
     // numbered to match the specimen order in §05").
 
+
+    // ---- shipping ------------------------------------------------------
+    // Its own section as of the fifth rep review: shipping is priced per leg,
+    // and a leg's cost depends on where it is going. Rates prompt with MT
+    // Group's own numbers and every one of them is editable.
+
+    var DEFAULT_LEGS = [
+      { label: 'Collection sites to MT Group', dest: '', intl: false, count: '', rate: '' },
+      { label: 'MT Group to the sponsor',      dest: '', intl: false, count: '1', rate: '' }
+    ];
+
+    function shipState() {
+      var sh = draft.shipping = draft.shipping || {};
+      if (!sh.legs) {
+        sh.legs = DEFAULT_LEGS.map(function (l) { return Object.assign({}, l); });
+      }
+      if (sh.usRate == null)   sh.usRate = '300';
+      if (sh.intlRate == null) sh.intlRate = '3000';
+      if (sh.markup == null)   sh.markup = '2';
+      if (sh.mode == null)     sh.mode = 'lump';
+      return sh;
+    }
+
+    /** A blank leg rate means "use the standard for that destination", so the
+     *  rep types only the ones that differ. */
+    function legRate(sh, leg) {
+      var typed = String(leg.rate == null ? '' : leg.rate).trim();
+      if (typed !== '') return num(typed);
+      return num(leg.intl ? sh.intlRate : sh.usRate);
+    }
+
+    function shippingCost() {
+      var sh = shipState();
+      return sh.legs.reduce(function (t, leg) {
+        return t + num(leg.count) * legRate(sh, leg);
+      }, 0);
+    }
+
+    function shippingCalculated() {
+      var sh = shipState();
+      return shippingCost() * (num(sh.markup) || 1);
+    }
+
+    function quoteSubjects() {
+      if (isMinimal()) {
+        return (draft.cohorts || []).reduce(function (t, c) {
+          return t + num(c.additionalSubjects); }, 0);
+      }
+      return (draft.cohorts || []).reduce(function (t, c) {
+        if (c.subcohorts && c.subcohorts.length) {
+          return t + c.subcohorts.reduce(function (u, sc) { return u + num(sc.subjects); }, 0);
+        }
+        return t + num(c.subjects);
+      }, 0);
+    }
+
+    /** What the sponsor is charged for shipping, whichever way it is quoted.
+     *  Per-subject quotes reconcile back to a total so the invoice adds up. */
+    function shippingTotal() {
+      var sh = shipState();
+      var typed = String(sh.override == null ? '' : sh.override).trim();
+      if (sh.mode === 'perSubject') {
+        var per = typed !== '' ? num(typed) : shippingPerSubject();
+        return per * quoteSubjects();
+      }
+      return typed !== '' ? num(typed) : shippingCalculated();
+    }
+
+    function shippingPerSubject() {
+      var n = quoteSubjects();
+      return n ? shippingCalculated() / n : 0;
+    }
+
+
+    function sectionShipping() {
+      var sec = el('section', { class: 'sec' });
+      sec.appendChild(secHead('10', 'Shipping'));
+
+      var sh = shipState();
+      var legsBox = el('div');
+      var calcOut = el('div', { class: 'calc' });
+      var modeBox = el('div');
+
+      function refresh() {
+        paintLegs(); paintCalc(); paintMode();
+        if (pricingRefresh) pricingRefresh();
+      }
+
+      function paintLegs() {
+        legsBox.replaceChildren();
+        legsBox.appendChild(el('div', { class: 'cohort-row ship cohort-head' }, [
+          el('span', { text: 'Leg' }),
+          el('span', { text: 'Going where' }),
+          el('span', { class: 'ca', text: 'Shipments' }),
+          el('span', { class: 'ca', text: '$ each' }),
+          el('span', { class: 'ca', text: 'Cost' }),
+          el('span', {})
+        ]));
+
+        sh.legs.forEach(function (leg, i) {
+          var nameIn = el('input', { type: 'text', 'aria-label': 'Leg ' + (i + 1) + ' description',
+            placeholder: 'e.g. Sites to MT Group',
+            oninput: function () { leg.label = nameIn.value; } });
+          nameIn.value = leg.label || '';
+
+          var destIn = el('input', { type: 'text',
+            'aria-label': 'Destination for leg ' + (i + 1),
+            placeholder: 'e.g. Boston, MA or Cambridge, UK',
+            oninput: function () { leg.dest = destIn.value; } });
+          destIn.value = leg.dest || '';
+
+          var countIn = el('input', { type: 'text', inputmode: 'numeric', placeholder: '0',
+            'aria-label': 'Number of shipments for leg ' + (i + 1),
+            oninput: function () { leg.count = countIn.value; refresh(); } });
+          countIn.value = leg.count == null ? '' : String(leg.count);
+
+          var rateIn = el('input', { type: 'text', inputmode: 'decimal',
+            'aria-label': 'Cost per shipment for leg ' + (i + 1),
+            placeholder: money(num(leg.intl ? sh.intlRate : sh.usRate)),
+            oninput: function () { leg.rate = rateIn.value; refresh(); } });
+          rateIn.value = leg.rate == null ? '' : String(leg.rate);
+
+          var intl = el('input', { type: 'checkbox', 'aria-label': 'Leg ' + (i + 1) + ' is international',
+            onchange: function () {
+              leg.intl = intl.checked;
+              rateIn.placeholder = money(num(leg.intl ? sh.intlRate : sh.usRate));
+              refresh();
+            } });
+          intl.checked = !!leg.intl;
+
+          var x = el('button', { class: 'row-x', type: 'button',
+            'aria-label': 'Remove leg ' + (i + 1),
+            onclick: function () { sh.legs.splice(i, 1); refresh(); } }, ['\u00d7']);
+
+          legsBox.appendChild(el('div', { class: 'cohort-row ship' }, [
+            nameIn, destIn,
+            el('span', { class: 'ca' }, [countIn]),
+            el('span', { class: 'ca' }, [rateIn]),
+            el('span', { class: 'ca dim', text: money(num(leg.count) * legRate(sh, leg)) }),
+            x
+          ]));
+          legsBox.appendChild(el('label', { class: 'check ship-intl' }, [
+            intl, el('span', { text: 'International \u2014 uses the international rate' })
+          ]));
+        });
+      }
+
+      function paintCalc() {
+        calcOut.replaceChildren();
+        var cost = shippingCost();
+        var markup = num(sh.markup) || 1;
+        calcOut.appendChild(el('div', { class: 'calc-row' }, [
+          el('span', { text: 'MT Group cost' }),
+          el('span', { class: 'v', text: money(cost) })]));
+        calcOut.appendChild(el('div', { class: 'calc-row calc-total' }, [
+          el('span', { text: 'Charged at ' + markup + '\u00d7 cost' }),
+          el('span', { class: 'v', text: money(shippingCalculated()) })]));
+      }
+
+      function paintMode() {
+        modeBox.replaceChildren();
+        var per = sh.mode === 'perSubject';
+        modeBox.appendChild(el('div', { class: 'check-row' }, [
+          radio('shipmode', 'Quote as a lump sum', !per, function () {
+            sh.mode = 'lump'; sh.override = ''; refresh(); }),
+          radio('shipmode', 'Quote per subject', per, function () {
+            sh.mode = 'perSubject'; sh.override = ''; refresh(); })
+        ]));
+
+        var n = quoteSubjects();
+        if (per) {
+          modeBox.appendChild(el('div', { class: 'calc' }, [
+            el('div', { class: 'calc-row calc-total' }, [
+              el('span', { text: n
+                ? money(shippingCalculated()) + ' \u00f7 ' + n + ' subjects'
+                : 'Add subject counts in \u00a703 to work this out' }),
+              el('span', { class: 'v', text: money(shippingPerSubject()) + ' per subject' })])
+          ]));
+        }
+
+        modeBox.appendChild(field(per ? 'Override the per-subject charge'
+                                     : 'Override the shipping price', {
+          inputmode: 'decimal', full: true,
+          placeholder: per ? 'Leave blank to quote ' + money(shippingPerSubject()) + ' per subject'
+                           : 'Leave blank to quote ' + money(shippingCalculated()),
+          hint: 'For when shipping is too expensive to show and the cost gets buried in '
+              + 'the per-specimen figure \u2014 enter 0 here and raise the specimen prices.',
+          get: function () { return sh.override; },
+          set: function (v) { sh.override = v; },
+          then: function () { paintMode(); if (pricingRefresh) pricingRefresh(); } }));
+
+        modeBox.appendChild(el('div', { class: 'calc' }, [
+          el('div', { class: 'calc-row calc-total' }, [
+            el('span', { text: 'Shipping on this quote' }),
+            el('span', { class: 'v', text: money(shippingTotal()) })])
+        ]));
+      }
+
+      sec.appendChild(field('Ship-to address(es)', { type: 'textarea', rows: 2, full: true,
+        placeholder: 'One per line if there is more than one',
+        hint: 'Where the specimens end up decides the rate — a frozen shipment to '
+            + 'Cambridge costs several times one to Boston.',
+        get: function () { return draft.shipping.addresses; },
+        set: function (v) { draft.shipping.addresses = v; } }));
+
+      sec.appendChild(subHead('Legs'));
+      sec.appendChild(legsBox);
+      sec.appendChild(el('button', { class: 'add-row', type: 'button', onclick: function () {
+        sh.legs.push({ label: '', dest: '', intl: false, count: '', rate: '' }); refresh();
+      } }, ['+ Add leg']));
+
+      var ratesBox = el('div');
+      function paintRates() {
+        ratesBox.replaceChildren();
+        if (!sh.showRates) return;
+        ratesBox.appendChild(el('div', { class: 'grid' }, [
+          field('Standard US frozen shipment', { inputmode: 'decimal',
+            get: function () { return sh.usRate; },
+            set: function (v) { sh.usRate = v; }, then: refresh }),
+          field('Standard international frozen shipment', { inputmode: 'decimal',
+            hint: 'Varies by country \u2014 typically $2,000\u20134,000. Set the ones that '
+                + 'differ on the leg itself.',
+            get: function () { return sh.intlRate; },
+            set: function (v) { sh.intlRate = v; }, then: refresh }),
+          field('Markup on cost', { inputmode: 'decimal',
+            hint: 'The sponsor is normally charged twice cost.',
+            get: function () { return sh.markup; },
+            set: function (v) { sh.markup = v; }, then: refresh })
+        ]));
+      }
+      var rateToggle = checkbox('Adjust the standard rates and markup',
+        function () { return sh.showRates; },
+        function (v) { sh.showRates = v; }, paintRates);
+      rateToggle.style.marginTop = '12px';
+      sec.appendChild(rateToggle);
+      sec.appendChild(ratesBox);
+      paintRates();
+
+      sec.appendChild(calcOut);
+      sec.appendChild(subHead('How it is quoted'));
+      sec.appendChild(modeBox);
+
+      sec.appendChild(field('Additional shipping detail', { type: 'textarea', rows: 2, full: true,
+        placeholder: 'Courier, service level, TempTale\u2026',
+        get: function () { return sh.detail; }, set: function (v) { sh.detail = v; } }));
+
+      shippingRefresh = function () { paintCalc(); paintMode(); };
+      paintLegs(); paintCalc(); paintMode();
+      return sec;
+    }
+
     function sectionPricing() {
       var ext = isMinimal();
       var sec = el('section', { class: 'sec' });
-      sec.appendChild(secHead('10', 'Pricing'));
+      sec.appendChild(secHead('11', 'Pricing'));
 
       draft.pricing = draft.pricing || {};
       var pr = draft.pricing;
@@ -2875,12 +3226,19 @@
           pr.specimenPrices[t] = pr.specimenPrices[t] || {};
           var sp = pr.specimenPrices[t];
           var card = el('div', { class: 'toggle-box' });
-          card.appendChild(el('div', { class: 'cohort-card-head' }, [
+          var tps = timepointNames();
+          var reps = collectionCount((draft.specimenDetail || {})[t], tps);
+          var head = el('div', { class: 'cohort-card-head' }, [
             el('span', { class: 'sec-num', text: '05.' + (i + 1) }),
             el('span', { class: 'cohort-card-title', text: t })
-          ]));
+          ]);
+          if (tps.length > 1) {
+            head.appendChild(el('span', { class: 'hint', style: 'margin:0 0 0 auto',
+              text: reps + (reps === 1 ? ' collection' : ' collections') + ' per subject' }));
+          }
+          card.appendChild(head);
           card.appendChild(el('div', { class: 'grid' }, [
-            field('Price to quote ($ per unit)', { placeholder: '1225.00', inputmode: 'decimal',
+            field('Price to quote ($ per collection)', { placeholder: '1225.00', inputmode: 'decimal',
               get: function () { return sp.price; },
               set: function (v) { sp.price = v; }, then: recalc }),
             field('Site cost + stipend', { placeholder: 'context only', inputmode: 'decimal',
@@ -2936,127 +3294,6 @@
         sfBox.appendChild(box);
       }
 
-      // ---- shipping -------------------------------------------------------
-      // Real rates, 2026-08: a frozen US shipment costs $300, an international
-      // one $2,000–4,000. Two legs — site to MTG, then MTG to the sponsor — and
-      // the sponsor is charged twice cost. Spec §4 records a markup multiplier
-      // as built and reverted; this is a different thing, asked for directly,
-      // and it always shows its working with an override beside it.
-      var shipBox = el('div');
-
-      function paintShipping() {
-        shipBox.replaceChildren();
-        var sh = pr.shipping;
-        if (sh.intlRate == null) sh.intlRate = '3000';
-        if (sh.usRate == null) sh.usRate = '300';
-        if (sh.markup == null) sh.markup = '2';
-
-        var calcOut = el('div', { class: 'calc' });
-
-        function recalcShipping() {
-          var usRate = num(sh.usRate), intlRate = num(sh.intlRate);
-          var inUs = num(sh.inboundUs), inIntl = num(sh.inboundIntl);
-          var outN = num(sh.outboundBatches);
-          var outRate = sh.outboundIntl ? intlRate : usRate;
-
-          var inboundCost = inUs * usRate + inIntl * intlRate;
-          var outboundCost = outN * outRate;
-          var cost = inboundCost + outboundCost;
-          var markup = num(sh.markup) || 1;
-          var priced = cost * markup;
-
-          calcOut.replaceChildren();
-          if (inUs) calcOut.appendChild(el('div', { class: 'calc-row' }, [
-            el('span', { text: 'Inbound US — ' + inUs + ' × ' + money(usRate) }),
-            el('span', { class: 'v', text: money(inUs * usRate) })]));
-          if (inIntl) calcOut.appendChild(el('div', { class: 'calc-row' }, [
-            el('span', { text: 'Inbound international — ' + inIntl + ' × ' + money(intlRate) }),
-            el('span', { class: 'v', text: money(inIntl * intlRate) })]));
-          if (outN) calcOut.appendChild(el('div', { class: 'calc-row' }, [
-            el('span', { text: 'Outbound to sponsor — ' + outN + ' × ' + money(outRate) }),
-            el('span', { class: 'v', text: money(outN * outRate) })]));
-          calcOut.appendChild(el('div', { class: 'calc-row' }, [
-            el('span', { text: 'MTG cost' }), el('span', { class: 'v', text: money(cost) })]));
-          calcOut.appendChild(el('div', { class: 'calc-row calc-total' }, [
-            el('span', { text: 'Shipping price at ' + markup + '× cost' }),
-            el('span', { class: 'v', text: money(priced) })]));
-
-          if (sh.override !== undefined && String(sh.override).trim() !== '') {
-            calcOut.appendChild(el('div', { class: 'calc-row calc-total' }, [
-              el('span', { text: 'Overridden — quoting instead' }),
-              el('span', { class: 'v', text: money(num(sh.override)) })]));
-          }
-          sh.computedPrice = priced;
-          recalc();
-        }
-
-        shipBox.appendChild(el('div', { class: 'grid' }, [
-          field('Inbound shipments from US sites', { inputmode: 'numeric', placeholder: '0',
-            get: function () { return sh.inboundUs; },
-            set: function (v) { sh.inboundUs = v; }, then: recalcShipping }),
-          field('Inbound shipments from international sites', { inputmode: 'numeric', placeholder: '0',
-            get: function () { return sh.inboundIntl; },
-            set: function (v) { sh.inboundIntl = v; }, then: recalcShipping }),
-          field('Batches out to the sponsor', { inputmode: 'numeric', placeholder: '1',
-            hint: 'Syncs with delivery batching in §09.',
-            get: function () {
-              if (sh.outboundBatches != null) return sh.outboundBatches;
-              return /2 batches/.test((draft.timeline || {}).batching || '') ? '2' : '1';
-            },
-            set: function (v) { sh.outboundBatches = v; }, then: recalcShipping })
-        ]));
-
-        shipBox.appendChild(checkbox('The sponsor is international',
-          function () { return sh.outboundIntl; },
-          function (v) { sh.outboundIntl = v; }, recalcShipping));
-
-        var ratesBox = el('div');
-        function paintRates() {
-          ratesBox.replaceChildren();
-          if (!sh.showRates) return;
-          ratesBox.appendChild(el('div', { class: 'grid' }, [
-            field('US frozen shipment', { inputmode: 'decimal',
-              get: function () { return sh.usRate; },
-              set: function (v) { sh.usRate = v; }, then: recalcShipping }),
-            field('International frozen shipment', { inputmode: 'decimal',
-              hint: 'Typically $2,000–4,000 depending on destination.',
-              get: function () { return sh.intlRate; },
-              set: function (v) { sh.intlRate = v; }, then: recalcShipping }),
-            field('Markup on cost', { inputmode: 'decimal',
-              hint: 'The sponsor is normally charged twice cost.',
-              get: function () { return sh.markup; },
-              set: function (v) { sh.markup = v; }, then: recalcShipping })
-          ]));
-        }
-        var rateToggle = checkbox('Adjust the rates and markup',
-          function () { return sh.showRates; },
-          function (v) { sh.showRates = v; }, paintRates);
-        rateToggle.style.marginTop = '10px';
-        shipBox.appendChild(rateToggle);
-        shipBox.appendChild(ratesBox);
-        paintRates();
-
-        shipBox.appendChild(calcOut);
-
-        shipBox.appendChild(field('Override the shipping price', { inputmode: 'decimal', full: true,
-          placeholder: 'Leave blank to quote the calculated price',
-          hint: 'For when shipping is too expensive to show and the cost gets buried in the per-specimen figure — enter 0 here and raise the specimen prices.',
-          get: function () { return sh.override; },
-          set: function (v) { sh.override = v; }, then: recalcShipping }));
-
-        shipBox.appendChild(field('Additional shipping detail', { type: 'textarea', rows: 2, full: true,
-          placeholder: 'Courier, service level, TempTale…',
-          get: function () { return sh.detail; }, set: function (v) { sh.detail = v; } }));
-
-        recalcShipping();
-      }
-
-      function shippingTotal() {
-        var sh = pr.shipping;
-        if (sh.override !== undefined && String(sh.override).trim() !== '') return num(sh.override);
-        return num(sh.computedPrice);
-      }
-
       // ---- other costs ------------------------------------------------------
       var otherBox = el('div');
       function paintOther() {
@@ -3103,11 +3340,16 @@
             lines.push([subjects + ' subjects × ' + money(num(draft.header.perSubject)), specimenTotal]);
           }
         } else {
+          var tpNames = timepointNames();
           pickedSpecimens().forEach(function (t) {
             var p = num((pr.specimenPrices[t] || {}).price);
             if (!p) return;
-            specimenTotal += subjects * p;
-            lines.push([t + ' — ' + subjects + ' × ' + money(p), subjects * p]);
+            var reps = collectionCount((draft.specimenDetail || {})[t], tpNames);
+            var line = subjects * reps * p;
+            specimenTotal += line;
+            lines.push([
+              t + ' — ' + subjects + (reps > 1 ? ' × ' + reps + ' collections' : '') +
+              ' × ' + money(p), line]);
           });
           if (!lines.length) lines.push(['Biospecimens & data', 0]);
         }
@@ -3150,7 +3392,7 @@
 
         draft.totalCost = grand ? grand.toFixed(2) : '';
       }
-      pricingRefresh = function () { paintMain(); paintShipping(); recalc(); };
+      pricingRefresh = function () { paintMain(); recalc(); };
 
       paintMain();
       sec.appendChild(mainBox);
@@ -3177,10 +3419,6 @@
       sec.appendChild(subHead('Other costs'));
       paintOther();
       sec.appendChild(otherBox);
-
-      sec.appendChild(subHead('Shipping and handling'));
-      paintShipping();
-      sec.appendChild(shipBox);
 
       sec.appendChild(subHead('Total'));
       sec.appendChild(el('div', { class: 'grid' }, [
@@ -3261,7 +3499,7 @@
 
     function sectionNotes() {
       var sec = el('section', { class: 'sec' });
-      sec.appendChild(secHead('11', 'Additional quote details'));
+      sec.appendChild(secHead('12', 'Additional quote details'));
       sec.appendChild(el('div', { class: 'hint',
         text: 'Anything else the quote should say. Appears on both the internal draft and the sponsor quote.' }));
       sec.appendChild(field('Notes', { type: 'textarea', rows: 4, full: true,

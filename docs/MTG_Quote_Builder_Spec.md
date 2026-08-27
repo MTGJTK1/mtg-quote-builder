@@ -772,3 +772,89 @@ plasma, $300 buffy coat), which reconcile to the $612,500 total already on it.
 Also: carried cohorts arrived with a literal `0` in *additional subjects* that a
 rep had to clear before typing, and which read as an answer rather than an empty
 box. They now start blank behind a `0` placeholder.
+
+## §14 — Sixth-pass revisions, rep review 2026-08-27
+
+Seven items from John, testing the mockup.
+
+### Quote date auto-fills
+
+It already defaulted to today; it did not say so. Now carries the `auto` badge
+and "Today, unless you change it," so a rep knows it was filled for them rather
+than wondering whether they left it blank.
+
+### Real Merck deals behind the lookup
+
+All 99 Merck deals whose HubSpot name carries an MT number are now in the
+mockup, so the lookup can be tested against live data instead of three fixtures.
+
+**What this makes visible is the point.** HubSpot holds the sponsor and the deal
+name. It does not hold cohorts, subject counts, specimens, timepoints, criteria
+or prices — spec §7 measured that. A HubSpot-sourced match therefore fills two
+fields and says so plainly: *"cohorts, specimens and pricing are not stored
+there, so those are yours to fill in."* Auto-fill from the register of past
+quotes is worth far more, which is an argument for the tool, not against it.
+
+Two behaviours fall out of the real data:
+
+- **Extension numbering reads HubSpot.** `MT0404` already has an extension #1 in
+  HubSpot, so the lookup proposes #2 — the register alone could not know that.
+- **Umbrella numbers refuse to guess.** `MT9920` covers 25 Merck deals; the
+  lookup names the problem and asks for the quote reference or PO instead.
+
+### Population group, subpopulation and severity removed
+
+Asked: *"do we need population group? the cohorts will be defined as free text."*
+No. All five controls are gone from the cohort card.
+
+They were lifted from HubSpot's `population_2` and `sub_population` enums, which
+are 99% populated and describe a *deal*, not a cohort. On a cohort they repeated
+what the description and the I/E criteria already carry, with less precision —
+the same failure as the feasibility form's naive/treated dropdown, and the same
+lesson as §4's reverted approaches. If HubSpot's fields ever need writing back,
+that is one dropdown on the quote, not five controls on every cohort.
+
+The allocation note now appears when a quote has more than one cohort, which is
+what it was always really about.
+
+### Specimens can differ by timepoint
+
+Asked: *"what if the biospecimens are different at each timepoint?"* Each
+specimen block in §05 now carries a **Collected at** row listing the timepoints,
+all ticked by default. Blood at every visit, a biopsy only at baseline.
+
+The count is priced. §11 shows "2 collections per subject" on the block, the
+field reads **$ per collection**, and the cost line spells it out —
+`Plasma — 100 × 2 collections × $200.00`. A specimen at one timepoint shows no
+multiplier, so the common case reads exactly as it did before.
+
+### Shipping becomes §10, and is quoted per leg
+
+Asked for, in three parts: its own section; cost inputs for every leg, prompted
+with MT Group's numbers but overwritable; and a choice between lump sum and per
+subject. Sections renumber — Shipping 10, Pricing 11, Additional details 12.
+
+- **Ship-to address(es)**, moved out of §09. There was previously nowhere to say
+  a frozen shipment was going to Cambridge rather than Boston, while the price
+  turns on exactly that.
+- **A table of legs**, two by default, each with a destination, a shipment count
+  and a rate. A blank rate uses the standard for that destination and shows it
+  as the placeholder, so a rep types only the ones that differ. International is
+  a per-leg tick, because one study can have both.
+- **Standard rates stay editable** — $300 US, $3,000 international, 2× markup —
+  but they are now defaults behind per-leg figures rather than the only inputs.
+  International genuinely varies by country.
+- **Lump sum or per subject**, with the division shown, and an override on
+  whichever is chosen. A per-subject quote still reconciles to a total so the
+  arithmetic on the document adds up.
+
+### A defect this uncovered
+
+The old shipping block displayed **"Batches out to the sponsor: 1"** and charged
+**$0** for it. The field's `get` returned `'1'` for display but never assigned
+it, so the calculation read `undefined` as zero. Every quote that accepted the
+default under-charged by one outbound shipment — $600 at the standard rate.
+
+Same class as the `pr.extMode` mismatch in §12: a default that exists for the
+eye and not for the arithmetic. Worth a standing check — where a field displays
+a default, confirm the maths reads the same value.
