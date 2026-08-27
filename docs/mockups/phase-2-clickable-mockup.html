@@ -1030,6 +1030,13 @@
   // ---------------------------------------------------------------- storage
 
   var KEY = 'mtg-quote-builder-mockup-v2';
+
+  // Bumped whenever SAMPLES changes. Stored data wins on load — a rep's own test
+  // drafts must survive — so a changed fixture set would otherwise sit unread in
+  // the file while the browser kept serving the old one. This makes the mismatch
+  // visible and offers the reset, rather than silently discarding their work.
+  var SAMPLES_VERSION = 3;
+  var samplesStale = false;
   var quotes = [];
   var storageWorks = true;
 
@@ -1038,12 +1045,24 @@
       window.localStorage.setItem(KEY + '-probe', '1');
       window.localStorage.removeItem(KEY + '-probe');
       var raw = window.localStorage.getItem(KEY);
-      if (raw) { quotes = JSON.parse(raw); return; }
+      if (raw) {
+        quotes = JSON.parse(raw);
+        var seen = parseInt(window.localStorage.getItem(KEY + '-samples'), 10);
+        samplesStale = !(seen >= SAMPLES_VERSION);
+        return;
+      }
     } catch (e) {
       storageWorks = false;
     }
+    resetSamples();
+  }
+
+  function resetSamples() {
     quotes = SAMPLES.map(function (s) { return finalize(Object.assign({ id: uid() }, s)); });
+    samplesStale = false;
     save();
+    try { window.localStorage.setItem(KEY + '-samples', String(SAMPLES_VERSION)); }
+    catch (e) { /* storage already known not to work */ }
   }
 
   function save() {
@@ -1371,6 +1390,15 @@
       ]));
     }
 
+    if (samplesStale) {
+      frag.appendChild(el('div', { class: 'warn' }, [
+        el('strong', { text: 'The sample quotes have been updated since you last opened this. ' }),
+        el('span', { text: 'Your browser is still showing the older set. Reset the sample data at ' +
+          'the foot of the table to pick up the new ones \u2014 any quotes you have created will be ' +
+          'discarded, so save anything you want to keep first.' })
+      ]));
+    }
+
     frag.appendChild(el('div', { class: 'page-head' }, [
       el('div', {}, [
         el('h1', { text: 'Quote register' }),
@@ -1435,9 +1463,9 @@
       el('button', {
         class: 'link-btn', type: 'button',
         onclick: function () {
-          if (!confirm('Reset the mockup back to its sample quotes?')) return;
-          quotes = SAMPLES.map(function (s) { return finalize(Object.assign({ id: uid() }, s)); });
-          save(); go('register'); toast('Sample quotes restored');
+          if (!confirm('Reset the mockup back to its sample quotes? Any quotes '
+                       + 'you have created will be discarded.')) return;
+          resetSamples(); go('register'); toast('Sample quotes restored');
         }
       }, ['Reset sample data'])
     ]);
