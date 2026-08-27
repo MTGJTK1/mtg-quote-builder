@@ -1,4 +1,4 @@
-# Hosting the quote builder on MT Group's own server
+# Hosting the study builder on MT Group's own server
 
 MT Group controls DNS for `mtgroupbio.com` and runs nginx with PHP. That is
 enough — nginx sits in front of the quote builder, the PHP site is untouched,
@@ -12,7 +12,7 @@ The quote builder is a Node application, not PHP, so it cannot be dropped into
 a folder alongside the existing site. It runs as its own service on a local
 port, and nginx forwards traffic to it:
 
-    quotes.mtgroupbio.com  →  nginx (443, TLS)  →  127.0.0.1:3000  →  Next.js
+    studybuilderbd.mtgroupbio.com  →  nginx (443, TLS)  →  127.0.0.1:3000  →  Next.js
     www.mtgroupbio.com     →  nginx (443, TLS)  →  PHP-FPM  (unchanged)
 
 One nginx server block, one systemd service, one DNS record. The existing site's
@@ -35,9 +35,9 @@ with PHP.
 One record, pointing the subdomain at the same server that already serves the
 site:
 
-    quotes    A    <the server's public IP>
+    studybuilderbd  A    <the server's public IP>
 
-`www` and `quotes` can share one IP; nginx tells them apart by hostname.
+`www` and `studybuilderbd` can share one IP; nginx tells them apart by hostname.
 
 ## nginx
 
@@ -46,10 +46,10 @@ A separate server block, so the existing site's config is never edited:
 ```nginx
 server {
     listen 443 ssl http2;
-    server_name quotes.mtgroupbio.com;
+    server_name studybuilderbd.mtgroupbio.com;
 
-    ssl_certificate     /etc/letsencrypt/live/quotes.mtgroupbio.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/quotes.mtgroupbio.com/privkey.pem;
+    ssl_certificate     /etc/letsencrypt/live/studybuilderbd.mtgroupbio.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/studybuilderbd.mtgroupbio.com/privkey.pem;
 
     # Word documents are generated on the fly and can take a moment.
     proxy_read_timeout 120s;
@@ -69,26 +69,26 @@ server {
 
 server {
     listen 80;
-    server_name quotes.mtgroupbio.com;
+    server_name studybuilderbd.mtgroupbio.com;
     return 301 https://$host$request_uri;
 }
 ```
 
-Certificate: `certbot --nginx -d quotes.mtgroupbio.com`. It renews itself.
+Certificate: `certbot --nginx -d studybuilderbd.mtgroupbio.com`. It renews itself.
 
 ## Running the app
 
 ```ini
-# /etc/systemd/system/quote-builder.service
+# /etc/systemd/system/studybuilder.service
 [Unit]
-Description=MT Group Quote Builder
+Description=MT Group Study Builder
 After=network.target
 
 [Service]
 Type=simple
-User=quotebuilder
-WorkingDirectory=/srv/quote-builder
-EnvironmentFile=/etc/quote-builder.env
+User=studybuilder
+WorkingDirectory=/srv/studybuilder
+EnvironmentFile=/etc/studybuilder.env
 ExecStart=/usr/bin/node node_modules/.bin/next start -p 3000
 Restart=always
 RestartSec=5
@@ -100,17 +100,17 @@ WantedBy=multi-user.target
 Deploying a new version:
 
 ```bash
-cd /srv/quote-builder
+cd /srv/studybuilder
 git pull
 npm ci                 # runs prisma generate via postinstall
 npm run db:deploy      # applies any new migrations
 npm run build
-sudo systemctl restart quote-builder
+sudo systemctl restart studybuilder
 ```
 
 ## Secrets
 
-`/etc/quote-builder.env`, owned by root, mode `600` — never in the repository:
+`/etc/studybuilder.env`, owned by root, mode `600` — never in the repository:
 
     DATABASE_URL=postgresql://...-pooler...   # pooled, for the app
     DIRECT_URL=postgresql://...               # unpooled, for migrations only

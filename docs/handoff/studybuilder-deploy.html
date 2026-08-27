@@ -1,0 +1,473 @@
+<title>Study Builder Deployment</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+  :root {
+    --paper:      #fbfcfd;
+    --surface:    #f2f5f7;
+    --sunk:       #eaeff3;
+    --ink:        #111820;
+    --body:       #47535f;
+    --faint:      #77848f;
+    --rule:       #dce3e9;
+    --rule-firm:  #c3ced7;
+    --accent:     #0e7c6d;
+    --accent-soft:#e4f2ef;
+    --warn:       #8f5c0c;
+    --warn-soft:  #fbf1de;
+    --warn-rule:  #e0c48c;
+    --code-bg:    #f2f5f7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:      #0d1319;
+      --surface:    #141c24;
+      --sunk:       #18222b;
+      --ink:        #eef3f7;
+      --body:       #a9b6c1;
+      --faint:      #7b8892;
+      --rule:       #23303b;
+      --rule-firm:  #33434f;
+      --accent:     #45c3ae;
+      --accent-soft:#11302c;
+      --warn:       #e2a955;
+      --warn-soft:  #2a2113;
+      --warn-rule:  #4d3c1c;
+      --code-bg:    #131b23;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:      #0d1319;
+    --surface:    #141c24;
+    --sunk:       #18222b;
+    --ink:        #eef3f7;
+    --body:       #a9b6c1;
+    --faint:      #7b8892;
+    --rule:       #23303b;
+    --rule-firm:  #33434f;
+    --accent:     #45c3ae;
+    --accent-soft:#11302c;
+    --warn:       #e2a955;
+    --warn-soft:  #2a2113;
+    --warn-rule:  #4d3c1c;
+    --code-bg:    #131b23;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--body);
+    font-family: 'Public Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font-size: 16px;
+    line-height: 1.62;
+    margin: 0;
+    padding: 0 24px 96px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 46rem; margin: 0 auto; }
+
+  /* ---------- masthead ---------- */
+
+  header.top {
+    padding: 64px 0 30px;
+    border-bottom: 1px solid var(--rule-firm);
+    margin-bottom: 44px;
+  }
+  .eyebrow {
+    font-size: 11.5px; font-weight: 600;
+    letter-spacing: .14em; text-transform: uppercase;
+    color: var(--faint);
+    margin: 0 0 18px;
+  }
+  h1 {
+    font-family: 'Newsreader', Georgia, serif;
+    font-weight: 500;
+    font-size: clamp(34px, 5.5vw, 46px);
+    line-height: 1.12;
+    color: var(--ink);
+    margin: 0 0 18px;
+    text-wrap: balance;
+    letter-spacing: -.012em;
+  }
+  .standfirst {
+    font-size: 17.5px;
+    max-width: 34rem;
+    margin: 0;
+  }
+  .host {
+    display: inline-block;
+    margin-top: 26px;
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 14.5px;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 7px 13px;
+  }
+
+  /* ---------- sections ---------- */
+
+  section { margin-bottom: 52px; }
+
+  h2 {
+    font-family: 'Newsreader', Georgia, serif;
+    font-weight: 500;
+    font-size: 27px;
+    line-height: 1.25;
+    color: var(--ink);
+    margin: 0 0 6px;
+    letter-spacing: -.008em;
+    display: flex;
+    align-items: baseline;
+    gap: 13px;
+  }
+  h2 .step {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--accent);
+    flex: none;
+    padding-top: 2px;
+  }
+  h2 + .lede { margin: 0 0 22px; color: var(--faint); font-size: 15px; }
+
+  h3 {
+    font-family: 'Public Sans', system-ui, sans-serif;
+    font-size: 13px; font-weight: 600;
+    letter-spacing: .1em; text-transform: uppercase;
+    color: var(--faint);
+    margin: 32px 0 12px;
+  }
+
+  p { margin: 0 0 16px; }
+  p:last-child { margin-bottom: 0; }
+
+  a { color: var(--accent); }
+
+  strong { color: var(--ink); font-weight: 600; }
+
+  code {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: .875em;
+    background: var(--sunk);
+    border-radius: 4px;
+    padding: 1.5px 5px;
+    color: var(--ink);
+  }
+
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--rule);
+    border-radius: 9px;
+    padding: 18px 20px;
+    overflow-x: auto;
+    margin: 0 0 18px;
+  }
+  pre code {
+    background: none; padding: 0; border-radius: 0;
+    font-size: 13.5px;
+    line-height: 1.65;
+    color: var(--ink);
+    display: block;
+    white-space: pre;
+  }
+  pre .c { color: var(--faint); }
+
+  /* ---------- routing diagram ---------- */
+
+  .routing {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: 22px 20px;
+    margin-bottom: 20px;
+    overflow-x: auto;
+  }
+  .routing table {
+    border-collapse: collapse;
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .routing td { padding: 7px 0; vertical-align: middle; }
+  .routing .arrow { color: var(--faint); padding: 0 14px; }
+  .routing .from { color: var(--ink); }
+  .routing .new { color: var(--accent); font-weight: 500; }
+  .routing .same { color: var(--faint); }
+
+  /* ---------- table ---------- */
+
+  .tablewrap { overflow-x: auto; margin-bottom: 18px; }
+  table.spec {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 15px;
+  }
+  table.spec th, table.spec td {
+    text-align: left;
+    padding: 12px 16px 12px 0;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  table.spec th {
+    font-size: 12px; font-weight: 600;
+    letter-spacing: .09em; text-transform: uppercase;
+    color: var(--faint);
+    border-bottom-color: var(--rule-firm);
+    white-space: nowrap;
+  }
+  table.spec td:first-child { color: var(--ink); font-weight: 500; white-space: nowrap; }
+
+  /* ---------- callout ---------- */
+
+  .callout {
+    background: var(--warn-soft);
+    border: 1px solid var(--warn-rule);
+    border-radius: 10px;
+    padding: 20px 22px;
+  }
+  .callout h2 { color: var(--warn); margin-bottom: 12px; }
+  .callout h2 .step { color: var(--warn); }
+  .callout p:last-child { margin-bottom: 0; }
+
+  /* ---------- questions ---------- */
+
+  ol.asks, ul.plain {
+    margin: 0 0 16px;
+    padding-left: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+  }
+  ol.asks li::marker { color: var(--accent); font-weight: 600; }
+
+  footer.end {
+    border-top: 1px solid var(--rule-firm);
+    padding-top: 24px;
+    color: var(--faint);
+    font-size: 14.5px;
+  }
+
+  @media (max-width: 620px) {
+    body { padding: 0 18px 72px; }
+    header.top { padding-top: 44px; }
+  }
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <p class="eyebrow">MT Group · Internal tooling · For Marius</p>
+  <h1>Standing up the Study Builder</h1>
+  <p class="standfirst">
+    An internal web application for the sales team, to sit alongside the existing
+    site on our own server. Everything it needs is below; nothing about the
+    current site changes.
+  </p>
+  <span class="host">studybuilderbd.mtgroupbio.com</span>
+</header>
+
+<section>
+  <h2>What this is</h2>
+  <p>
+    The Study Builder replaces the current process of hunting through HubSpot and
+    OneDrive for a comparable quote and retyping a Word document. Reps fill in a
+    structured form; it produces two Word files — an internal draft with the
+    pricing workings, and a clean sponsor-facing quote. A feasibility request
+    builder shares the same form and the same database.
+  </p>
+  <p>
+    It is a Node application rather than PHP, so it cannot be dropped into a
+    folder beside the existing site. It runs as its own service on a local port,
+    with nginx in front of it.
+  </p>
+</section>
+
+<section>
+  <h2>How it fits with the current site</h2>
+  <p class="lede">One additional server block. The existing configuration is not edited.</p>
+  <div class="routing">
+    <table>
+      <tr>
+        <td class="from">www.mtgroupbio.com</td>
+        <td class="arrow">→</td>
+        <td class="same">nginx</td>
+        <td class="arrow">→</td>
+        <td class="same">PHP-FPM &nbsp;<em>(unchanged)</em></td>
+      </tr>
+      <tr>
+        <td class="from">studybuilderbd.mtgroupbio.com</td>
+        <td class="arrow">→</td>
+        <td class="new">nginx</td>
+        <td class="arrow">→</td>
+        <td class="new">127.0.0.1:3000 → Node</td>
+      </tr>
+    </table>
+  </div>
+  <p>
+    Both hostnames can resolve to the same IP; nginx separates them by
+    <code>server_name</code>. The database is hosted externally (Neon Postgres),
+    so nothing new runs on the box besides the Node process.
+  </p>
+</section>
+
+<section>
+  <h2>What the server needs</h2>
+  <div class="tablewrap">
+    <table class="spec">
+      <tr><th>Requirement</th><th>Detail</th></tr>
+      <tr>
+        <td>Node.js</td>
+        <td>Version 20 or newer. Built and tested on 22. Installs alongside PHP without conflict.</td>
+      </tr>
+      <tr>
+        <td>Process manager</td>
+        <td>systemd, already present. No need for pm2 or similar.</td>
+      </tr>
+      <tr>
+        <td>Outbound HTTPS</td>
+        <td>To Neon (the database) and to HubSpot's API. No inbound access beyond 443.</td>
+      </tr>
+      <tr>
+        <td>Disk</td>
+        <td>Under 1&nbsp;GB including <code>node_modules</code>. Generated documents are not stored.</td>
+      </tr>
+      <tr>
+        <td>TLS</td>
+        <td>Let's Encrypt via certbot, same as the main site.</td>
+      </tr>
+    </table>
+  </div>
+  <p>
+    For reference, on a test build the application compiles in about 23 seconds
+    and the server is accepting requests roughly 150&nbsp;ms after start.
+  </p>
+</section>
+
+<section>
+  <h2><span class="step">1</span> DNS</h2>
+  <p>One record, pointing at the server that already serves the site:</p>
+  <pre><code>studybuilderbd    A    &lt;the server's public IP&gt;</code></pre>
+</section>
+
+<section>
+  <h2><span class="step">2</span> nginx</h2>
+  <p class="lede">A separate server block, so the existing site's config stays untouched.</p>
+  <pre><code>server {
+    listen 443 ssl http2;
+    server_name studybuilderbd.mtgroupbio.com;
+
+    ssl_certificate     /etc/letsencrypt/live/studybuilderbd.mtgroupbio.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/studybuilderbd.mtgroupbio.com/privkey.pem;
+
+    <span class="c"># Word documents are generated on the fly and can take a moment.</span>
+    proxy_read_timeout 120s;
+
+    location / {
+        proxy_pass         http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header   Upgrade           $http_upgrade;
+        proxy_set_header   Connection        'upgrade';
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+
+server {
+    listen 80;
+    server_name studybuilderbd.mtgroupbio.com;
+    return 301 https://$host$request_uri;
+}</code></pre>
+  <p>Certificate: <code>certbot --nginx -d studybuilderbd.mtgroupbio.com</code>. It renews itself.</p>
+</section>
+
+<section>
+  <h2><span class="step">3</span> The service</h2>
+  <pre><code><span class="c"># /etc/systemd/system/studybuilder.service</span>
+[Unit]
+Description=MT Group Study Builder
+After=network.target
+
+[Service]
+Type=simple
+User=studybuilder
+WorkingDirectory=/srv/studybuilder
+EnvironmentFile=/etc/studybuilder.env
+ExecStart=/usr/bin/node node_modules/.bin/next start -p 3000
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target</code></pre>
+</section>
+
+<section>
+  <h2><span class="step">4</span> Deploying a new version</h2>
+  <pre><code>cd /srv/studybuilder
+git pull
+npm ci                 <span class="c"># generates the database client</span>
+npm run db:deploy      <span class="c"># applies any new migrations</span>
+npm run build
+sudo systemctl restart studybuilder</code></pre>
+  <p>
+    There is a health endpoint at <code>/api/health</code> worth pointing
+    monitoring at. It returns <strong>200</strong> when the application can reach
+    the database and <strong>503</strong> when it cannot, so a failure shows up
+    as down rather than as a page that loads but cannot save anything.
+  </p>
+</section>
+
+<section>
+  <h2><span class="step">5</span> Secrets</h2>
+  <p>
+    In <code>/etc/studybuilder.env</code>, owned by root, mode <code>600</code>.
+    These never go in the repository.
+  </p>
+  <pre><code>DATABASE_URL=postgresql://...-pooler...   <span class="c"># pooled, for the app</span>
+DIRECT_URL=postgresql://...               <span class="c"># unpooled, migrations only</span>
+HUBSPOT_TOKEN=pat-na1-...                 <span class="c"># read-only service key</span></code></pre>
+  <p>
+    Two database URLs is not a mistake. Migrations run against a transaction-mode
+    pooler fail on lock acquisition — sometimes only under load — so the
+    migration tooling is pointed at the direct connection deliberately.
+  </p>
+</section>
+
+<section class="callout">
+  <h2><span class="step">!</span> Before the DNS record goes in</h2>
+  <p>
+    The application currently has <strong>no login</strong>. A subdomain is not
+    private — they get found and guessed — and the internal draft carries our
+    pricing notes, margins and site costs.
+  </p>
+  <p>
+    Authentication is being built before go-live. Worth knowing now in case you
+    would rather restrict access at the nginx level as well, or put it behind the
+    office IP range for an initial trial.
+  </p>
+</section>
+
+<section>
+  <h2>What we need from you</h2>
+  <ol class="asks">
+    <li><strong>Is Node available on that server, or would it need installing?</strong> Either is fine — it changes the timeline, not the plan.</li>
+    <li><strong>Who adds the DNS record, and what notice do you need?</strong></li>
+    <li><strong>Any objection to the layout above</strong> — the port, the service user, <code>/srv/studybuilder</code> as the location? Happy to match whatever convention you already use for the site.</li>
+    <li><strong>How would you prefer deploys to happen?</strong> The steps above are manual over SSH. If you would rather it pulled automatically on a push, that is straightforward to set up.</li>
+  </ol>
+</section>
+
+<footer class="end">
+  Nothing here needs doing yet — the application is still in development. This is
+  so you can tell us early if any of it conflicts with how the server is run.
+</footer>
+
+</div>
