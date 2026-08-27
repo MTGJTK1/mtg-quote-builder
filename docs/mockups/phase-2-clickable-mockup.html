@@ -840,6 +840,10 @@
   var PATHOLOGY_FORMATS = ['Report or summary', 'Full report only', 'Summary only'];
 
   var REPS = ['John Kibler', 'Heather Shahzade', 'Joshua Taylor', 'Karen Krantz'];
+
+  // Who the quote is prepared by is the signed-in rep, not a question. This
+  // stands in for the session user until auth exists (build brief §6).
+  var CURRENT_REP = REPS[0];
   var VALIDITY = ['30 Day Quote', '60 Day Quote'];
   var SERVICE_TYPES = ['Retrospective', 'Prospective'];
 
@@ -1342,7 +1346,7 @@
 
   function blank() {
     return {
-      id: null, client: '', sponsorAcronym: '', quoteName: '', preparedBy: REPS[0],
+      id: null, client: '', sponsorAcronym: '', quoteName: '', preparedBy: CURRENT_REP,
       quoteDate: new Date().toISOString().slice(0, 10), status: 'draft', totalCost: '',
       specimenTypes: [], isExtension: false, hubspotDealName: '',
       cohorts: [{ name: '', subjects: '' }], notes: '', summary: '',
@@ -1440,7 +1444,8 @@
     function applyStudy(study, via) {
       draft.client = study.client;
       draft.sponsorAcronym = study.acronym;
-      draft.preparedBy = study.preparedBy || draft.preparedBy;
+      // Deliberately not carried over — this quote is being written by whoever
+      // is signed in now, not by the original study's author.
       draft.specimenTypes = (study.specimens || []).slice();
       draft.header.parentMtNumber = study.mt;
       draft.header.originalStudyQuote = draft.header.originalStudyQuote || study.quote;
@@ -1618,7 +1623,6 @@
           el('dl', { class: 'carried-list' }, [
             el('dt', { text: 'Study' }), el('dd', { text: draft.header.matchedStudy }),
             el('dt', { text: 'Client' }), el('dd', { text: draft.client || '—' }),
-            el('dt', { text: 'Prepared by' }), el('dd', { text: draft.preparedBy || '—' }),
             el('dt', { text: 'Specimens' }),
             el('dd', { text: (draft.specimenTypes || []).join(', ') || '—' })
           ]),
@@ -1736,8 +1740,6 @@
       var f = sponsorFields();
       headerBody.appendChild(el('div', { class: 'grid' }, [
         f.client, f.acronym,
-        field('Prepared by', { type: 'select', required: true, options: REPS,
-          get: function () { return draft.preparedBy; }, set: function (v) { draft.preparedBy = v; } }),
         field('Quote date', { type: 'date', required: true,
           get: function () { return draft.quoteDate; }, set: function (v) { draft.quoteDate = v; } }),
         field('Validity', { type: 'select', options: VALIDITY,
@@ -1787,9 +1789,7 @@
           get: function () { return draft.hubspotDealName; },
           set: function (v) { draft.hubspotDealName = v; } }),
         field('Quote date', { type: 'date', required: true,
-          get: function () { return draft.quoteDate; }, set: function (v) { draft.quoteDate = v; } }),
-        field('Prepared by', { type: 'select', required: true, options: REPS,
-          get: function () { return draft.preparedBy; }, set: function (v) { draft.preparedBy = v; } })
+          get: function () { return draft.quoteDate; }, set: function (v) { draft.quoteDate = v; } })
       ]));
     }
 
@@ -2067,10 +2067,6 @@
         field('Delivery detail', { get: function () { return cd.deliveryDetail; },
           set: function (v) { cd.deliveryDetail = v; } })
       ]));
-
-      sec.appendChild(field('Known gaps', { type: 'textarea', rows: 2, full: true,
-        placeholder: 'Anything the sites are unlikely to have',
-        get: function () { return cd.knownGaps; }, set: function (v) { cd.knownGaps = v; } }));
 
       var outBox = el('div');
       function paintOutcome() {

@@ -665,11 +665,18 @@ Done: the quote number is gone, specimen column headings are gone, extensions
 no longer re-ask for population, the stale "partial" note on §10 is gone now
 that pricing is real, and the lookup fills more from less.
 
-Still candidates, not yet acted on:
+Also removed, on request:
+
+- **"Prepared by" is no longer a field.** It is the signed-in rep, recorded
+  without being asked, and still shown in the register as the audit trail
+  build brief §6 wants. An extension deliberately does *not* inherit the
+  original study's author — whoever writes this quote is writing it now.
+  Until auth exists the mockup stands a session user in.
+- **§07 "known gaps" is gone.** Too close to "additional data detail" for a rep
+  to know which to use.
+
+Still a candidate, not yet acted on:
 
 - **§09 "maximum subjects per day" overlaps "delivery restrictions"**, which
-  already takes "max 10/week, Tues-Fri only". Two fields for one idea.
-- **"Prepared by" should default to the signed-in rep** once auth exists
-  (Phase 8), and stop being a question.
-- **§07 "additional data detail" and "known gaps"** are close enough that reps
-  may not know which to use.
+  already takes "max 10/week, Tues-Fri only". Two fields for one idea, and the
+  per-day cap was asked for explicitly, so it stays until someone decides.
