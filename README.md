@@ -61,6 +61,30 @@ deployment is wired up correctly.
 `prisma generate` runs on `postinstall`; the generated client lives in
 `lib/generated/prisma` and is not committed.
 
+## Connecting a hosted database
+
+The app runs on any Postgres. On Neon or Vercel Postgres, which put a
+connection pooler in front of the database, set **two** variables:
+
+| Variable | Which connection string | Used by |
+|---|---|---|
+| `DATABASE_URL` | pooled — host contains `-pooler` | the running app |
+| `DIRECT_URL` | direct — the same string with `-pooler` removed | `prisma migrate` only |
+
+Migrations take session-level locks that a transaction-mode pooler cannot
+hold, which is the whole reason for the split. On a plain Postgres with no
+pooler, leave `DIRECT_URL` unset and `DATABASE_URL` is used for both.
+
+Change the `sslmode=require` Neon hands out to `sslmode=verify-full`. Both
+verify the server certificate today, but a future driver release downgrades
+`require` to encrypt-without-verifying; spelling out `verify-full` keeps the
+check.
+
+On Vercel, set both variables in the project's environment settings. The
+`vercel-build` script applies pending migrations before building, so a deploy
+brings the database up to date on its own — there is no separate migration
+step to remember.
+
 ## Build phases
 
 Each phase is independently demoable. Don't move on until the current one
