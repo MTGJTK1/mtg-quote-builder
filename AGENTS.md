@@ -15,6 +15,10 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - `docs/MTG_Quote_Builder_Spec.md` — the field-by-field behavior spec.
 - `docs/MTG_Quote_Builder_Build_Brief.md` — stack, schema, folder layout,
   phased build order.
+- `docs/ARCHITECTURE_feasibility_and_quotes.md` — a feasibility builder is
+  coming and shares nine of the eleven sections. Study design belongs in its
+  own record, not inside a quote, and the section components must be built to
+  serve both documents. This revises the build order in brief §8.
 
 Both are the source of truth. When the spec and an assumption disagree, the
 spec wins.

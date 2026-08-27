@@ -18,6 +18,10 @@ changing behavior:
   rules, and a list of approaches that were tried and deliberately reverted.
 - [`docs/MTG_Quote_Builder_Build_Brief.md`](docs/MTG_Quote_Builder_Build_Brief.md)
   — how to build it: stack, schema, folder layout, phased build order.
+- [`docs/ARCHITECTURE_feasibility_and_quotes.md`](docs/ARCHITECTURE_feasibility_and_quotes.md)
+  — why a feasibility builder changes the shape: nine of the eleven sections are
+  shared, so study design lives in its own record and the sections serve both
+  documents. Revises the build order below.
 
 ## Stack
 
