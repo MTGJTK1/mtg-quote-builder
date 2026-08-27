@@ -570,6 +570,30 @@
     .cohort-row.full { grid-template-columns: 1fr 84px 32px; }
   }
 
+  .cohort-card-head {
+    display: flex; align-items: baseline; gap: 10px;
+    padding-bottom: 10px; margin-bottom: 14px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .cohort-card-title {
+    font-family: var(--serif); font-size: 16px; font-weight: 600;
+    margin-right: auto;
+  }
+  .sub-label {
+    font-family: var(--mono); font-size: 12px; color: var(--ink-soft);
+  }
+
+  .ie-note {
+    background: var(--surface-sunk);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 7px 7px 0;
+    padding: 11px 14px;
+    margin: 22px 0 16px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+  }
+  .ie-note strong { color: var(--ink); font-weight: 600; }
+
   /* ---------- biospecimen columns ---------- */
 
   .spec-cols {
@@ -729,6 +753,77 @@
   ];
 
   var ALL_SPECIMENS = SPECIMEN_GROUPS.reduce(function (a, g) { return a.concat(g.items); }, []);
+
+
+  // ---------------------------------------------------------------- §03 vocabulary
+  // Population groups and subpopulations are the live HubSpot enum values for
+  // `population_2` and `sub_population`, read from portal 7423331 on 2026-08-27.
+  // Phase 5 should read them live rather than keeping this copy.
+
+  var POPULATION_GROUPS = ['Normal', 'Solid tumor', 'Blood cancer', 'Autoimmune disorder',
+    'Cardiovascular disease', 'Infectious disease', 'Inflammatory bowel disease',
+    'Metabolic disorder', 'Neurological disease', 'Ophthalmological', 'Other'];
+
+  // HubSpot stores group and subpopulation as independent fields — it has no
+  // mapping between them. This grouping is ours, so it can be wrong; the form
+  // offers "show all" as the escape hatch rather than trapping anyone.
+  var SUBPOPULATIONS_BY_GROUP = {
+    'Normal': ['Normal'],
+    'Solid tumor': ['All cancer', 'Cancer high risk (e.g. DCIS, CIN, adenoma)',
+      'Advanced adenoma', 'Bladder cancer', 'Brain cancer', 'Breast cancer (TNBC)',
+      'Breast cancer (other)', 'Cervical cancer', 'Colorectal cancer',
+      'Endometrial cancer', 'Esophageal cancer', 'Gastric cancer',
+      'Gastro-esophageal cancer', 'Head & neck cancer', 'Liver cancer',
+      'Lung cancer (NSCLC)', 'Lung cancer (SCLC)', 'Melanoma', 'Mesothelioma',
+      'Ovarian cancer', 'Pancreatic cancer', 'Prostate cancer',
+      'Renal cell carcinoma', 'Other solid tumor'],
+    'Blood cancer': ['AML', 'Lymphoma', 'MDS', 'Multiple myeloma', 'Other leukemia'],
+    'Autoimmune disorder': ['Arthritis', 'Atopic dermatitis', 'Hidradenitis suppurativa',
+      'Lupus', 'Psoriasis', 'Scleroderma / Systemic sclerosis', "Sjogren's syndrome",
+      'Other autoimmune'],
+    'Cardiovascular disease': ['ASCVD', 'Cardiomyopathy', 'Heart failure'],
+    'Infectious disease': ['COVID-19', 'Influenza', 'RSV', 'Other infectious disease'],
+    'Inflammatory bowel disease': ["Crohn's disease", 'Ulcerative colitis'],
+    'Metabolic disorder': ['Diabetes', 'NASH', 'Chronic kidney disease', 'Liver transplant'],
+    'Neurological disease': ["Alzheimer's Disease", 'Amyotrophic Lateral Sclerosis',
+      "Parkinson's Disease"],
+    'Ophthalmological': [],
+    'Other': ['Asthma', 'COPD', 'Other']
+  };
+
+  var ALL_SUBPOPULATIONS = Object.keys(SUBPOPULATIONS_BY_GROUP)
+    .reduce(function (a, k) { return a.concat(SUBPOPULATIONS_BY_GROUP[k]); }, [])
+    .filter(function (v, i, arr) { return arr.indexOf(v) === i; })
+    .sort();
+
+  var ONCOLOGY_GROUPS = ['Solid tumor', 'Blood cancer'];
+  var STAGES = ['Stage I', 'Stage II', 'Stage III', 'Stage IV'];
+  var SEVERITIES = ['Mild', 'Moderate', 'Severe'];
+
+  // Subpopulation-specific clinical scoring systems. The exact thresholds live in
+  // the company reference doc, which this session did not have — so the form asks
+  // for the requirement as text rather than inventing cut-offs.
+  var CLINICAL_SCORES = {
+    'Psoriasis': 'PASI',
+    'Atopic dermatitis': 'EASI',
+    'Hidradenitis suppurativa': 'Hurley stage',
+    'Scleroderma / Systemic sclerosis': 'mRSS',
+    'Lupus': 'CLASI'
+  };
+
+  // ---------------------------------------------------------------- §07 / §08
+
+  var CLINICAL_DATA_CATEGORIES = ['Demographics', 'Medical history', 'Therapeutic history',
+    'Family history', 'Lifestyle factors (smoking, alcohol)',
+    'Disease scoring (EASI, PASI, IHS4…)', 'Biomarkers', 'Other'];
+
+  // EDC is named rather than buried under "Other" — it is real site burden that
+  // gets priced, and some sites decline over it (spec §10).
+  var DELIVERY_METHODS = ['Excel spreadsheet', 'Paper CRF', 'EMR entry',
+    "Sponsor's EDC", 'Other'];
+
+  var REPORT_TYPES = ['Pathology', 'Radiology report', 'Biomarkers', 'Other'];
+  var PATHOLOGY_FORMATS = ['Report or summary', 'Full report only', 'Summary only'];
 
   var REPS = ['John Kibler', 'Heather Shahzade', 'Joshua Taylor', 'Karen Krantz'];
   var VALIDITY = ['30 Day Quote', '60 Day Quote'];
@@ -1438,8 +1533,18 @@
       headerBody.replaceChildren();
       restBox.replaceChildren();
       if (isMinimal()) renderMinimalHeader(); else renderFullHeader();
-      restBox.appendChild(sectionCohorts());
-      if (!isMinimal()) restBox.appendChild(sectionSpecimens());
+
+      if (isMinimal()) {
+        restBox.appendChild(sectionExtensionCohorts());
+      } else {
+        restBox.appendChild(sectionApproach());
+        restBox.appendChild(sectionPopulation());
+        restBox.appendChild(sectionTimepoints());
+        restBox.appendChild(sectionSpecimens());
+        restBox.appendChild(sectionClinicalData());
+        restBox.appendChild(sectionReports());
+        restBox.appendChild(sectionTimeline());
+      }
       restBox.appendChild(sectionPricing());
       restBox.appendChild(sectionSummaryAndName());
       restBox.appendChild(sectionNotes());
@@ -1554,8 +1659,9 @@
 
     // ---- 03 cohorts ---------------------------------------------------
 
-    function sectionCohorts() {
-      var ext = isMinimal();
+    // Extension-only: the parent's cohorts with an 'additional' column.
+    function sectionExtensionCohorts() {
+      var ext = true;
       var sec = el('section', { class: 'sec' });
       sec.appendChild(secHead('03', ext ? 'Cohorts & additional subjects' : 'Population & cohorts'));
 
@@ -1631,6 +1737,651 @@
           text: 'Filled from the original study when the lookup finds it — otherwise type them in.' }));
       }
       return sec;
+    }
+
+
+    // ---- 02 quote approach ---------------------------------------------
+
+    function sectionApproach() {
+      var sec = el('section', { class: 'sec' });
+      sec.appendChild(secHead('02', 'Quote approach'));
+
+      var body = el('div');
+      function paint() {
+        body.replaceChildren();
+        var byDollar = draft.approach === 'dollar';
+
+        var radios = el('div', { class: 'check-row' }, [
+          radio('approach', 'Defined subject count', !byDollar, function () {
+            draft.approach = 'subjects'; paint(); }),
+          radio('approach', 'Defined dollar amount', byDollar, function () {
+            draft.approach = 'dollar'; paint(); })
+        ]);
+        body.appendChild(radios);
+        if (!byDollar) {
+          body.appendChild(el('div', { class: 'hint',
+            text: 'Subject counts come from the cohorts below.' }));
+          return;
+        }
+
+        draft.caseTypes = draft.caseTypes || [{ label: '', price: '' }];
+        body.appendChild(el('div', { class: 'grid' }, [
+          field('PO total', { placeholder: '500000.00', inputmode: 'decimal',
+            get: function () { return draft.poTotal; },
+            set: function (v) { draft.poTotal = v; }, then: recalcEstimate })
+        ]));
+
+        var rows = el('div', { class: 'cohorts' });
+        var estimate = el('div', { class: 'calc' });
+
+        function recalcEstimate() {
+          var po = num(draft.poTotal);
+          var highest = draft.caseTypes.reduce(function (m, c) {
+            return Math.max(m, num(c.price)); }, 0);
+          estimate.replaceChildren();
+          estimate.appendChild(el('div', { class: 'calc-row' }, [
+            el('span', { text: 'PO total' }),
+            el('span', { class: 'v', text: money(po) })]));
+          estimate.appendChild(el('div', { class: 'calc-row' }, [
+            el('span', { text: 'Highest case price' }),
+            el('span', { class: 'v', text: highest ? money(highest) : '—' })]));
+          estimate.appendChild(el('div', { class: 'calc-row calc-total' }, [
+            el('span', { text: 'Estimated subjects' }),
+            el('span', { class: 'v', text: highest ? String(Math.floor(po / highest)) : '—' })]));
+        }
+
+        function paintRows() {
+          rows.replaceChildren();
+          rows.appendChild(el('div', { class: 'cohort-row full cohort-head' }, [
+            el('span', { text: 'Tumor / case type' }),
+            el('span', { class: 'ca', text: '$ per case' }), el('span', {})]));
+          draft.caseTypes.forEach(function (c, i) {
+            var lab = el('input', { type: 'text', value: c.label || '',
+              'aria-label': 'Case type ' + (i + 1),
+              placeholder: 'e.g. NSCLC resection',
+              oninput: function () { draft.caseTypes[i].label = lab.value; } });
+            lab.value = c.label || '';
+            var pr = el('input', { type: 'text', inputmode: 'decimal',
+              'aria-label': 'Price per case for ' + (c.label || 'case type ' + (i + 1)),
+              oninput: function () { draft.caseTypes[i].price = pr.value; recalcEstimate(); } });
+            pr.value = c.price || '';
+            var x = el('button', { class: 'row-x', type: 'button',
+              'aria-label': 'Remove case type ' + (i + 1),
+              onclick: function () { draft.caseTypes.splice(i, 1); paintRows(); recalcEstimate(); } }, ['×']);
+            rows.appendChild(el('div', { class: 'cohort-row full' },
+              [lab, el('span', { class: 'ca' }, [pr]), x]));
+          });
+        }
+        paintRows();
+        body.appendChild(rows);
+        body.appendChild(el('button', { class: 'add-row', type: 'button', onclick: function () {
+          draft.caseTypes.push({ label: '', price: '' }); paintRows();
+        } }, ['+ Add case type']));
+
+        body.appendChild(checkbox('Matched blood add-on',
+          function () { return draft.matchedBlood; },
+          function (v) { draft.matchedBlood = v; }));
+
+        body.appendChild(estimate);
+        recalcEstimate();
+        body.appendChild(el('div', { class: 'hint',
+          text: 'Estimate uses the highest case price, not an average — the mix is unknown, so this stays conservative. Do not attribute counts to specific types here.' }));
+      }
+      paint();
+      sec.appendChild(body);
+      return sec;
+    }
+
+    function radio(name, label, checked, onPick) {
+      var r = el('input', { type: 'radio', name: name, onchange: function () {
+        if (r.checked) onPick();
+      } });
+      r.checked = checked;
+      return el('label', { class: 'check' }, [r, el('span', {}, [label])]);
+    }
+
+    // ---- 04 collection timepoints ---------------------------------------
+
+    function sectionTimepoints() {
+      var sec = el('section', { class: 'sec' });
+      sec.appendChild(secHead('04', 'Collection timepoints'));
+
+      var body = el('div');
+      function paint() {
+        body.replaceChildren();
+        var multi = draft.multipleTimepoints === true;
+        body.appendChild(el('div', { class: 'check-row' }, [
+          radio('tps', 'Single collection', !multi, function () {
+            draft.multipleTimepoints = false; paint(); }),
+          radio('tps', 'Multiple timepoints', multi, function () {
+            draft.multipleTimepoints = true;
+            if (!draft.timepoints || !draft.timepoints.length) {
+              draft.timepoints = [{ label: '' }, { label: '' }];
+            }
+            paint(); })
+        ]));
+        if (!multi) return;
+
+        draft.timepoints = draft.timepoints || [];
+        var rows = el('div', { class: 'cohorts' });
+        function paintRows() {
+          rows.replaceChildren();
+          draft.timepoints.forEach(function (t, i) {
+            var inp = el('input', { type: 'text',
+              'aria-label': 'Timepoint ' + (i + 1),
+              placeholder: i === 0 ? 'e.g. Baseline, pre-treatment' : 'e.g. 1st trimester, weeks 11-13',
+              oninput: function () { draft.timepoints[i].label = inp.value; } });
+            inp.value = t.label || '';
+            var x = el('button', { class: 'row-x', type: 'button',
+              'aria-label': 'Remove timepoint ' + (i + 1),
+              onclick: function () { draft.timepoints.splice(i, 1); paintRows(); } }, ['×']);
+            rows.appendChild(el('div', { class: 'cohort-row', style: 'grid-template-columns:1fr 40px' },
+              [inp, x]));
+          });
+        }
+        paintRows();
+        body.appendChild(rows);
+        body.appendChild(el('button', { class: 'add-row', type: 'button', onclick: function () {
+          draft.timepoints.push({ label: '' }); paintRows();
+        } }, ['+ Add timepoint']));
+        body.appendChild(el('div', { class: 'hint',
+          text: 'Labels are free text on purpose — reps write dates and windows directly rather than picking an anchor and an offset.' }));
+      }
+      paint();
+      sec.appendChild(body);
+      return sec;
+    }
+
+    // ---- 07 clinical data -----------------------------------------------
+
+    function sectionClinicalData() {
+      var sec = el('section', { class: 'sec' });
+      sec.appendChild(secHead('07', 'Clinical data'));
+
+      draft.clinicalData = draft.clinicalData || { required: [], ifAvailable: [] };
+      var cd = draft.clinicalData;
+
+      var grid = el('div', { class: 'spec-cols', style: 'grid-template-columns:1fr 1fr' });
+      function inList(list, item) { return list.indexOf(item) > -1; }
+      function toggle(list, other, item, on) {
+        var i = list.indexOf(item);
+        if (on && i === -1) list.push(item);
+        if (!on && i > -1) list.splice(i, 1);
+        var j = other.indexOf(item);            // checking one clears the other
+        if (on && j > -1) other.splice(j, 1);
+      }
+
+      function paint() {
+        grid.replaceChildren();
+        [['Required', cd.required, cd.ifAvailable], ['If available', cd.ifAvailable, cd.required]]
+          .forEach(function (col) {
+            grid.appendChild(el('div', { class: 'spec-col' }, [
+              el('div', { class: 'spec-col-title', text: col[0] })
+            ].concat(CLINICAL_DATA_CATEGORIES.map(function (c) {
+              return checkbox(c,
+                function () { return inList(col[1], c); },
+                function (on) { toggle(col[1], col[2], c, on); },
+                paint);
+            }))));
+          });
+      }
+      paint();
+      sec.appendChild(grid);
+
+      if (inList(cd.required, 'Other') || inList(cd.ifAvailable, 'Other')) {
+        sec.appendChild(field('Other data — what exactly', { full: true,
+          get: function () { return cd.otherDetail; },
+          set: function (v) { cd.otherDetail = v; } }));
+      }
+
+      sec.appendChild(field('Additional data detail', { type: 'textarea', rows: 2, full: true,
+        placeholder: 'e.g. EASI score collected on day of biopsy',
+        get: function () { return cd.detail; }, set: function (v) { cd.detail = v; } }));
+
+      sec.appendChild(el('div', { class: 'grid' }, [
+        field('Delivery method', { type: 'select', options: DELIVERY_METHODS,
+          hint: 'EDC entry is real site burden — some sites decline over it, and it gets priced.',
+          get: function () { return cd.deliveryMethod || DELIVERY_METHODS[0]; },
+          set: function (v) { cd.deliveryMethod = v; } }),
+        field('Delivery detail', { get: function () { return cd.deliveryDetail; },
+          set: function (v) { cd.deliveryDetail = v; } })
+      ]));
+
+      sec.appendChild(field('Known gaps', { type: 'textarea', rows: 2, full: true,
+        placeholder: 'Anything the sites are unlikely to have',
+        get: function () { return cd.knownGaps; }, set: function (v) { cd.knownGaps = v; } }));
+
+      var outBox = el('div');
+      function paintOutcome() {
+        outBox.replaceChildren();
+        if (!cd.outcomeData) return;
+        outBox.appendChild(field('Outcome / follow-up description', { type: 'textarea', rows: 2, full: true,
+          hint: 'Description lives here; the fee for it lives in §10.',
+          get: function () { return cd.outcomeDetail; },
+          set: function (v) { cd.outcomeDetail = v; } }));
+      }
+      var oc = checkbox('Outcome / follow-up data required',
+        function () { return cd.outcomeData; },
+        function (v) { cd.outcomeData = v; }, paintOutcome);
+      oc.style.marginTop = '16px';
+      sec.appendChild(oc);
+      sec.appendChild(outBox);
+      paintOutcome();
+      return sec;
+    }
+
+    // ---- 08 reports ------------------------------------------------------
+
+    function sectionReports() {
+      var sec = el('section', { class: 'sec' });
+      sec.appendChild(secHead('08', 'Reports'));
+
+      draft.reports = draft.reports || { types: {}, notes: '' };
+      var rp = draft.reports;
+
+      var box = el('div');
+      function paint() {
+        box.replaceChildren();
+        REPORT_TYPES.forEach(function (t) {
+          var on = !!rp.types[t];
+          box.appendChild(checkbox(t,
+            function () { return !!rp.types[t]; },
+            function (v) { rp.types[t] = v ? (rp.types[t] || {}) : null; if (!v) delete rp.types[t]; },
+            paint));
+          if (!on) return;
+          var detail = rp.types[t];
+          var kids = [];
+          if (t === 'Pathology') {
+            kids.push(field('Format', { type: 'select', options: PATHOLOGY_FORMATS,
+              get: function () { return detail.format || PATHOLOGY_FORMATS[0]; },
+              set: function (v) { detail.format = v; } }));
+          }
+          if (t === 'Other') {
+            kids.push(field('Which report', { get: function () { return detail.other; },
+              set: function (v) { detail.other = v; } }));
+          }
+          kids.push(field('Timepoint(s) covered', { placeholder: 'e.g. at diagnosis, at surgery',
+            get: function () { return detail.timepoints; },
+            set: function (v) { detail.timepoints = v; } }));
+          kids.push(field('Notes', { get: function () { return detail.notes; },
+            set: function (v) { detail.notes = v; } }));
+          var sub = el('div', { class: 'toggle-box' }, [el('div', { class: 'grid' }, kids)]);
+          sub.style.margin = '4px 0 14px 26px';
+          box.appendChild(sub);
+        });
+      }
+      paint();
+      sec.appendChild(box);
+
+      sec.appendChild(field('General report notes', { type: 'textarea', rows: 2, full: true,
+        placeholder: 'Delivery timing, required vs. optional…',
+        get: function () { return rp.notes; }, set: function (v) { rp.notes = v; } }));
+      return sec;
+    }
+
+    // ---- 09 timeline & logistics ----------------------------------------
+
+    function sectionTimeline() {
+      var sec = el('section', { class: 'sec' });
+      sec.appendChild(secHead('09', 'Timeline & logistics'));
+
+      draft.timeline = draft.timeline || {};
+      var tl = draft.timeline;
+
+      var kickBox = el('div');
+      function paintKick() {
+        kickBox.replaceChildren();
+        if (!tl.kickoffCall) return;
+        kickBox.appendChild(field('Kickoff call trigger', { full: true,
+          placeholder: 'What has to happen before the call is scheduled',
+          get: function () { return tl.kickoffTrigger; },
+          set: function (v) { tl.kickoffTrigger = v; } }));
+      }
+      sec.appendChild(checkbox('Kickoff call required',
+        function () { return tl.kickoffCall; },
+        function (v) { tl.kickoffCall = v; }, paintKick));
+      sec.appendChild(kickBox);
+      paintKick();
+
+      var batchBox = el('div');
+      function paintBatching() {
+        batchBox.replaceChildren();
+        var frozen = (draft.specimenTypes || []).some(function (t) {
+          return /frozen|flash/i.test(t);
+        });
+        if (!frozen) return;
+        var months = parseInt(String(tl.enrollmentCompletion || '').replace(/[^0-9].*$/, ''), 10);
+        var canSplit = !isNaN(months) && months >= 3;
+        var opts = canSplit
+          ? ['1 batch (end of study)', '2 batches (midpoint + end)']
+          : ['1 batch (end of study)'];
+        batchBox.appendChild(field('Delivery batching', { type: 'select', options: opts,
+          hint: canSplit
+            ? 'Enrollment runs ' + months + ' months or more, so a midpoint batch is available.'
+            : 'Under three months of enrollment, so a single end-of-study batch is the only option.',
+          get: function () { return opts.indexOf(tl.batching) > -1 ? tl.batching : opts[0]; },
+          set: function (v) { tl.batching = v; } }));
+      }
+
+      sec.appendChild(el('div', { class: 'grid' }, [
+        field('Site / study initiation', { placeholder: 'e.g. 3-4 weeks from PO',
+          get: function () { return tl.initiation; }, set: function (v) { tl.initiation = v; } }),
+        field('Enrollment completion', { placeholder: 'e.g. 6-9 months',
+          hint: 'Free text so ranges work. The leading number drives batching below.',
+          get: function () { return tl.enrollmentCompletion; },
+          set: function (v) { tl.enrollmentCompletion = v; }, then: paintBatching }),
+        field('Data / specimen delivery', { placeholder: 'e.g. within 30 days of collection',
+          get: function () { return tl.delivery; }, set: function (v) { tl.delivery = v; } }),
+        field('Delivery restrictions', { placeholder: 'e.g. max 10/week, Tues-Fri only',
+          get: function () { return tl.restrictions; }, set: function (v) { tl.restrictions = v; } }),
+        field('Maximum subjects delivered per day', { placeholder: 'e.g. 4',
+          inputmode: 'numeric',
+          hint: 'A site enrolling in bursts can overrun a downstream processing limit nobody stated.',
+          get: function () { return tl.maxPerDay; }, set: function (v) { tl.maxPerDay = v; } }),
+        field('Days fresh cases can be received', { placeholder: 'e.g. Mon-Fri, or any day incl. weekends',
+          hint: 'Fresh collection is surgery-driven and surgery does not stop for weekends. A weekday-only receiver silently loses eligible cases.',
+          get: function () { return tl.receivingDays; }, set: function (v) { tl.receivingDays = v; } })
+      ]));
+
+      sec.appendChild(field('Timeframe blackouts', { full: true,
+        placeholder: 'e.g. no subjects in January; lab closed 20 Dec – 2 Jan',
+        hint: 'An unstated blackout makes every enrollment projection wrong.',
+        get: function () { return tl.blackouts; }, set: function (v) { tl.blackouts = v; } }));
+
+      sec.appendChild(field('Delivery address(es)', { type: 'textarea', rows: 2, full: true,
+        placeholder: 'One per line if there is more than one',
+        get: function () { return tl.addresses; }, set: function (v) { tl.addresses = v; } }));
+
+      sec.appendChild(batchBox);
+      paintBatching();
+      return sec;
+    }
+
+    // ---- 03 population & cohorts (full quote) ---------------------------
+
+    function sectionPopulation() {
+      var sec = el('section', { class: 'sec' });
+      sec.appendChild(secHead('03', 'Population & cohorts'));
+
+      draft.cohorts = draft.cohorts || [];
+      var cards = el('div');
+      // Declared before paintCards() runs — it calls paintAllocation().
+      var allocBox = el('div');
+
+      function cohortSubjects(c) {
+        if (c.subcohorts && c.subcohorts.length) {
+          return c.subcohorts.reduce(function (s, sc) { return s + num(sc.subjects); }, 0);
+        }
+        return num(c.subjects);
+      }
+
+      function selectedSubpops() {
+        return draft.cohorts.reduce(function (a, c) {
+          return a.concat(c.subpopulations || []);
+        }, []);
+      }
+
+      function paintCards() {
+        cards.replaceChildren();
+        draft.cohorts.forEach(function (c, i) { cards.appendChild(cohortCard(c, i)); });
+        // Allocation note appears only once more than one subpopulation is in play.
+        paintAllocation();
+        refreshDrafts();
+      }
+
+      function cohortCard(c, i) {
+        c.subpopulations = c.subpopulations || [];
+        c.severity = c.severity || [];
+        c.subcohorts = c.subcohorts || [];
+
+        var card = el('div', { class: 'toggle-box' });
+        var head = el('div', { class: 'cohort-card-head' }, [
+          el('span', { class: 'sec-num', text: String(i + 1) }),
+          el('span', { class: 'cohort-card-title', text: c.name || 'Untitled cohort' })
+        ]);
+        if (draft.cohorts.length > 1) {
+          head.appendChild(el('button', { class: 'row-x', type: 'button',
+            'aria-label': 'Remove cohort ' + (i + 1),
+            onclick: function () { draft.cohorts.splice(i, 1); paintCards(); } }, ['×']));
+        }
+        card.appendChild(head);
+
+        var autoSummed = c.subcohorts.length > 0;
+
+        var subjFld = field('# subjects', {
+          inputmode: 'numeric',
+          hint: autoSummed ? 'Summed from the subcohorts below.' : '',
+          get: function () { return autoSummed ? String(cohortSubjects(c)) : c.subjects; },
+          set: function (v) { if (!autoSummed) c.subjects = v; },
+          then: function () { refreshDrafts(); } });
+        if (autoSummed) {
+          subjFld._input.disabled = true;
+          subjFld._input.value = String(cohortSubjects(c));
+        }
+
+        var top = el('div', { class: 'grid' }, [
+          field('Cohort name', { required: true, placeholder: 'e.g. Colorectal cancer',
+            get: function () { return c.name; },
+            set: function (v) { c.name = v; head.children[1].textContent = v || 'Untitled cohort'; },
+            then: function () { refreshDrafts(); } }),
+          subjFld
+        ]);
+        card.appendChild(top);
+
+        var upTo = checkbox('Up to this number (not a firm target)',
+          function () { return c.upTo; }, function (v) { c.upTo = v; });
+        upTo.style.margin = '2px 0 14px';
+        card.appendChild(upTo);
+
+        // --- population group
+        var subBox = el('div');
+        var sevBox = el('div');
+
+        card.appendChild(el('div', { class: 'grid' }, [
+          field('Population group', { type: 'select',
+            options: [''].concat(POPULATION_GROUPS),
+            get: function () { return c.populationGroup || ''; },
+            set: function (v) {
+              c.populationGroup = v;
+              c.subpopulations = [];
+              c.severity = [];
+            },
+            then: function () { paintSubpops(); paintSeverity(); paintAllocation(); } })
+        ]));
+
+        function paintSubpops() {
+          subBox.replaceChildren();
+          var g = c.populationGroup;
+          if (!g) return;
+
+          // "Other" as a group skips the subpopulation list entirely (spec §03).
+          if (g === 'Other') {
+            subBox.appendChild(field('Population — describe', { full: true,
+              get: function () { return c.populationOther; },
+              set: function (v) { c.populationOther = v; } }));
+            return;
+          }
+
+          var list = c.showAllSubpops ? ALL_SUBPOPULATIONS : (SUBPOPULATIONS_BY_GROUP[g] || []);
+          var fs = el('fieldset', {}, [el('legend', { text: 'Subpopulation(s)' })]);
+          if (!list.length) {
+            fs.appendChild(el('div', { class: 'hint', text: 'No subpopulations listed for this group.' }));
+          }
+          fs.appendChild(el('div', { class: 'spec-cols' }, chunk(list, 3).map(function (col) {
+            return el('div', { class: 'spec-col' }, col.map(function (sp) {
+              return checkbox(sp,
+                function () { return c.subpopulations.indexOf(sp) > -1; },
+                function (on) {
+                  var k = c.subpopulations.indexOf(sp);
+                  if (on && k === -1) c.subpopulations.push(sp);
+                  if (!on && k > -1) c.subpopulations.splice(k, 1);
+                },
+                function () { paintSubpopOther(); paintSeverity(); paintAllocation(); refreshDrafts(); });
+            }));
+          })));
+
+          // HubSpot has no group→subpopulation mapping; ours can be wrong.
+          fs.appendChild(el('label', { class: 'check', style: 'margin-top:10px' }, [
+            (function () {
+              var b = el('input', { type: 'checkbox', onchange: function () {
+                c.showAllSubpops = b.checked; paintSubpops();
+              } });
+              b.checked = !!c.showAllSubpops;
+              return b;
+            })(),
+            el('span', { class: 'hint', style: 'margin:0',
+              text: 'Show all subpopulations, not just this group’s' })
+          ]));
+          subBox.appendChild(fs);
+          paintSubpopOther();
+        }
+
+        var otherBox = el('div');
+        function paintSubpopOther() {
+          otherBox.replaceChildren();
+          c.subpopulations.filter(function (sp) { return sp.indexOf('Other') === 0; })
+            .forEach(function (sp) {
+              c.subpopulationDetail = c.subpopulationDetail || {};
+              otherBox.appendChild(field(sp + ' — which', { full: true,
+                placeholder: 'e.g. Small intestine',
+                get: function () { return c.subpopulationDetail[sp]; },
+                set: function (v) { c.subpopulationDetail[sp] = v; } }));
+            });
+        }
+
+        function paintSeverity() {
+          sevBox.replaceChildren();
+          var g = c.populationGroup;
+          if (!g || g === 'Other') return;
+
+          var opts = ONCOLOGY_GROUPS.indexOf(g) > -1 ? STAGES : SEVERITIES;
+          var fs = el('fieldset', {}, [el('legend', { text: 'Severity / stage' })]);
+          fs.appendChild(el('div', { class: 'check-row' }, opts.map(function (o) {
+            return checkbox(o,
+              function () { return c.severity.indexOf(o) > -1; },
+              function (on) {
+                var k = c.severity.indexOf(o);
+                if (on && k === -1) c.severity.push(o);
+                if (!on && k > -1) c.severity.splice(k, 1);
+              });
+          })));
+          sevBox.appendChild(fs);
+
+          // Scoring systems attach to the subpopulation, and their thresholds live
+          // in the company reference doc — so ask for the requirement as text.
+          c.scores = c.scores || {};
+          c.subpopulations.forEach(function (sp) {
+            var scale = CLINICAL_SCORES[sp];
+            if (!scale) return;
+            sevBox.appendChild(field(scale + ' requirement (' + sp + ')', { full: true,
+              placeholder: 'e.g. ' + scale + ' ≥ 12 at enrollment',
+              get: function () { return c.scores[sp]; },
+              set: function (v) { c.scores[sp] = v; } }));
+          });
+
+          sevBox.appendChild(field('Additional severity detail', { full: true,
+            placeholder: 'Precision the checkboxes cannot hold — e.g. "Stage Ia only"',
+            get: function () { return c.severityDetail; },
+            set: function (v) { c.severityDetail = v; } }));
+        }
+
+        card.appendChild(subBox);
+        card.appendChild(otherBox);
+        card.appendChild(sevBox);
+        paintSubpops();
+        paintSeverity();
+
+        // --- subcohorts
+        var scBox = el('div');
+        function paintSub() {
+          scBox.replaceChildren();
+          if (!c.subcohorts.length) return;
+          var rows = el('div', { class: 'cohorts' });
+          rows.appendChild(el('div', { class: 'cohort-row ext cohort-head' }, [
+            el('span', { text: 'Subcohort' }), el('span', { class: 'ca', text: '# subjects' }),
+            el('span', {}), el('span', {}), el('span', {})]));
+          c.subcohorts.forEach(function (sc, j) {
+            var label = (i + 1) + String.fromCharCode(97 + j);
+            var noteIn = el('input', { type: 'text', 'aria-label': 'Subcohort ' + label + ' note',
+              placeholder: 'What distinguishes this subcohort',
+              oninput: function () { sc.note = noteIn.value; } });
+            noteIn.value = sc.note || '';
+            var nIn = el('input', { type: 'text', inputmode: 'numeric',
+              'aria-label': 'Subjects for subcohort ' + label,
+              oninput: function () {
+                sc.subjects = nIn.value;
+                subjFld._input.value = String(cohortSubjects(c));
+                refreshDrafts();
+              } });
+            nIn.value = sc.subjects == null ? '' : String(sc.subjects);
+            var x = el('button', { class: 'row-x', type: 'button',
+              'aria-label': 'Remove subcohort ' + label,
+              onclick: function () {
+                c.subcohorts.splice(j, 1); paintSub();
+                subjFld._input.disabled = c.subcohorts.length > 0;
+                subjFld._input.value = c.subcohorts.length ? String(cohortSubjects(c)) : (c.subjects || '');
+                refreshDrafts();
+              } }, ['×']);
+            rows.appendChild(el('div', { class: 'cohort-row ext' }, [
+              el('span', { class: 'sub-label' }, [label]), el('span', { class: 'ca' }, [nIn]),
+              noteIn, el('span', {}), x]));
+          });
+          scBox.appendChild(rows);
+        }
+        paintSub();
+        card.appendChild(scBox);
+        card.appendChild(el('button', { class: 'add-row', type: 'button', onclick: function () {
+          c.subcohorts.push({ subjects: '', note: '' });
+          paintSub();
+          subjFld._input.disabled = true;
+          subjFld._input.value = String(cohortSubjects(c));
+          subjFld._input.nextSibling && null;
+          refreshDrafts();
+        } }, ['+ Add subcohort']));
+
+        return card;
+      }
+
+      paintCards();
+      sec.appendChild(cards);
+      sec.appendChild(el('button', { class: 'add-row', type: 'button', onclick: function () {
+        draft.cohorts.push({ name: '', subjects: '', subpopulations: [], severity: [], subcohorts: [] });
+        paintCards();
+      } }, ['+ Add cohort']));
+
+      // --- inclusion / exclusion
+      sec.appendChild(el('div', { class: 'ie-note' }, [
+        el('strong', { text: 'Keep these as prose, one criterion per line. ' }),
+        el('span', { text: 'They carry geography, treatment history, washout periods and severity — detail no dropdown holds.' })
+      ]));
+
+      sec.appendChild(field('Inclusion criteria', { type: 'textarea', rows: 5, full: true,
+        placeholder: 'One per line. Include where you are collecting, any lab value gates (which assay, how recent a result counts), and treatment status.',
+        get: function () { return draft.inclusion; }, set: function (v) { draft.inclusion = v; } }));
+
+      sec.appendChild(field('Exclusion criteria', { type: 'textarea', rows: 5, full: true,
+        placeholder: 'One per line. Name excluded therapies individually, and say whether any become acceptable after a washout — and how long.',
+        get: function () { return draft.exclusion; }, set: function (v) { draft.exclusion = v; } }));
+
+      function paintAllocation() {
+        allocBox.replaceChildren();
+        if (selectedSubpops().length <= 1) return;
+        allocBox.appendChild(field('Allocation note', { type: 'textarea', rows: 2, full: true,
+          placeholder: 'e.g. MT Group and the sponsor will mutually agree in writing on enrollment allocations per cancer type',
+          hint: 'Shown because more than one subpopulation is in play.',
+          get: function () { return draft.allocationNote; },
+          set: function (v) { draft.allocationNote = v; } }));
+      }
+      sec.appendChild(allocBox);
+      paintAllocation();
+
+      return sec;
+    }
+
+    function chunk(arr, n) {
+      var per = Math.ceil(arr.length / n), out = [];
+      for (var i = 0; i < arr.length; i += per) out.push(arr.slice(i, i + per));
+      return out;
     }
 
     // ---- 05 biospecimens ----------------------------------------------
