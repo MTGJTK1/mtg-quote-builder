@@ -350,33 +350,51 @@ treat HubSpot as the fallback for studies quoted before this tool existed.
 
 ### Umbrella MT numbers
 
-Most MT numbers identify one sponsor's study and are unique. A small number are
-**umbrella numbers covering a whole category of work**, shared across many
-sponsors — confirmed by the team, not inferred. Two are visible in the data:
+Most MT numbers identify one sponsor's study and are unique. A small set are
+**umbrella numbers for banked/inventory programs**, shared across many sponsors
+— confirmed by the team, then measured across all 2,843 deal titles. 886 of
+them carry an MT number; 510 distinct numbers appear.
 
-| Number | Covers | Scale | Shape |
-|---|---|---|---|
-| `MT9920` | all fresh tumor tissue orders | 166 deals; ≥8 sponsors (ELS, EMC, GNT, JNJ, MRK, PHT, TRB, YTP) | bare number, no suffix |
-| `MT0893` | FFPE block orders | 17 deals; ≥4 sponsors (AGT, RGN, TFS, XRA) | suffixed per order: `MT0893-AL2603`, `MT0893-TF2602` |
+**Spanning more than one sponsor is the signature of an umbrella**, so this set
+can be derived rather than hardcoded — which matters when a new one is created.
 
-In a 200-deal sample, 33 of 42 distinct MT numbers appeared exactly once. Every
-other repeat stayed within a single sponsor — `MT2234` (NTA ×2), `MT0466`
-(MRK ×2), `MT4090` (BMS ×2) — which is ordinary study-plus-extension lineage,
-not an umbrella. **Spanning multiple sponsors is the signature of an umbrella
-number.**
+| Number | Deals | Sponsors | Suffixed | Read |
+|---|---|---|---|---|
+| `MT9920` | 166 | **43** | no | Fresh tumor tissue. The big one. |
+| `MT9923` | 21 | 9 | 20 / 21 | Banked programme, `MT9923-XXNNNN`. |
+| `MT0893` | 17 | 9 | 17 / 17 | FFPE blocks, `MT0893-AL2603`. |
+| `MT0892` | 2 | 2 | 2 / 2 | Small, same suffixed family as MT0893. |
+| `MT9925` | 2 | 2 | 2 / 2 | Small, same suffixed family as MT9923. |
+| `MT0424` | 11 | 2 (MRK ×10, TRB ×1) | no | **Ambiguous** — probably an MRK study with one TRB deal mislabelled, not an umbrella. Worth a human look. |
+| `MT0291` | 2 | 2 (CNH, SVA) | no | **Ambiguous** — likelier a collision than an umbrella. |
+
+The suffixed umbrellas cluster into two families, `MT089x` and `MT992x`, which
+looks deliberate. `MT9920` is the outlier: umbrella-scale but unsuffixed, so it
+is the only one where the number alone cannot identify an order.
+
+Everything else behaves: **409 of 510 numbers appear exactly once**, and the 94
+that repeat all stay within a single sponsor — ordinary study-plus-extension
+lineage, not umbrellas.
+
+Three deals carry a placeholder instead of a number — `(MTXNEW)` twice and
+`(MT WHAT IS IT)` once. Treat an unparseable MT number as absent, not as an
+error.
 
 Two rules follow, and the first one bites:
 
 1. **Never derive an extension number by counting the MT number.** Each sponsor
-   runs its own extension sequence under an umbrella. Real deal names include
-   both `MRK: Solid tumors - tissue (MT9920 extension #6)` and
-   `PHT: CRC - fresh tissue (MT9920 extension #2)`. Counting by MT number alone
-   numbers a sponsor's first extension after someone else's sixth. Scope the
-   count to the parent quote, falling back to MT number **and** client.
-2. **Never use an MT number as a lookup key.** It is a reference to display,
-   not an identifier to match on. Link an extension to the specific parent
-   quote. Where a suffix is present (`MT0893-AL2603`) the full suffixed string
-   *is* unique, so parse `MT\d+(-[A-Z0-9]+)?` and keep the suffix.
+   runs its own sequence under an umbrella. MT9920 alone carries 37 distinct
+   extension threads — MRK is on #6, BMS on #4, IOV on #6, ATC on #4, all under
+   the same number. Counting by MT number numbers a sponsor's first extension
+   after someone else's sixth. Scope the count to the parent quote, falling
+   back to MT number **and** client.
+2. **Never use an MT number as a lookup key.** It is a reference to display.
+   Link an extension to the specific parent quote. Where a suffix is present
+   the full string *is* unique, so parse `MT\d+(-[A-Z0-9]+)?` and keep it.
+
+Coverage note: all 2,843 titles were scanned. 2,662 were machine-aggregated;
+the final 243 were read directly and the 63 carrying MT numbers transcribed, so
+the MT statistics cover the full set while the raw name count reads 2,662.
 
 ---
 
