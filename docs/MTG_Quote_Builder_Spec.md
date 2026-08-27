@@ -600,3 +600,76 @@ extension path gets the same options as a full quote rather than a stripped one.
   auto-cap — spec §4 records that as built and reverted.
 - A running total lists every component and sums them, matching the "list each
   addend, then the grand total" convention in §3.
+
+---
+
+## 12. Fourth-pass revisions, 2026-08-27
+
+**The quote name *is* the quote number.** There is only one. The separate quote
+number is removed, and the name moves to the very end of the form — after §11 —
+since it drafts itself from everything above it. §06 keeps the study summary
+alone.
+
+**Inclusion and exclusion criteria are per cohort, not per study.** A cancer
+cohort and its healthy controls do not share criteria. This supersedes §03,
+which listed them at section level.
+
+**Extensions inherit their population.** Population group, subpopulation and
+severity no longer appear per cohort in an extension — the parent study already
+established them, and re-asking is work the rep should not repeat.
+
+**The lookup runs while typing**, roughly 400ms after the rep stops, rather than
+waiting for focus to leave the field. Waiting for blur meant someone who filled
+in the quote reference, PO and MT and then stopped saw nothing happen at all.
+Matching also widened: the register is consulted before the standing index, a
+unique partial match on the quote reference counts, and an MT number alone
+resolves against the register.
+
+**Reps type the cohort description only** — the field is labelled "Cohort
+description" and says so. The tool owns the numbering.
+
+**Biospecimen columns lost their headings.** Tissue / blood products / other was
+grouping for brevity, not information the rep needed.
+
+### §10 shipping — real rates and real arithmetic
+
+Replaces the lump-sum / per-line structure. Rates as of 2026-08:
+
+| | |
+|---|---|
+| Frozen US shipment | **$300** |
+| Frozen international shipment | **$2,000–4,000** (default $3,000) |
+| Charged to the sponsor | **2× MTG cost** |
+
+Two legs, both counted: sites to MTG, then MTG to the sponsor. The rep enters
+how many inbound US shipments, how many inbound international, and how many
+batches go out; a checkbox marks an international sponsor so the outbound leg
+uses the right rate. Rates and the multiplier are adjustable behind a toggle so
+the common case needs no attention.
+
+Every line of the arithmetic shows, ending in cost and then the doubled price.
+
+**The override matters as much as the calculator.** Where shipping is too
+expensive to show, reps bury it in the per-specimen figure — so an override
+field sits beside the result, and entering 0 there quotes zero shipping while
+the specimen prices carry it.
+
+Note this partially reverses §4's "shipping markup multiplier" entry. What was
+reverted was an auto-multiply with a cap and overage-shifting; this is a visible
+2× that always shows its working and can be overridden outright. Asked for
+directly, 2026-08-27.
+
+### Streamlining — done, and still open
+
+Done: the quote number is gone, specimen column headings are gone, extensions
+no longer re-ask for population, the stale "partial" note on §10 is gone now
+that pricing is real, and the lookup fills more from less.
+
+Still candidates, not yet acted on:
+
+- **§09 "maximum subjects per day" overlaps "delivery restrictions"**, which
+  already takes "max 10/week, Tues-Fri only". Two fields for one idea.
+- **"Prepared by" should default to the signed-in rep** once auth exists
+  (Phase 8), and stop being a question.
+- **§07 "additional data detail" and "known gaps"** are close enough that reps
+  may not know which to use.
