@@ -1,0 +1,1075 @@
+<title>MT Group Quote Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Public+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+  :root {
+    --ground: #FAFAF8;
+    --surface: #FFFFFF;
+    --surface-sunk: #F3F4F2;
+    --ink: #16211F;
+    --ink-soft: #5F6E6B;
+    --ink-faint: #8D9995;
+    --rule: #E2E6E3;
+    --rule-strong: #CBD2CF;
+    --accent: #0E5B57;
+    --accent-ink: #FFFFFF;
+    --accent-soft: #E2EFEC;
+
+    --st-draft-fg: #5F6E6B;   --st-draft-bg: #ECEEEC;
+    --st-review-fg: #8A5606;  --st-review-bg: #FBF0DC;
+    --st-sent-fg: #1B4F8C;    --st-sent-bg: #E4EDF8;
+    --st-won-fg: #16613B;     --st-won-bg: #E0F0E7;
+    --st-lost-fg: #8E3039;    --st-lost-bg: #FAE6E7;
+
+    --danger: #A33A44;
+    --danger-bg: #FBEBEC;
+
+    --shadow: 0 1px 2px rgba(22, 33, 31, .05), 0 6px 20px -12px rgba(22, 33, 31, .18);
+
+    --serif: "Newsreader", Georgia, "Times New Roman", serif;
+    --sans: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0E1312;
+      --surface: #151B1A;
+      --surface-sunk: #1B2322;
+      --ink: #E9EEEC;
+      --ink-soft: #97A5A1;
+      --ink-faint: #6E7C79;
+      --rule: #25302E;
+      --rule-strong: #35423F;
+      --accent: #57BAAE;
+      --accent-ink: #06201E;
+      --accent-soft: #14302D;
+
+      --st-draft-fg: #9AA8A4;   --st-draft-bg: #222A29;
+      --st-review-fg: #E0B366;  --st-review-bg: #332915;
+      --st-sent-fg: #8FB8E6;    --st-sent-bg: #162434;
+      --st-won-fg: #7BC79B;     --st-won-bg: #13291E;
+      --st-lost-fg: #E0949B;    --st-lost-bg: #2E191B;
+
+      --danger: #E0949B;
+      --danger-bg: #2A1A1C;
+
+      --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 6px 20px -12px rgba(0, 0, 0, .6);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #0E1312;
+    --surface: #151B1A;
+    --surface-sunk: #1B2322;
+    --ink: #E9EEEC;
+    --ink-soft: #97A5A1;
+    --ink-faint: #6E7C79;
+    --rule: #25302E;
+    --rule-strong: #35423F;
+    --accent: #57BAAE;
+    --accent-ink: #06201E;
+    --accent-soft: #14302D;
+
+    --st-draft-fg: #9AA8A4;   --st-draft-bg: #222A29;
+    --st-review-fg: #E0B366;  --st-review-bg: #332915;
+    --st-sent-fg: #8FB8E6;    --st-sent-bg: #162434;
+    --st-won-fg: #7BC79B;     --st-won-bg: #13291E;
+    --st-lost-fg: #E0949B;    --st-lost-bg: #2E191B;
+
+    --danger: #E0949B;
+    --danger-bg: #2A1A1C;
+
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 6px 20px -12px rgba(0, 0, 0, .6);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  /* ---------- shell ---------- */
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 14px 28px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--rule);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    flex-wrap: wrap;
+  }
+
+  .brand { display: flex; align-items: center; gap: 11px; margin-right: auto; }
+
+  .mark {
+    display: grid;
+    place-items: center;
+    width: 34px; height: 34px;
+    border-radius: 7px;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: .02em;
+  }
+
+  .brand-name {
+    font-family: var(--serif);
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -.01em;
+    line-height: 1.15;
+  }
+
+  .brand-org {
+    display: block;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: .13em;
+    color: var(--ink-faint);
+    margin-top: 1px;
+  }
+
+  .nav { display: flex; gap: 4px; }
+
+  .nav button {
+    font: inherit;
+    font-size: 14px;
+    padding: 7px 13px;
+    border-radius: 7px;
+    border: 1px solid transparent;
+    background: none;
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+  .nav button:hover { background: var(--surface-sunk); color: var(--ink); }
+  .nav button[aria-current="page"] {
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .banner {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 9px 28px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 12.5px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .banner strong { font-weight: 600; }
+  .banner span { color: var(--ink-soft); }
+
+  main { padding: 34px 28px 90px; max-width: 1120px; margin: 0 auto; }
+
+  /* ---------- page heading ---------- */
+
+  .page-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 26px;
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-size: 30px;
+    font-weight: 500;
+    letter-spacing: -.015em;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  .sub { color: var(--ink-soft); font-size: 14px; margin: 5px 0 0; }
+
+  /* ---------- buttons ---------- */
+
+  .btn {
+    font: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 9px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--rule-strong);
+    background: var(--surface);
+    color: var(--ink);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn:hover { border-color: var(--ink-faint); }
+
+  .btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+  }
+  .btn-primary:hover { filter: brightness(1.08); border-color: var(--accent); }
+
+  .btn-danger {
+    border-color: transparent;
+    background: none;
+    color: var(--danger);
+    padding-inline: 6px;
+  }
+  .btn-danger:hover { background: var(--danger-bg); border-color: transparent; }
+
+  /* ---------- register table ---------- */
+
+  .table-wrap {
+    overflow-x: auto;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 11px;
+    box-shadow: var(--shadow);
+  }
+
+  table { width: 100%; min-width: 860px; border-collapse: collapse; }
+
+  th {
+    text-align: left;
+    font-size: 10.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .11em;
+    color: var(--ink-faint);
+    padding: 13px 18px;
+    border-bottom: 1px solid var(--rule);
+    white-space: nowrap;
+  }
+  th.num { text-align: right; }
+
+  td {
+    padding: 15px 18px;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+    font-size: 14px;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody tr:hover { background: var(--surface-sunk); }
+
+  .q-name {
+    font-weight: 600;
+    color: var(--ink);
+    background: none;
+    border: 0;
+    padding: 0;
+    font: inherit;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+  }
+  .q-name:hover { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+
+  .q-number {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--ink-faint);
+    margin-top: 4px;
+    word-break: break-word;
+  }
+
+  .q-specimens { font-size: 12.5px; color: var(--ink-soft); margin-top: 5px; }
+
+  .money { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+
+  .nowrap { white-space: nowrap; }
+
+  .chip {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: .01em;
+    white-space: nowrap;
+  }
+  .chip-draft { background: var(--st-draft-bg); color: var(--st-draft-fg); }
+  .chip-internal_reviewed { background: var(--st-review-bg); color: var(--st-review-fg); }
+  .chip-sent { background: var(--st-sent-bg); color: var(--st-sent-fg); }
+  .chip-won { background: var(--st-won-bg); color: var(--st-won-fg); }
+  .chip-lost { background: var(--st-lost-bg); color: var(--st-lost-fg); }
+
+  .tag-ext {
+    display: inline-block;
+    margin-left: 7px;
+    padding: 1px 7px;
+    border: 1px solid var(--rule-strong);
+    border-radius: 4px;
+    font-size: 10.5px;
+    color: var(--ink-soft);
+    letter-spacing: .03em;
+    vertical-align: 1px;
+  }
+
+  .table-foot {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+    font-size: 12.5px;
+    color: var(--ink-faint);
+  }
+
+  .empty {
+    background: var(--surface);
+    border: 1px dashed var(--rule-strong);
+    border-radius: 11px;
+    padding: 62px 24px;
+    text-align: center;
+    color: var(--ink-soft);
+  }
+
+  .link-btn {
+    background: none; border: 0; padding: 0;
+    font: inherit; font-size: inherit;
+    color: var(--accent); cursor: pointer;
+    text-decoration: underline; text-underline-offset: 3px;
+  }
+
+  /* ---------- form ---------- */
+
+  .form-wrap { max-width: 760px; }
+
+  .back {
+    background: none; border: 0; padding: 0;
+    font: inherit; font-size: 13.5px;
+    color: var(--ink-soft); cursor: pointer;
+    margin-bottom: 18px;
+  }
+  .back:hover { color: var(--accent); }
+
+  .quote-no-preview {
+    background: var(--surface-sunk);
+    border: 1px solid var(--rule);
+    border-radius: 9px;
+    padding: 12px 15px;
+    margin-bottom: 26px;
+  }
+  .quote-no-preview .lbl {
+    font-size: 10px; text-transform: uppercase; letter-spacing: .13em;
+    color: var(--ink-faint); display: block; margin-bottom: 4px;
+  }
+  .quote-no-preview .val {
+    font-family: var(--mono); font-size: 13.5px; color: var(--ink);
+    word-break: break-word;
+  }
+
+  section.sec { margin-bottom: 34px; }
+
+  .sec-head {
+    display: flex; align-items: baseline; gap: 11px;
+    padding-bottom: 9px;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 18px;
+  }
+  .sec-num {
+    font-family: var(--mono); font-size: 12px;
+    color: var(--accent); font-weight: 500;
+  }
+  .sec-title { font-family: var(--serif); font-size: 19px; font-weight: 600; letter-spacing: -.01em; }
+  .sec-note { margin-left: auto; font-size: 12px; color: var(--ink-faint); }
+
+  .sec-pending {
+    display: flex; align-items: baseline; gap: 11px;
+    padding: 9px 0;
+    border-bottom: 1px dashed var(--rule);
+    color: var(--ink-faint);
+    font-size: 13.5px;
+  }
+  .sec-pending .sec-num { color: var(--ink-faint); }
+  .sec-pending .phase {
+    margin-left: auto; font-size: 11px;
+    text-transform: uppercase; letter-spacing: .1em;
+  }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 17px; }
+  @media (max-width: 620px) { .grid { grid-template-columns: 1fr; } }
+  .grid .full { grid-column: 1 / -1; }
+
+  .fld { display: flex; flex-direction: column; }
+  .fld > label {
+    font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--ink);
+  }
+  .req { color: var(--danger); }
+
+  input[type="text"], input[type="email"], input[type="date"], select, textarea {
+    font: inherit; font-size: 14px;
+    padding: 9px 11px;
+    border: 1px solid var(--rule-strong);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--ink);
+    width: 100%;
+  }
+  textarea { resize: vertical; min-height: 62px; }
+  input:hover, select:hover, textarea:hover { border-color: var(--ink-faint); }
+  input:focus, select:focus, textarea:focus {
+    outline: none; border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  ::placeholder { color: var(--ink-faint); opacity: 1; }
+
+  .hint { font-size: 12px; color: var(--ink-faint); margin-top: 5px; }
+
+  .check { display: flex; align-items: flex-start; gap: 9px; font-size: 14px; cursor: pointer; }
+  .check input { margin: 2px 0 0; width: 15px; height: 15px; accent-color: var(--accent); flex: none; cursor: pointer; }
+
+  .check-row { display: flex; flex-wrap: wrap; gap: 10px 24px; }
+
+  .specimen-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(178px, 1fr));
+    gap: 10px 18px;
+  }
+
+  .toggle-box {
+    background: var(--surface-sunk);
+    border: 1px solid var(--rule);
+    border-radius: 9px;
+    padding: 17px;
+    margin-bottom: 18px;
+  }
+
+  fieldset { border: 0; padding: 0; margin: 18px 0 0; }
+  legend { font-size: 13px; font-weight: 500; margin-bottom: 8px; padding: 0; }
+
+  .errors {
+    background: var(--danger-bg);
+    border: 1px solid var(--danger);
+    border-radius: 9px;
+    padding: 14px 17px;
+    margin-bottom: 26px;
+    font-size: 13.5px;
+  }
+  .errors p { margin: 0 0 7px; font-weight: 600; color: var(--danger); }
+  .errors ul { margin: 0; padding-left: 19px; color: var(--ink); }
+  .errors li { margin-bottom: 3px; }
+
+  .actions {
+    display: flex; align-items: center; gap: 11px; flex-wrap: wrap;
+    padding-top: 22px;
+    border-top: 1px solid var(--rule);
+  }
+  .actions .spacer { margin-left: auto; }
+
+  .toast {
+    position: fixed;
+    left: 50%; bottom: 26px;
+    transform: translateX(-50%) translateY(12px);
+    background: var(--ink);
+    color: var(--ground);
+    padding: 10px 18px;
+    border-radius: 9px;
+    font-size: 13.5px;
+    box-shadow: var(--shadow);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s ease, transform .18s ease;
+    z-index: 50;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .toast { transition: none; }
+  }
+
+  @media (max-width: 640px) {
+    main { padding: 26px 18px 80px; }
+    .topbar, .banner { padding-inline: 18px; }
+    h1 { font-size: 25px; }
+  }
+</style>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="mark" aria-hidden="true">MT</span>
+    <div>
+      <span class="brand-name">Quote Builder</span>
+      <span class="brand-org">The MT Group</span>
+    </div>
+  </div>
+  <nav class="nav">
+    <button type="button" data-nav="register">Register</button>
+    <button type="button" data-nav="new">New quote</button>
+  </nav>
+</header>
+
+<div class="banner">
+  <strong>Mockup</strong>
+  <span>Everything works, but it saves only in this browser — nothing here reaches the real system.</span>
+</div>
+
+<main id="view"></main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------------------------------------------------------------- data
+
+  var SPECIMEN_TYPES = ['Fresh tissue', 'Frozen tissue', 'FFPE block', 'Whole blood',
+    'Plasma', 'Serum', 'Buffy coat', 'PBMC', 'Fresh marrow', 'BMMC', 'Urine',
+    'Saliva', 'Buccal swab', 'Nasal swab', 'Nasopharyngeal swab', 'Stool', 'Other'];
+
+  var REPS = ['John Kibler', 'Heather Shahzade', 'Joshua Taylor', 'Karen Krantz'];
+  var VALIDITY = ['30 Day Quote', '60 Day Quote'];
+  var SERVICE_TYPES = ['Retrospective', 'Prospective'];
+
+  var STATUSES = [
+    { value: 'draft', label: 'Draft' },
+    { value: 'internal_reviewed', label: 'Internally reviewed' },
+    { value: 'sent', label: 'Sent to sponsor' },
+    { value: 'won', label: 'Won' },
+    { value: 'lost', label: 'Lost' }
+  ];
+
+  // Sections that arrive in Phase 3, shown so the numbering tells the whole story.
+  var PENDING_SECTIONS = [
+    ['02', 'Quote approach', 'Phase 3'], ['03', 'Population & cohorts', 'Phase 3'],
+    ['04', 'Collection timepoints', 'Phase 3'], ['07', 'Clinical data', 'Phase 3'],
+    ['08', 'Reports', 'Phase 3'], ['09', 'Timeline & logistics', 'Phase 3'],
+    // The section exists in Phase 3, but generating the two documents is Phase 6.
+    ['11', 'Review & generate', 'Phase 6']
+  ];
+
+  var SAMPLES = [
+    { client: 'Guardant Health', sponsorAcronym: 'GHI', quoteName: 'NSCLC - FFPE & plasma',
+      preparedBy: 'Joshua Taylor', quoteDate: '2026-08-27', status: 'draft', totalCost: '342750.00',
+      specimenTypes: ['FFPE block', 'Plasma'], isExtension: false,
+      hubspotDealName: 'GHI: NSCLC tissue + plasma',
+      header: { validity: '60 Day Quote', serviceTypes: ['Retrospective', 'Prospective'],
+        sponsorContactName: 'Dana Whitfield', sponsorContactEmail: 'dwhitfield@example.com',
+        sponsorSelectedCases: 'Case list GHI-2026-08 (142 cases)' } },
+    { client: 'Natera', sponsorAcronym: 'NTA', quoteName: 'Pan-cancer - blood',
+      preparedBy: 'John Kibler', quoteDate: '2026-08-26', status: 'sent', totalCost: '612500.00',
+      specimenTypes: ['Whole blood', 'Plasma', 'Buffy coat'], isExtension: false,
+      hubspotDealName: 'NTA: 500 healthies - blood',
+      header: { validity: '30 Day Quote', serviceTypes: ['Prospective'] } },
+    { client: 'Natera', sponsorAcronym: 'NTA', quoteName: 'Pan-cancer - blood (MT2291 extension #1)',
+      preparedBy: 'John Kibler', quoteDate: '2026-08-25', status: 'draft', totalCost: '96250.00',
+      specimenTypes: ['Whole blood'], isExtension: true, hubspotDealName: '',
+      header: { validity: '30 Day Quote', serviceTypes: ['Prospective'],
+        originalStudyPo: 'PO-88214', parentMtNumber: 'MT2291', extensionNumber: '1',
+        designChanged: false } },
+    { client: 'Exact Sciences', sponsorAcronym: 'EXS', quoteName: 'CRC - plasma & buffy',
+      preparedBy: 'Heather Shahzade', quoteDate: '2026-08-19', status: 'internal_reviewed',
+      totalCost: '288400.00', specimenTypes: ['Plasma', 'Buffy coat'], isExtension: false,
+      hubspotDealName: '', header: { validity: '60 Day Quote', serviceTypes: ['Prospective'] } },
+    { client: 'Merck', sponsorAcronym: 'MRK', quoteName: 'Multi-tumor fresh tissue',
+      preparedBy: 'John Kibler', quoteDate: '2026-08-12', status: 'won', totalCost: '1140000.00',
+      specimenTypes: ['Fresh tissue', 'Whole blood'], isExtension: false, hubspotDealName: '',
+      header: { validity: '30 Day Quote', serviceTypes: ['Prospective'] } },
+    { client: 'Regeneron', sponsorAcronym: 'RGN', quoteName: 'Atopic dermatitis - biopsy & serum',
+      preparedBy: 'Karen Krantz', quoteDate: '2026-07-30', status: 'lost', totalCost: '175000.00',
+      specimenTypes: ['Frozen tissue', 'Serum'], isExtension: false, hubspotDealName: '',
+      header: { validity: '30 Day Quote', serviceTypes: ['Retrospective'],
+        sponsorSelectedCases: 'RGN AD cohort, 60 archived biopsies' } }
+  ];
+
+  // ---------------------------------------------------------------- storage
+
+  var KEY = 'mtg-quote-builder-mockup-v1';
+  var quotes = [];
+
+  function load() {
+    try {
+      var raw = window.localStorage.getItem(KEY);
+      if (raw) { quotes = JSON.parse(raw); return; }
+    } catch (e) { /* private window, blocked storage — fall through to samples */ }
+    quotes = SAMPLES.map(function (s) { return finalize(Object.assign({ id: uid() }, s)); });
+    save();
+  }
+
+  function save() {
+    try { window.localStorage.setItem(KEY, JSON.stringify(quotes)); }
+    catch (e) { /* storage unavailable; the session still works in memory */ }
+  }
+
+  function uid() { return 'q' + Math.random().toString(36).slice(2, 10); }
+
+  // ---------------------------------------------------------------- helpers
+
+  /** Mirrors buildQuoteNumber() in the real app: "QTE NTA20260826 Pan-cancer - blood". */
+  function quoteNumber(q) {
+    var prefix = String(q.sponsorAcronym || q.client || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+    var d = String(q.quoteDate || '').replace(/-/g, '');
+    if (!prefix && !d && !q.quoteName) return '';
+    return ('QTE ' + prefix + d + ' ' + (q.quoteName || '')).trim();
+  }
+
+  function finalize(q) { q.quoteNumber = quoteNumber(q); return q; }
+
+  function money(v) {
+    if (v === '' || v === null || v === undefined) return '—';
+    var n = Number(String(v).replace(/[$,]/g, ''));
+    if (isNaN(n)) return '—';
+    return n.toLocaleString('en-US', { style: 'currency', currency: 'USD',
+      minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function prettyDate(iso) {
+    if (!iso) return '—';
+    var p = String(iso).split('-');
+    if (p.length !== 3) return iso;
+    var d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2]));
+    if (isNaN(d.getTime())) return iso;
+    return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
+  }
+
+  function statusLabel(v) {
+    for (var i = 0; i < STATUSES.length; i++) if (STATUSES[i].value === v) return STATUSES[i].label;
+    return v;
+  }
+
+  function el(tag, attrs, kids) {
+    var n = document.createElement(tag);
+    if (attrs) Object.keys(attrs).forEach(function (k) {
+      if (k === 'class') n.className = attrs[k];
+      else if (k === 'text') n.textContent = attrs[k];
+      else if (k.slice(0, 2) === 'on') n.addEventListener(k.slice(2), attrs[k]);
+      else if (attrs[k] === true) n.setAttribute(k, '');
+      else if (attrs[k] !== false && attrs[k] != null) n.setAttribute(k, attrs[k]);
+    });
+    (kids || []).forEach(function (k) { if (k) n.appendChild(typeof k === 'string' ? document.createTextNode(k) : k); });
+    return n;
+  }
+
+  var toastTimer;
+  function toast(msg) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove('show'); }, 2600);
+  }
+
+  // ---------------------------------------------------------------- routing
+
+  var view = document.getElementById('view');
+  var route = { name: 'register', id: null };
+
+  function go(name, id) {
+    route = { name: name, id: id || null };
+    document.querySelectorAll('[data-nav]').forEach(function (b) {
+      var current = (b.dataset.nav === 'register' && name === 'register') ||
+                    (b.dataset.nav === 'new' && name === 'new');
+      if (current) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+    });
+    render();
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+
+  document.querySelectorAll('[data-nav]').forEach(function (b) {
+    b.addEventListener('click', function () { go(b.dataset.nav); });
+  });
+
+  function render() {
+    view.replaceChildren();
+    if (route.name === 'register') view.appendChild(renderRegister());
+    else view.appendChild(renderForm(route.id));
+  }
+
+  // ---------------------------------------------------------------- register
+
+  function sorted() {
+    return quotes.slice().sort(function (a, b) {
+      return String(b.quoteDate).localeCompare(String(a.quoteDate));
+    });
+  }
+
+  function renderRegister() {
+    var frag = document.createDocumentFragment();
+
+    frag.appendChild(el('div', { class: 'page-head' }, [
+      el('div', {}, [
+        el('h1', { text: 'Quote register' }),
+        el('p', { class: 'sub', text: 'Every quote the team has drafted, newest first.' })
+      ]),
+      el('button', { class: 'btn btn-primary', type: 'button', onclick: function () { go('new'); } }, ['New quote'])
+    ]));
+
+    if (!quotes.length) {
+      frag.appendChild(el('div', { class: 'empty' }, [
+        el('p', { text: 'No quotes yet.' }),
+        el('button', { class: 'link-btn', type: 'button', onclick: function () { go('new'); } }, ['Create the first one'])
+      ]));
+      frag.appendChild(footRow());
+      return frag;
+    }
+
+    var head = el('tr', {}, [
+      el('th', { text: 'Quote' }), el('th', { text: 'Client' }), el('th', { text: 'Prepared by' }),
+      el('th', { text: 'Date' }), el('th', { class: 'num', text: 'Total' }), el('th', { text: 'Status' })
+    ]);
+
+    var body = el('tbody', {}, sorted().map(function (q) {
+      return el('tr', {}, [
+        el('td', {}, [
+          el('button', { class: 'q-name', type: 'button', onclick: function () { go('edit', q.id); } }, [q.quoteName || '(untitled)']),
+          el('div', { class: 'q-number', text: q.quoteNumber || '—' }),
+          q.specimenTypes && q.specimenTypes.length
+            ? el('div', { class: 'q-specimens', text: q.specimenTypes.join(', ') }) : null
+        ]),
+        el('td', {}, [
+          q.client || '—',
+          q.isExtension ? el('span', { class: 'tag-ext', text: 'extension' }) : null
+        ]),
+        el('td', { text: q.preparedBy || '—' }),
+        el('td', { class: 'nowrap', text: prettyDate(q.quoteDate) }),
+        el('td', { class: 'money', text: money(q.totalCost) }),
+        el('td', {}, [el('span', { class: 'chip chip-' + q.status, text: statusLabel(q.status) })])
+      ]);
+    }));
+
+    frag.appendChild(el('div', { class: 'table-wrap' }, [
+      el('table', {}, [el('thead', {}, [head]), body])
+    ]));
+    frag.appendChild(footRow());
+    return frag;
+  }
+
+  function footRow() {
+    var total = quotes.reduce(function (sum, q) {
+      var n = Number(String(q.totalCost || '').replace(/[$,]/g, ''));
+      return sum + (isNaN(n) ? 0 : n);
+    }, 0);
+
+    return el('div', { class: 'table-foot' }, [
+      el('span', { text: quotes.length + (quotes.length === 1 ? ' quote' : ' quotes') +
+        (quotes.length ? ' · ' + money(total) + ' quoted' : '') }),
+      el('button', {
+        class: 'link-btn', type: 'button',
+        onclick: function () {
+          if (!confirm('Reset the mockup back to its sample quotes?')) return;
+          quotes = SAMPLES.map(function (s) { return finalize(Object.assign({ id: uid() }, s)); });
+          save(); go('register'); toast('Sample quotes restored');
+        }
+      }, ['Reset sample data'])
+    ]);
+  }
+
+  // ---------------------------------------------------------------- form
+
+  function blank() {
+    return {
+      id: null, client: '', sponsorAcronym: '', quoteName: '', preparedBy: REPS[0],
+      quoteDate: new Date().toISOString().slice(0, 10), status: 'draft', totalCost: '',
+      specimenTypes: [], isExtension: false, hubspotDealName: '',
+      header: { validity: VALIDITY[0], serviceTypes: [] }
+    };
+  }
+
+  function renderForm(id) {
+    var existing = id ? quotes.filter(function (q) { return q.id === id; })[0] : null;
+    var draft = existing ? JSON.parse(JSON.stringify(existing)) : blank();
+    draft.header = draft.header || {};
+    draft.header.serviceTypes = draft.header.serviceTypes || [];
+    draft.specimenTypes = draft.specimenTypes || [];
+
+    var frag = document.createDocumentFragment();
+    var wrap = el('div', { class: 'form-wrap' });
+    frag.appendChild(wrap);
+
+    wrap.appendChild(el('button', { class: 'back', type: 'button', onclick: function () { go('register'); } },
+      ['← Quote register']));
+
+    wrap.appendChild(el('div', { class: 'page-head' }, [
+      el('div', {}, [
+        el('h1', { text: existing ? (existing.quoteName || 'Quote') : 'New quote' }),
+        el('p', { class: 'sub', text: existing
+          ? 'Change anything and save. Deleting cannot be undone.'
+          : 'Fill in what you know — you can save a draft and come back.' })
+      ])
+    ]));
+
+    var numVal = el('div', { class: 'val', text: quoteNumber(draft) || 'Fills in as you type' });
+    wrap.appendChild(el('div', { class: 'quote-no-preview' }, [
+      el('span', { class: 'lbl', text: 'Quote number' }), numVal
+    ]));
+
+    var errorBox = el('div');
+    wrap.appendChild(errorBox);
+
+    function refreshNumber() {
+      numVal.textContent = quoteNumber(draft) || 'Fills in as you type';
+    }
+
+    // ---- text/select field helper
+    var idc = 0;
+    function field(label, opts) {
+      opts = opts || {};
+      var fid = 'f' + (++idc);
+      var input;
+
+      if (opts.type === 'select') {
+        input = el('select', { id: fid, onchange: function () { opts.set(input.value); refreshNumber(); } });
+        opts.options.forEach(function (o) {
+          var v = typeof o === 'string' ? o : o.value;
+          var l = typeof o === 'string' ? o : o.label;
+          input.appendChild(el('option', { value: v, text: l }));
+        });
+        input.value = opts.get();
+      } else if (opts.type === 'textarea') {
+        input = el('textarea', { id: fid, rows: opts.rows || 2, placeholder: opts.placeholder || '',
+          oninput: function () { opts.set(input.value); } });
+        input.value = opts.get() || '';
+      } else {
+        input = el('input', { id: fid, type: opts.type || 'text', placeholder: opts.placeholder || '',
+          inputmode: opts.inputmode || false,
+          oninput: function () { opts.set(input.value); refreshNumber(); } });
+        input.value = opts.get() || '';
+      }
+
+      var lbl = el('label', { for: fid }, [label]);
+      if (opts.required) lbl.appendChild(el('span', { class: 'req', text: ' *' }));
+
+      var kids = [lbl, input];
+      if (opts.hint) kids.push(el('div', { class: 'hint', text: opts.hint }));
+      return el('div', { class: 'fld' + (opts.full ? ' full' : '') }, kids);
+    }
+
+    function checkbox(label, get, set, onToggle) {
+      var box = el('input', { type: 'checkbox', onchange: function () {
+        set(box.checked); if (onToggle) onToggle();
+      } });
+      box.checked = !!get();
+      return el('label', { class: 'check' }, [box, el('span', {}, [label])]);
+    }
+
+    // ---- section 01
+    var sec01 = el('section', { class: 'sec' });
+    sec01.appendChild(secHead('01', 'Quote header'));
+
+    var extBox = el('div');
+    function renderExtBox() {
+      extBox.replaceChildren();
+      if (!draft.isExtension) return;
+      var g = el('div', { class: 'grid' }, [
+        field('Original study PO #', { get: function () { return draft.header.originalStudyPo; },
+          set: function (v) { draft.header.originalStudyPo = v; } }),
+        field('Original study quote', { get: function () { return draft.header.originalStudyQuote; },
+          set: function (v) { draft.header.originalStudyQuote = v; } }),
+        field('Parent MT number', { get: function () { return draft.header.parentMtNumber; },
+          set: function (v) { draft.header.parentMtNumber = v; }, placeholder: 'MT2291' }),
+        field('Extension #', { get: function () { return draft.header.extensionNumber; },
+          set: function (v) { draft.header.extensionNumber = v; }, placeholder: '1' })
+      ]);
+      var changed = checkbox('The study design has changed',
+        function () { return draft.header.designChanged; },
+        function (v) { draft.header.designChanged = v; });
+      changed.style.marginTop = '15px';
+      extBox.appendChild(el('div', { class: 'toggle-box' }, [g, changed,
+        el('div', { class: 'hint', text: 'Left unchecked, the generated quote stays minimal — summary, population, costs and terms only.' })
+      ]));
+    }
+
+    var extCheck = checkbox('This is a study extension',
+      function () { return draft.isExtension; },
+      function (v) { draft.isExtension = v; },
+      renderExtBox);
+    extCheck.style.marginBottom = '15px';
+    sec01.appendChild(extCheck);
+    sec01.appendChild(extBox);
+    renderExtBox();
+
+    sec01.appendChild(el('div', { class: 'grid' }, [
+      field('Client / sponsor', { required: true, placeholder: 'Natera',
+        get: function () { return draft.client; }, set: function (v) { draft.client = v; } }),
+      field('Sponsor acronym', { placeholder: 'NTA',
+        get: function () { return draft.sponsorAcronym; },
+        set: function (v) { draft.sponsorAcronym = v.toUpperCase(); } }),
+      field('Prepared by', { type: 'select', required: true, options: REPS,
+        get: function () { return draft.preparedBy; }, set: function (v) { draft.preparedBy = v; } }),
+      field('Quote date', { type: 'date', required: true,
+        get: function () { return draft.quoteDate; }, set: function (v) { draft.quoteDate = v; } }),
+      field('Validity', { type: 'select', options: VALIDITY,
+        get: function () { return draft.header.validity || VALIDITY[0]; },
+        set: function (v) { draft.header.validity = v; } }),
+      field('HubSpot deal name', { placeholder: 'NTA: 500 healthies - blood',
+        get: function () { return draft.hubspotDealName; },
+        set: function (v) { draft.hubspotDealName = v; } }),
+      field('Sponsor contact name', { get: function () { return draft.header.sponsorContactName; },
+        set: function (v) { draft.header.sponsorContactName = v; } }),
+      field('Sponsor contact email', { type: 'email',
+        get: function () { return draft.header.sponsorContactEmail; },
+        set: function (v) { draft.header.sponsorContactEmail = v; } })
+    ]));
+
+    var casesBox = el('div');
+    function renderCases() {
+      casesBox.replaceChildren();
+      if (draft.header.serviceTypes.indexOf('Retrospective') === -1) return;
+      var f = field('Sponsor-selected cases', { type: 'textarea',
+        placeholder: 'Document name, or case / biospecimen numbers',
+        get: function () { return draft.header.sponsorSelectedCases; },
+        set: function (v) { draft.header.sponsorSelectedCases = v; } });
+      f.style.marginTop = '17px';
+      casesBox.appendChild(f);
+    }
+
+    var svc = el('fieldset', {}, [el('legend', { text: 'Service type' })]);
+    svc.appendChild(el('div', { class: 'check-row' }, SERVICE_TYPES.map(function (t) {
+      return checkbox(t,
+        function () { return draft.header.serviceTypes.indexOf(t) > -1; },
+        function (on) {
+          var i = draft.header.serviceTypes.indexOf(t);
+          if (on && i === -1) draft.header.serviceTypes.push(t);
+          if (!on && i > -1) draft.header.serviceTypes.splice(i, 1);
+        },
+        renderCases);
+    })));
+    sec01.appendChild(svc);
+    sec01.appendChild(casesBox);
+    renderCases();
+    wrap.appendChild(sec01);
+
+    wrap.appendChild(pendingRow('02'));
+    wrap.appendChild(pendingRow('03'));
+    wrap.appendChild(pendingRow('04'));
+
+    // ---- section 05
+    var sec05 = el('section', { class: 'sec' });
+    sec05.appendChild(secHead('05', 'Biospecimens', 'Per-specimen detail in Phase 3'));
+    sec05.appendChild(el('div', { class: 'specimen-grid' }, SPECIMEN_TYPES.map(function (t) {
+      return checkbox(t,
+        function () { return draft.specimenTypes.indexOf(t) > -1; },
+        function (on) {
+          var i = draft.specimenTypes.indexOf(t);
+          if (on && i === -1) draft.specimenTypes.push(t);
+          if (!on && i > -1) draft.specimenTypes.splice(i, 1);
+        });
+    })));
+    wrap.appendChild(sec05);
+
+    // ---- section 06
+    var sec06 = el('section', { class: 'sec' });
+    sec06.appendChild(secHead('06', 'Quote name'));
+    sec06.appendChild(field('Quote name', { required: true, full: true,
+      placeholder: 'CRC - plasma & buffy',
+      hint: 'Drafts itself from the population and specimens once Phase 3 lands.',
+      get: function () { return draft.quoteName; }, set: function (v) { draft.quoteName = v; } }));
+    wrap.appendChild(sec06);
+
+    wrap.appendChild(pendingRow('07'));
+    wrap.appendChild(pendingRow('08'));
+    wrap.appendChild(pendingRow('09'));
+
+    // ---- section 10
+    var sec10 = el('section', { class: 'sec' });
+    sec10.appendChild(secHead('10', 'Pricing'));
+    sec10.appendChild(el('div', { class: 'grid' }, [
+      field('Total study cost', { placeholder: '125000.00', inputmode: 'decimal',
+        hint: 'Typed in for now; the pricing engine computes it in Phase 4.',
+        get: function () { return draft.totalCost; }, set: function (v) { draft.totalCost = v; } }),
+      field('Status', { type: 'select', options: STATUSES,
+        get: function () { return draft.status; }, set: function (v) { draft.status = v; } })
+    ]));
+    wrap.appendChild(sec10);
+
+    wrap.appendChild(pendingRow('11'));
+
+    // ---- actions
+    var actions = el('div', { class: 'actions' });
+    actions.style.marginTop = '30px';
+
+    actions.appendChild(el('button', { class: 'btn btn-primary', type: 'button',
+      onclick: function () { submit(); } }, [existing ? 'Save changes' : 'Create quote']));
+    actions.appendChild(el('button', { class: 'btn', type: 'button',
+      onclick: function () { go('register'); } }, ['Cancel']));
+
+    if (existing) {
+      var del = el('button', { class: 'btn btn-danger spacer', type: 'button', onclick: function () {
+        if (!confirm('Delete this quote? This cannot be undone.')) return;
+        quotes = quotes.filter(function (q) { return q.id !== existing.id; });
+        save(); go('register'); toast('Quote deleted');
+      } }, ['Delete quote']);
+      actions.appendChild(del);
+    }
+    wrap.appendChild(actions);
+
+    function submit() {
+      var errs = [];
+      if (!String(draft.client).trim()) errs.push('Client / sponsor is required (§01).');
+      if (!String(draft.quoteName).trim()) errs.push('Quote name is required (§06).');
+      if (!String(draft.quoteDate).trim()) errs.push('Quote date is required (§01).');
+      if (String(draft.totalCost).trim() !== '') {
+        var n = Number(String(draft.totalCost).replace(/[$,]/g, ''));
+        if (isNaN(n)) errs.push('Total cost must be a number (§10).');
+        else if (n < 0) errs.push('Total cost cannot be negative (§10).');
+      }
+
+      errorBox.replaceChildren();
+      if (errs.length) {
+        errorBox.appendChild(el('div', { class: 'errors', role: 'alert' }, [
+          el('p', { text: 'This quote can’t be saved yet:' }),
+          el('ul', {}, errs.map(function (e) { return el('li', { text: e }); }))
+        ]));
+        errorBox.scrollIntoView({ block: 'nearest' });
+        return;
+      }
+
+      finalize(draft);
+      if (existing) {
+        for (var i = 0; i < quotes.length; i++) if (quotes[i].id === existing.id) quotes[i] = draft;
+        save(); go('edit', existing.id); toast('Changes saved');
+      } else {
+        draft.id = uid();
+        quotes.push(draft);
+        save(); go('edit', draft.id); toast('Quote created');
+      }
+    }
+
+    return frag;
+  }
+
+  function secHead(num, title, note) {
+    return el('div', { class: 'sec-head' }, [
+      el('span', { class: 'sec-num', text: num }),
+      el('span', { class: 'sec-title', text: title }),
+      note ? el('span', { class: 'sec-note', text: note }) : null
+    ]);
+  }
+
+  function pendingRow(num) {
+    var match = PENDING_SECTIONS.filter(function (p) { return p[0] === num; })[0];
+    if (!match) return null;
+    return el('div', { class: 'sec-pending' }, [
+      el('span', { class: 'sec-num', text: match[0] }),
+      el('span', { text: match[1] }),
+      el('span', { class: 'phase', text: match[2] })
+    ]);
+  }
+
+  // ---------------------------------------------------------------- boot
+
+  load();
+  go('register');
+})();
+</script>
