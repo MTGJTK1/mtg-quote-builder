@@ -680,3 +680,65 @@ Still a candidate, not yet acted on:
 - **§09 "maximum subjects per day" overlaps "delivery restrictions"**, which
   already takes "max 10/week, Tues-Fri only". Two fields for one idea, and the
   per-day cap was asked for explicitly, so it stays until someone decides.
+
+---
+
+## §13 — Fifth-pass revisions (2026-08-27, §05 build-out)
+
+Made while John reviewed the MT number extraction. Nothing here was asked for
+directly; it is the work the mockup had left.
+
+### §05 stops being a checkbox list
+
+§05 previously collected only *which* specimens, and carried a "Partial" marker
+for storage state, media, tube type, volumes and FFPE specs. Those now exist.
+
+Ticking a specimen opens a block for it holding: amount per subject, aliquots
+per subject, container or tube, storage state, shipping temperature, and — where
+it is a real decision — processing requirements. FFPE adds block age limit,
+minimum tumour content and an H&E checkbox; slides add section thickness and
+stain.
+
+**Every block arrives prefilled** from `SPECIMEN_SPEC`, which records what MT
+Group normally collects for that specimen type — plasma comes up as a spun EDTA
+(K2) tube at −80 °C shipped on dry ice, FFPE as a paraffin block at ambient.
+The rep confirms rather than types, and only a sponsor asking for something
+unusual should cause an edit. This is the "auto collect as much as possible"
+instruction applied to a section that previously collected almost nothing.
+
+The amount field relabels itself per specimen — *Blocks per subject* for FFPE,
+*Volume per subject* for plasma, *Cells per subject* for PBMCs — rather than
+asking for a generic quantity the rep has to interpret.
+
+### Processing requirements reach §06
+
+A non-standard processing protocol is the single most common reason a site
+declines (`FEASIBILITY_spec_draft.md`, prompt #1). Entering one now appends a
+sentence to the drafted study summary — *"Processing is not standard: plasma
+requires double-spin within 2 hours of draw…"* — rather than leaving it in §05
+for someone downstream to notice.
+
+### Specimen order is now shared, not coincidental
+
+Spec §10 requires pricing blocks to be numbered to match the specimen order in
+§05. They did not: §10 iterated `draft.specimenTypes`, which is the order the
+rep happened to tick the boxes. The comment above it claimed "in §05 order".
+
+`orderedSpecimens(d)` is now the single source of that order — the canonical
+`ALL_SPECIMENS` sequence, filtered to what is selected — and §05, §10, the cost
+breakdown, the drafted quote name and the drafted summary all read it. Ticking
+specimens in any order cannot make the two sections disagree.
+
+### Smaller
+
+- **§09 lost "Delivery restrictions."** Its own example text (*"max 10/week,
+  Tues-Fri only"*) asked for exactly what the two prompts below it already ask.
+  The specific prompts name the consequence of getting it wrong; the catch-all
+  did not.
+- **The register column "Prepared by" is now "Rep."** The phrase was removed
+  from the form on John's instruction; the column survives because it is derived
+  from the signed-in user and costs the rep nothing, but it should not carry the
+  name of a field that no longer exists.
+- **"Partial" markers are gone.** No section of the form is unbuilt now, so the
+  remaining notes are empty states ("tick the specimens above and each gets a
+  block here"), and are styled as such.

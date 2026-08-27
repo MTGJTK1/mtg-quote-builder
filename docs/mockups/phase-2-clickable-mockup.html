@@ -464,9 +464,9 @@
   fieldset { border: 0; padding: 0; margin: 18px 0 0; }
   legend { font-size: 13px; font-weight: 500; margin-bottom: 8px; padding: 0; }
 
-  /* ---------- partial-section marker ---------- */
+  /* ---------- empty-state note ---------- */
 
-  .partial-note {
+  .empty-note {
     display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap;
     background: var(--surface-sunk);
     border-left: 3px solid var(--rule-strong);
@@ -475,15 +475,6 @@
     margin-bottom: 16px;
     font-size: 12.5px;
     color: var(--ink-soft);
-  }
-  .partial-tag {
-    flex: none;
-    font-size: 10px; font-weight: 600;
-    text-transform: uppercase; letter-spacing: .11em;
-    color: var(--ink-faint);
-    border: 1px solid var(--rule-strong);
-    border-radius: 4px;
-    padding: 1px 6px;
   }
 
   /* ---------- lookup / carried-over detail ---------- */
@@ -768,6 +759,72 @@
 
   var ALL_SPECIMENS = SPECIMEN_GROUPS.reduce(function (a, g) { return a.concat(g.items); }, []);
 
+  // What MT Group normally collects for each specimen type. These prefill §05
+  // so a rep confirms rather than types; every one of them is editable, and a
+  // sponsor asking for something else is the only reason to touch them.
+  //
+  //   amount   label + placeholder for the per-subject quantity
+  //   store    default storage state
+  //   ship     default shipping temperature
+  //   holder   default container or tube
+  //   process  true where a processing protocol is a real decision. Sites
+  //            decline over these more than over anything else in the form.
+  var STORAGE_STATES = ['Ambient', '2-8 \u00b0C', '-20 \u00b0C', '-80 \u00b0C',
+                        'LN2 vapour phase'];
+  var SHIP_TEMPS = ['Ambient', 'Wet ice / cold pack', 'Dry ice', 'LN2 dry shipper'];
+
+  var VOLUME = { label: 'Volume per subject', hint: 'e.g. 10 mL' };
+  var MASS = { label: 'Minimum size or weight', hint: 'e.g. 100 mg, or 0.5 cm\u00b3' };
+
+  var SPECIMEN_SPEC = {
+    'Fresh tissue': { amount: MASS, holder: 'Sterile container with transport media',
+      store: 'Ambient', ship: 'Wet ice / cold pack', process: true },
+    'Flash frozen tissue': { amount: MASS, holder: 'Cryovial',
+      store: '-80 \u00b0C', ship: 'Dry ice', process: true },
+    'Frozen tissue in media': { amount: MASS, holder: 'Cryovial with OCT or RNAlater',
+      store: '-80 \u00b0C', ship: 'Dry ice', process: true },
+    'FFPE': { amount: { label: 'Blocks per subject', hint: 'e.g. 1' },
+      holder: 'Paraffin block', store: 'Ambient', ship: 'Ambient', ffpe: true },
+    'Slides': { amount: { label: 'Slides per subject', hint: 'e.g. 10' },
+      holder: 'Charged unstained slides', store: 'Ambient', ship: 'Ambient', slides: true },
+
+    'Whole blood': { amount: VOLUME, holder: 'EDTA (K2) tube',
+      store: '2-8 \u00b0C', ship: 'Wet ice / cold pack', process: true },
+    'Plasma': { amount: VOLUME, holder: 'EDTA (K2) tube, spun',
+      store: '-80 \u00b0C', ship: 'Dry ice', process: true },
+    'Serum': { amount: VOLUME, holder: 'SST / red top',
+      store: '-80 \u00b0C', ship: 'Dry ice', process: true },
+    'Buffy coat': { amount: VOLUME, holder: 'Cryovial',
+      store: '-80 \u00b0C', ship: 'Dry ice', process: true },
+    'PBMCs': { amount: { label: 'Cells per subject', hint: 'e.g. 10 x 10\u2076' },
+      holder: 'CPT tube, cryopreserved', store: 'LN2 vapour phase',
+      ship: 'LN2 dry shipper', process: true },
+
+    'Fresh bone marrow aspirate': { amount: VOLUME, holder: 'Heparin or EDTA tube',
+      store: 'Ambient', ship: 'Wet ice / cold pack', process: true },
+    'Frozen bone marrow aspirate': { amount: VOLUME, holder: 'Cryovial',
+      store: '-80 \u00b0C', ship: 'Dry ice', process: true },
+    'BMMCs': { amount: { label: 'Cells per subject', hint: 'e.g. 10 x 10\u2076' },
+      holder: 'Cryovial, cryopreserved', store: 'LN2 vapour phase',
+      ship: 'LN2 dry shipper', process: true },
+    'Urine': { amount: VOLUME, holder: 'Sterile collection cup',
+      store: '-80 \u00b0C', ship: 'Dry ice', process: true },
+    'Saliva': { amount: VOLUME, holder: 'Saliva collection kit',
+      store: '-20 \u00b0C', ship: 'Wet ice / cold pack' },
+    'Buccal swab': { amount: { label: 'Swabs per subject', hint: 'e.g. 2' },
+      holder: 'Swab in transport tube', store: 'Ambient', ship: 'Ambient' },
+    'Nasal swab': { amount: { label: 'Swabs per subject', hint: 'e.g. 2' },
+      holder: 'Swab in viral transport medium', store: '-80 \u00b0C', ship: 'Dry ice' },
+    'Stool': { amount: { label: 'Amount per subject', hint: 'e.g. 2 g' },
+      holder: 'Stool collection kit', store: '-80 \u00b0C', ship: 'Dry ice', process: true },
+    'Synovial fluid': { amount: VOLUME, holder: 'Sterile tube',
+      store: '-80 \u00b0C', ship: 'Dry ice', process: true },
+    'Synovial tissue': { amount: MASS, holder: 'Sterile container with transport media',
+      store: 'Ambient', ship: 'Wet ice / cold pack', process: true },
+    'Other': { amount: { label: 'Amount per subject', hint: '' },
+      holder: '', store: 'Ambient', ship: 'Ambient', process: true }
+  };
+
 
   // ---------------------------------------------------------------- §03 vocabulary
   // Population groups and subpopulations are the live HubSpot enum values for
@@ -841,8 +898,9 @@
 
   var REPS = ['John Kibler', 'Heather Shahzade', 'Joshua Taylor', 'Karen Krantz'];
 
-  // Who the quote is prepared by is the signed-in rep, not a question. This
-  // stands in for the session user until auth exists (build brief §6).
+  // The rep is the signed-in user, never a question on the form. It survives in
+  // the register only as a way to find your own quotes. This stands in for the
+  // session user until auth exists (build brief §6).
   var CURRENT_REP = REPS[0];
   var VALIDITY = ['30 Day Quote', '60 Day Quote'];
   var SERVICE_TYPES = ['Retrospective', 'Prospective'];
@@ -1174,7 +1232,7 @@
     var indication = (d.cohorts || [])
       .map(function (c) { return String(c.name || '').trim(); })
       .filter(Boolean)[0] || '';
-    var specs = (d.specimenTypes || []).map(function (s) { return s.toLowerCase(); });
+    var specs = orderedSpecimens(d).map(function (s) { return s.toLowerCase(); });
     var specPart = specs.length > 2
       ? specs.slice(0, -1).join(', ') + ' & ' + specs[specs.length - 1]
       : specs.join(' & ');
@@ -1187,9 +1245,18 @@
     return base;
   }
 
+  /** Section numbering is load-bearing: §10's pricing blocks are numbered to
+   *  match §05's specimen order, and the drafted name and summary list them the
+   *  same way. Everything reads this rather than the order they were ticked. */
+  function orderedSpecimens(d) {
+    return ALL_SPECIMENS.filter(function (t) {
+      return (d.specimenTypes || []).indexOf(t) > -1;
+    });
+  }
+
   /** Study summary drafts in the real quotes' phrasing (spec §06). */
   function draftSummary(d) {
-    var specs = (d.specimenTypes || []).map(function (s) { return s.toLowerCase(); });
+    var specs = orderedSpecimens(d).map(function (s) { return s.toLowerCase(); });
     var specPart = specs.length > 2
       ? specs.slice(0, -1).join(', ') + ' and ' + specs[specs.length - 1]
       : specs.join(' and ');
@@ -1206,8 +1273,20 @@
         '(pricing repeated for clarity).';
     }
     if (!specPart && !pop) return '';
-    return 'The goal of this study is to collect and evaluate ' +
+    var out = 'The goal of this study is to collect and evaluate ' +
       (specPart || 'biospecimens') + ' from ' + (pop || 'study') + ' subjects.';
+
+    // A processing protocol decides whether a site can take part at all, so it
+    // is carried into the summary rather than left in §05 for someone to find.
+    var detail = d.specimenDetail || {};
+    var protocols = orderedSpecimens(d).map(function (t) {
+      var note = String((detail[t] || {}).processing || '').trim();
+      return note ? t.toLowerCase() + ' requires ' + note.replace(/\.$/, '') : '';
+    }).filter(Boolean);
+    if (protocols.length) {
+      out += ' Processing is not standard: ' + protocols.join('; ') + '.';
+    }
+    return out;
   }
 
   // ---------------------------------------------------------------- routing
@@ -1295,7 +1374,7 @@
     }
 
     var head = el('tr', {}, [
-      el('th', { text: 'Quote' }), el('th', { text: 'Client' }), el('th', { text: 'Prepared by' }),
+      el('th', { text: 'Quote' }), el('th', { text: 'Client' }), el('th', { text: 'Rep' }),
       el('th', { text: 'Date' }), el('th', { class: 'num', text: 'Total' }), el('th', { text: 'Status' })
     ]);
 
@@ -2501,6 +2580,8 @@
       return sec;
     }
 
+    function pickedSpecimens() { return orderedSpecimens(draft); }
+
     function chunk(arr, n) {
       var per = Math.ceil(arr.length / n), out = [];
       for (var i = 0; i < arr.length; i += per) out.push(arr.slice(i, i + per));
@@ -2512,8 +2593,106 @@
     function sectionSpecimens() {
       var sec = el('section', { class: 'sec' });
       sec.appendChild(secHead('05', 'Biospecimens'));
-      sec.appendChild(partialNote(
-        'Storage state, media, tube type, volumes and FFPE specs are still to come.'));
+
+      draft.specimenDetail = draft.specimenDetail || {};
+      var detailBox = el('div');
+
+      // Prefill from SPECIMEN_SPEC the first time a type is ticked, so the rep
+      // confirms a standard rather than typing one out.
+      function detailFor(t) {
+        var spec = SPECIMEN_SPEC[t] || SPECIMEN_SPEC['Other'];
+        var d = draft.specimenDetail[t];
+        if (!d) {
+          d = draft.specimenDetail[t] = {
+            amount: '', aliquots: '', holder: spec.holder,
+            store: spec.store, ship: spec.ship, processing: '',
+            blockAge: '', tumourContent: '', heRequired: false,
+            thickness: '', stain: 'Unstained'
+          };
+        }
+        return d;
+      }
+
+      function paintDetail() {
+        detailBox.replaceChildren();
+        var picked = pickedSpecimens();
+        if (!picked.length) {
+          detailBox.appendChild(emptyNote(
+            'Tick the specimens above and each one gets a block here for volume, '
+            + 'container, storage and processing.'));
+          return;
+        }
+        picked.forEach(function (t, i) {
+          detailBox.appendChild(specimenCard(t, i));
+        });
+      }
+
+      function specimenCard(t, i) {
+        var spec = SPECIMEN_SPEC[t] || SPECIMEN_SPEC['Other'];
+        var d = detailFor(t);
+        var card = el('div', { class: 'toggle-box' });
+        card.appendChild(el('div', { class: 'cohort-card-head' }, [
+          el('span', { class: 'sec-num', text: String(i + 1) }),
+          el('span', { class: 'cohort-card-title', text: t })
+        ]));
+
+        var rows = [
+          field(spec.amount.label, { placeholder: spec.amount.hint,
+            get: function () { return d.amount; },
+            set: function (v) { d.amount = v; } }),
+          field('Aliquots per subject', { placeholder: 'Leave blank if not aliquoted',
+            inputmode: 'numeric',
+            get: function () { return d.aliquots; },
+            set: function (v) { d.aliquots = v; } }),
+          field('Container / tube', {
+            hint: i === 0 ? 'Prefilled with what we normally use. Change it only if '
+                          + 'the sponsor asks for something else.' : '',
+            get: function () { return d.holder; },
+            set: function (v) { d.holder = v; } }),
+          field('Storage state', { type: 'select', options: STORAGE_STATES,
+            get: function () { return d.store; },
+            set: function (v) { d.store = v; } }),
+          field('Shipping temperature', { type: 'select', options: SHIP_TEMPS,
+            get: function () { return d.ship; },
+            set: function (v) { d.ship = v; } })
+        ];
+
+        if (spec.ffpe) {
+          rows.push(field('Block age limit', { placeholder: 'e.g. collected within 5 years',
+            get: function () { return d.blockAge; },
+            set: function (v) { d.blockAge = v; } }));
+          rows.push(field('Minimum tumour content', { placeholder: 'e.g. 30%',
+            get: function () { return d.tumourContent; },
+            set: function (v) { d.tumourContent = v; } }));
+        }
+        if (spec.slides) {
+          rows.push(field('Section thickness', { placeholder: 'e.g. 5 \u00b5m',
+            get: function () { return d.thickness; },
+            set: function (v) { d.thickness = v; } }));
+          rows.push(field('Stain', { type: 'select',
+            options: ['Unstained', 'H&E', 'Unstained + one H&E per block'],
+            get: function () { return d.stain; },
+            set: function (v) { d.stain = v; } }));
+        }
+        card.appendChild(el('div', { class: 'grid' }, rows));
+
+        if (spec.ffpe) {
+          card.appendChild(checkbox('A matching H&E is required with each block',
+            function () { return !!d.heRequired; },
+            function (on) { d.heRequired = on; }));
+        }
+        if (spec.process) {
+          card.appendChild(field('Processing requirements', { type: 'textarea', rows: 2,
+            full: true,
+            placeholder: 'e.g. double-spin plasma within 2 hours of draw, 1,500 g for 10 min',
+            hint: 'Non-standard processing is one of the most common reasons a site '
+                + 'declines. Say it here rather than assuming the site will ask.',
+            get: function () { return d.processing; },
+            set: function (v) { d.processing = v; },
+            then: refreshDrafts }));
+        }
+        return card;
+      }
 
       // Three parallel columns, unlabelled — the grouping is only there to keep
       // the list short, not to tell the rep anything.
@@ -2526,9 +2705,13 @@
               if (on && i === -1) draft.specimenTypes.push(t);
               if (!on && i > -1) draft.specimenTypes.splice(i, 1);
             },
-            function () { refreshDrafts(); if (pricingRefresh) pricingRefresh(); });
+            function () { refreshDrafts(); paintDetail();
+                          if (pricingRefresh) pricingRefresh(); });
         })));
       })));
+
+      sec.appendChild(detailBox);
+      paintDetail();
       return sec;
     }
 
@@ -2590,7 +2773,7 @@
           }
 
           if (!draft.cohorts.length) {
-            mainBox.appendChild(partialNote('Add cohorts above and each one gets its own price here.'));
+            mainBox.appendChild(emptyNote('Add cohorts above and each one gets its own price here.'));
             return;
           }
           var rows = el('div', { class: 'cohorts' });
@@ -2621,9 +2804,9 @@
         }
 
         // --- full quote: one block per specimen type, in §05 order
-        var specs = draft.specimenTypes || [];
+        var specs = pickedSpecimens();
         if (!specs.length) {
-          mainBox.appendChild(partialNote('Pick specimen types in §05 and each gets its own pricing block here, numbered to match.'));
+          mainBox.appendChild(emptyNote('Pick specimen types in §05 and each gets its own pricing block here, numbered to match.'));
           return;
         }
         specs.forEach(function (t, i) {
@@ -2858,7 +3041,7 @@
             lines.push([subjects + ' subjects × ' + money(num(draft.header.perSubject)), specimenTotal]);
           }
         } else {
-          (draft.specimenTypes || []).forEach(function (t) {
+          pickedSpecimens().forEach(function (t) {
             var p = num((pr.specimenPrices[t] || {}).price);
             if (!p) return;
             specimenTotal += subjects * p;
@@ -3081,11 +3264,10 @@
     return frag;
   }
 
-  function partialNote(text) {
-    return el('div', { class: 'partial-note' }, [
-      el('span', { class: 'partial-tag', text: 'Partial' }),
-      el('span', { text: text })
-    ]);
+  // An empty state, not an unbuilt one. Every section of the form exists; this
+  // says what to fill in above to make a block appear here.
+  function emptyNote(text) {
+    return el('div', { class: 'empty-note' }, [el('span', { text: text })]);
   }
 
   function secHead(num, title, note) {
