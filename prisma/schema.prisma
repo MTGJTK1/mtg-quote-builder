@@ -1,0 +1,80 @@
+// MT Group Quote Builder — database schema.
+// See MTG_Quote_Builder_Build_Brief.md §2 for the rationale behind the hybrid
+// (relational parent row + JSON formData) approach.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id             String   @id @default(cuid())
+  name           String
+  email          String   @unique
+  hubspotOwnerId String?
+  role           String   @default("rep") // rep | admin
+  quotes         Quote[]
+  createdAt      DateTime @default(now())
+}
+
+model Quote {
+  id              String   @id @default(cuid())
+  quoteNumber     String // e.g. "QTE NTA20260826 Pan-cancer - blood"
+  quoteName       String
+  client          String
+  sponsorAcronym  String?
+  hubspotDealId   String?
+  hubspotDealName String?
+  preparedById    String
+  preparedBy      User     @relation(fields: [preparedById], references: [id])
+  quoteDate       DateTime
+  status          String   @default("draft") // draft | internal_reviewed | sent | won | lost
+  totalCost       Decimal? // last computed grand total, for register list/sort/filter
+  specimenTypes   String[] // denormalized for filtering the register
+  isExtension     Boolean  @default(false)
+  formData        Json // full nested state: cohorts, specimens, pricing, timeline, etc.
+  // — same shape as the prototype's `state` object
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// --- Shared/growing tables — multi-user, cross-quote (the prototype's window.storage keys) ---
+
+model CostLogEntry {
+  id        String   @id @default(cuid())
+  client    String
+  kind      String // "site cost — Fresh tissue", "shipping cost", "enrollment timeline"
+  detail    String
+  person    String
+  date      DateTime
+  createdAt DateTime @default(now())
+}
+
+model HistoricalComparable {
+  id         String   @id @default(cuid())
+  client     String
+  indication String
+  type       String?
+  unit       String
+  price      Decimal
+  date       DateTime
+  source     String // "rep-added" or a real quote number once the register is seeded
+  addedBy    String?
+}
+
+model FreshTissueRate {
+  tumorType String   @id
+  price     Decimal
+  updatedBy String?
+  updatedAt DateTime @updatedAt
+}
+
+model QuoteCode {
+  clientNameLower String   @id
+  code            String
+  learnedAt       DateTime @default(now())
+}
