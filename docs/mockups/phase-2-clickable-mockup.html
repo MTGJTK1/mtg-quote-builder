@@ -637,6 +637,17 @@
     padding-left: 14px;
   }
   .cohort-row.sub-add { grid-template-columns: 1fr; padding-left: 14px; }
+  .cohort-row.cost {
+    grid-template-columns: 1.5fr 90px 62px 1fr 96px 32px;
+    align-items: center;
+  }
+  @media (max-width: 760px) { .cohort-row.cost { grid-template-columns: 1fr; gap: 6px; } }
+  .cohort-row.unit {
+    grid-template-columns: 1fr 64px 130px 78px 32px;
+    align-items: center; padding: 0 0 8px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .cohort-row.unit .hint { margin: 0; text-align: right; }
 
   .says {
     margin-left: auto;
@@ -943,6 +954,12 @@
   var CURRENT_REP = REPS[0];
   var VALIDITY = ['30 Day Quote', '60 Day Quote'];
 
+  // What a price is quoted per. Every one of these is taken from a real Natera
+  // quote: subject, draw, stool, case, report, shipper. The unit changes the
+  // arithmetic as well as the wording — 120 draws is not 120 subjects.
+  var PRICE_UNITS = ['subject', 'draw', 'case', 'collection', 'stool', 'aliquot',
+                     'block', 'slide', 'report', 'shipper'];
+
   // Said on every criteria box rather than once in a note above them, because a
   // rep reads the box they are typing in.
   var CRITERIA_HINT = 'Put each criterion on its own line \u2014 every line becomes '
@@ -1228,7 +1245,7 @@
   // drafts must survive — so a changed fixture set would otherwise sit unread in
   // the file while the browser kept serving the old one. This makes the mismatch
   // visible and offers the reset, rather than silently discarding their work.
-  var SAMPLES_VERSION = 10;
+  var SAMPLES_VERSION = 11;
   var samplesStale = false;
   var quotes = [];
   var storageWorks = true;
@@ -1305,6 +1322,13 @@
       if (n) { sum += n; seen = true; }
     });
     return seen ? sum.toFixed(2) : '';
+  }
+
+  /** A cost line with no count is a lump sum; with one it is rate x count. */
+  function otherCostAmount(o) {
+    if (!o) return 0;
+    var c = String(o.count == null ? '' : o.count).trim();
+    return c === '' ? num(o.amount) : num(o.amount) * num(c);
   }
 
   function num(v) {
@@ -1548,6 +1572,22 @@
     return ALL_SPECIMENS.filter(function (t) {
       return (d.specimenTypes || []).indexOf(t) > -1;
     });
+  }
+
+  /** Priced units in a cohort: subjects times units per subject, which is one
+   *  unless the quote says otherwise. */
+  function cohortUnitCount(c, key, pr) {
+    var per = num(((pr || {}).cohortPer || {})[key]) || 1;
+    return cohortSubjects(c) * per;
+  }
+
+  /** Subjects in a cohort. Subcohorts win when present. Module scope because
+   *  §03 counts them, §11 prices them and the export reads them. */
+  function cohortSubjects(c) {
+    if (c.subcohorts && c.subcohorts.length) {
+      return c.subcohorts.reduce(function (s, sc) { return s + num(sc.subjects); }, 0);
+    }
+    return num(c.subjects);
   }
 
   /** A specimen with no explicit list is collected at every timepoint — the
@@ -2830,6 +2870,14 @@
           set: function (v) { cd.otherDetail = v; } }));
       }
 
+      if ((draft.cohorts || []).length > 1) {
+        sec.appendChild(field('Where this differs by cohort', { type: 'textarea', rows: 2, full: true,
+          placeholder: 'e.g. Cohort 1 only: stage, grade, TNM, date of colonoscopy, date of surgery.',
+          hint: 'Leave blank when every cohort provides the same data.',
+          get: function () { return draft.clinicalData.byCohort; },
+          set: function (v) { draft.clinicalData.byCohort = v; } }));
+      }
+
       sec.appendChild(field('Additional data detail', { type: 'textarea', rows: 2, full: true,
         placeholder: 'e.g. EASI score collected on day of biopsy',
         get: function () { return cd.detail; }, set: function (v) { cd.detail = v; } }));
@@ -2839,7 +2887,8 @@
           hint: 'EDC entry is real site burden — some sites decline over it, and it gets priced.',
           get: function () { return cd.deliveryMethod || DELIVERY_METHODS[0]; },
           set: function (v) { cd.deliveryMethod = v; } }),
-        field('Delivery detail', { placeholder: 'Reference the processing instruction file if there is one',
+        field('Delivery detail', { placeholder: 'e.g. Example AA data needed_21Jul2026.xls',
+          hint: 'Name the format or example file if one exists.',
           get: function () { return cd.deliveryDetail; },
           set: function (v) { cd.deliveryDetail = v; } })
       ]));
@@ -3026,6 +3075,12 @@
         }
       }
 
+      sec.appendChild(field('Collection protocol document', { full: true,
+        placeholder: 'e.g. CRC and healthy collections_ Kit insert',
+        hint: 'Where the collection instructions live, if a document carries them.',
+        get: function () { return draft.collectionDoc; },
+        set: function (v) { draft.collectionDoc = v; } }));
+
       var casesToggle = checkbox('The sponsor has selected the cases',
         function () { return h.sponsorSelected; },
         function (on) { h.sponsorSelected = on; paintCards(); },
@@ -3039,13 +3094,6 @@
       var cards = el('div');
       // Declared before paintCards() runs — it calls paintAllocation().
       var allocBox = el('div');
-
-      function cohortSubjects(c) {
-        if (c.subcohorts && c.subcohorts.length) {
-          return c.subcohorts.reduce(function (s, sc) { return s + num(sc.subjects); }, 0);
-        }
-        return num(c.subjects);
-      }
 
       function paintCards() {
         cards.replaceChildren();
@@ -3095,6 +3143,14 @@
           subjFld._input.value = String(cohortSubjects(c));
         }
 
+        // Some counts are a forecast, not a commitment — the pan-cancer quote
+        // prices a "negative bladder" cohort that only exists if suspicion
+        // cases come back non-cancer, and the total says "estimating 7 cases".
+        var estBox = checkbox('This count is an estimate',
+          function () { return c.estimated; },
+          function (on) { c.estimated = on; },
+          function () { refreshDrafts(); if (pricingRefresh) pricingRefresh(); });
+
         var top;
         if (casesPicked()) {
           top = el('div', { class: 'grid' }, [
@@ -3119,6 +3175,7 @@
           ]);
         }
         card.appendChild(top);
+        if (!casesPicked()) card.appendChild(estBox);
 
         var upTo = checkbox('Up to this number',
           function () { return c.upTo; }, function (v) { c.upTo = v; });
@@ -3457,6 +3514,28 @@
                           if (pricingRefresh) pricingRefresh(); });
         })));
       })));
+
+      if ((draft.cohorts || []).length > 1) {
+        sec.appendChild(field('Where this differs by cohort', { type: 'textarea', rows: 2, full: true,
+          placeholder: 'e.g. Cohort 1: one or two stools per subject. Cohort 2: two stools, '
+                     + 'the second one to two days after the first.',
+          hint: 'Leave blank when every cohort is collected the same way.',
+          get: function () { return draft.specimensByCohort; },
+          set: function (v) { draft.specimensByCohort = v; } }));
+      }
+
+      sec.appendChild(field('Provided by the sponsor', { full: true,
+        placeholder: 'e.g. Streck tubes, collection kits, shipping boxes and labels',
+        hint: 'Named in four of five real quotes, and it gates the timeline — '
+            + 'one study starts only once the tubes arrive.',
+        get: function () { return draft.sponsorProvides; },
+        set: function (v) { draft.sponsorProvides = v; } }));
+
+      sec.appendChild(field('Processing protocol document', { full: true,
+        placeholder: 'e.g. Plasma Isolations for Vendor (5).doc',
+        hint: 'Named in the quote, so both sides are working to the same file.',
+        get: function () { return draft.processingDoc; },
+        set: function (v) { draft.processingDoc = v; } }));
 
       sec.appendChild(detailBox);
       specimensRefresh = paintDetail;
@@ -3868,7 +3947,83 @@
           return;
         }
 
-        // --- full quote: one block per specimen type, in §05 order
+        // --- full quote. Priced per cohort by default: four of the five real
+        // Natera quotes price that way and none price per specimen type, which
+        // is what this section used to assume.
+        var byCohort = pr.fullMode !== 'specimen';
+        mainBox.appendChild(el('div', { class: 'check-row' }, [
+          radio('fullprice', 'Price per cohort', byCohort, function () {
+            pr.fullMode = 'cohort'; paintMain(); recalc(); }),
+          radio('fullprice', 'Price per specimen type', !byCohort, function () {
+            pr.fullMode = 'specimen'; paintMain(); recalc(); })
+        ]));
+
+        if (byCohort) {
+          if (!draft.cohorts.length) {
+            mainBox.appendChild(emptyNote('Add cohorts in §03 and each one gets its own price here.'));
+            return;
+          }
+          var crows = el('div', { class: 'cohorts' });
+          crows.appendChild(el('div', { class: 'cohort-row ext cohort-head' }, [
+            el('span', { text: 'Cohort' }), el('span', { class: 'ca', text: 'Count' }),
+            el('span', { class: 'ca', text: '$ per unit' }),
+            el('span', { class: 'ca', text: 'Subtotal' }), el('span', {})]));
+
+          draft.cohorts.forEach(function (c, i) {
+            var key = c.name || ('cohort-' + i);
+            pr.cohortUnits = pr.cohortUnits || {};
+            var n = cohortSubjects(c);
+            var sub = el('span', { class: 'ca' });
+
+            var priceIn = el('input', { type: 'text', inputmode: 'decimal',
+              'aria-label': '$ per unit for ' + (c.name || 'cohort ' + (i + 1)),
+              oninput: function () {
+                pr.cohortPrices[key] = priceIn.value; retotal();
+              } });
+            priceIn.value = pr.cohortPrices[key] || '';
+
+            var unitSel = el('select', {
+              'aria-label': 'Unit for ' + (c.name || 'cohort ' + (i + 1)),
+              onchange: function () {
+                pr.cohortUnits[key] = unitSel.value; retotal();
+              } });
+            PRICE_UNITS.forEach(function (u) {
+              unitSel.appendChild(el('option', { value: u, text: u }));
+            });
+            unitSel.value = pr.cohortUnits[key] || 'subject';
+
+            // A unit is not always one per subject. The stool quote collects 25
+            // subjects but prices 50 stools, two from each; the adenoma quote is
+            // one draw per subject. Blank means one.
+            pr.cohortPer = pr.cohortPer || {};
+            var perIn = el('input', { type: 'text', inputmode: 'numeric', placeholder: '1',
+              'aria-label': 'Units per subject for ' + (c.name || 'cohort ' + (i + 1)),
+              oninput: function () { pr.cohortPer[key] = perIn.value; retotal(); } });
+            perIn.value = pr.cohortPer[key] == null ? '' : String(pr.cohortPer[key]);
+
+            function retotal() {
+              sub.textContent = money(cohortUnitCount(c, key, pr) * num(priceIn.value));
+              recalc();
+            }
+
+            sub.textContent = money(cohortUnitCount(c, key, pr) * num(priceIn.value));
+            crows.appendChild(el('div', { class: 'cohort-row ext' }, [
+              el('span', { text: c.name || 'Cohort ' + (i + 1) }),
+              el('span', { class: 'ca dim', text: String(cohortUnitCount(c, key, pr)) }),
+              el('span', { class: 'ca' }, [priceIn]),
+              sub, el('span', {})]));
+            crows.appendChild(el('div', { class: 'cohort-row unit' }, [
+              el('span', { class: 'hint', text: 'per subject' }),
+              el('span', { class: 'ca' }, [perIn]),
+              unitSel, el('span', {}), el('span', {})]));
+          });
+          mainBox.appendChild(crows);
+          mainBox.appendChild(el('div', { class: 'hint',
+            text: 'The unit is printed in the quote — "$1,250 / Cohort 1 draw" — and '
+                + 'the count above comes from §03.' }));
+          return;
+        }
+
         var specs = pickedSpecimens();
         if (!specs.length) {
           mainBox.appendChild(emptyNote('Pick specimen types in §05 and each gets its own pricing block here, numbered to match.'));
@@ -3948,29 +4103,59 @@
 
       // ---- other costs ------------------------------------------------------
       var otherBox = el('div');
+      // A cost line is often a rate times a count, not a lump: Medrio entry at
+      // $100 a subject is $53,200 of a real $948,425 quote, and shipping kits
+      // out to sites is $50 a stool. Leave the count blank and the rate is the
+      // whole line, which is the old behaviour.
       function paintOther() {
         otherBox.replaceChildren();
         var rows = el('div', { class: 'cohorts' });
-        rows.appendChild(el('div', { class: 'cohort-row full cohort-head' }, [
-          el('span', { text: 'Cost' }), el('span', { class: 'ca', text: 'Amount' }), el('span', {})]));
+        rows.appendChild(el('div', { class: 'cohort-row cost cohort-head' }, [
+          el('span', { text: 'Cost' }),
+          el('span', { class: 'ca', text: 'Rate' }),
+          el('span', { class: 'ca', text: '×' }),
+          el('span', { text: 'Unit' }),
+          el('span', { class: 'ca', text: 'Amount' }),
+          el('span', {})]));
         pr.otherCosts.forEach(function (o, i) {
-          var lab = el('input', { type: 'text', 'aria-label': 'Other cost ' + (i + 1) + ' label',
-            placeholder: 'e.g. study start-up fee',
+          var lab = el('input', { type: 'text', 'aria-label': 'Cost line ' + (i + 1) + ' label',
+            placeholder: 'e.g. Medrio entry',
             oninput: function () { pr.otherCosts[i].label = lab.value; } });
           lab.value = o.label || '';
+
+          var sub = el('span', { class: 'ca dim' });
+          function retotal() {
+            sub.textContent = money(otherCostAmount(pr.otherCosts[i]));
+            recalc();
+          }
+
           var amt = el('input', { type: 'text', inputmode: 'decimal',
-            'aria-label': 'Other cost ' + (i + 1) + ' amount',
-            oninput: function () { pr.otherCosts[i].amount = amt.value; recalc(); } });
+            'aria-label': 'Cost line ' + (i + 1) + ' rate',
+            oninput: function () { pr.otherCosts[i].amount = amt.value; retotal(); } });
           amt.value = o.amount || '';
+
+          var qty = el('input', { type: 'text', inputmode: 'numeric', placeholder: '—',
+            'aria-label': 'Cost line ' + (i + 1) + ' count',
+            oninput: function () { pr.otherCosts[i].count = qty.value; retotal(); } });
+          qty.value = o.count == null ? '' : String(o.count);
+
+          var unit = el('input', { type: 'text', placeholder: 'subjects, reports…',
+            'aria-label': 'Cost line ' + (i + 1) + ' unit',
+            oninput: function () { pr.otherCosts[i].unit = unit.value; } });
+          unit.value = o.unit || '';
+
           var x = el('button', { class: 'row-x', type: 'button',
-            'aria-label': 'Remove other cost ' + (i + 1),
+            'aria-label': 'Remove cost line ' + (i + 1),
             onclick: function () { pr.otherCosts.splice(i, 1); paintOther(); recalc(); } }, ['×']);
-          rows.appendChild(el('div', { class: 'cohort-row full' },
-            [lab, el('span', { class: 'ca' }, [amt]), x]));
+
+          sub.textContent = money(otherCostAmount(o));
+          rows.appendChild(el('div', { class: 'cohort-row cost' },
+            [lab, el('span', { class: 'ca' }, [amt]), el('span', { class: 'ca' }, [qty]),
+             unit, sub, x]));
         });
         otherBox.appendChild(rows);
         otherBox.appendChild(el('button', { class: 'add-row', type: 'button', onclick: function () {
-          pr.otherCosts.push({ label: '', amount: '' }); paintOther();
+          pr.otherCosts.push({ label: '', amount: '', count: '', unit: '' }); paintOther();
         } }, ['+ Add cost line']));
       }
 
@@ -3991,6 +4176,24 @@
             specimenTotal = subjects * num(draft.header.perSubject);
             lines.push([subjects + ' subjects × ' + money(num(draft.header.perSubject)), specimenTotal]);
           }
+        } else if (pr.fullMode !== 'specimen') {
+          // Per cohort, priced in whatever unit the cohort is counted in.
+          pr.cohortUnits = pr.cohortUnits || {};
+          draft.cohorts.forEach(function (c, i) {
+            var key = c.name || ('cohort-' + i);
+            var p = num(pr.cohortPrices[key]);
+            if (!p) return;
+            var n = cohortUnitCount(c, key, pr);
+            var unit = pr.cohortUnits[key] || 'subject';
+            var per = num((pr.cohortPer || {})[key]) || 1;
+            var line = n * p;
+            specimenTotal += line;
+            lines.push([(c.name || 'Cohort ' + (i + 1)) + ' — ' +
+              (per > 1 ? cohortSubjects(c) + ' subjects × ' + per + ' ' : '') +
+              (per > 1 ? '' : n + ' ') + unit + (n === 1 ? '' : 's') +
+              ' × ' + money(p), line]);
+          });
+          if (!lines.length) lines.push(['Biospecimens & data', 0]);
         } else {
           var tpNames = timepointNames();
           pickedSpecimens().forEach(function (t) {
@@ -4022,10 +4225,13 @@
 
         var otherTotal = 0;
         pr.otherCosts.forEach(function (o) {
-          var a = num(o.amount);
+          var a = otherCostAmount(o);
           if (!a) return;
           otherTotal += a;
-          lines.push([o.label || 'Other cost', a]);
+          var c = String(o.count == null ? '' : o.count).trim();
+          lines.push([(o.label || 'Other cost') + (c
+            ? ' — ' + c + ' ' + (o.unit || '') + ' × ' + money(num(o.amount))
+            : ''), a]);
         });
 
         var shipTotal = shippingTotal();
@@ -4071,6 +4277,13 @@
       sec.appendChild(subHead('Other costs'));
       paintOther();
       sec.appendChild(otherBox);
+
+      sec.appendChild(field('What the total assumes', { full: true,
+        placeholder: 'e.g. estimating that 100% of subjects provide two stools',
+        hint: 'Printed beside the total. A real quote reads '
+            + '"$180,000 (estimating that 100% of subjects provide two stools)".',
+        get: function () { return pr.totalAssumption; },
+        set: function (v) { pr.totalAssumption = v; } }));
 
       sec.appendChild(subHead('Total'));
       sec.appendChild(el('div', { class: 'grid' }, [

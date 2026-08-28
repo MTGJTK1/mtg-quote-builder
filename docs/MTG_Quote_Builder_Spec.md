@@ -1196,3 +1196,71 @@ itself, so the extract is shown as selectable text with a **Copy** button, which
 always works. The **Download .csv** button beside it works in the real app and
 when the file is opened locally. In the real app this becomes a route handler
 and the textarea is unnecessary.
+
+## §21 — Building the gaps the five real quotes exposed, 2026-08-28
+
+All five Natera quotes now reproduce to the cent.
+
+| Quote | Real total | Builder |
+|---|---|---|
+| Butterfly vs. straight needle | $90,000 | $90,000 |
+| Clean colonoscopy & advanced adenoma | $366,000 | $366,000 |
+| CRC & healthy — stool | $180,000 | $180,000 |
+| Healthy confirmed colonoscopy | $18,000 | $18,000 |
+| Pan-cancer & benign diseases | $948,425 | $948,425 |
+
+### §11 prices a full quote per cohort
+
+Per cohort is now the default and per specimen type the alternative, because
+four of the five real quotes price the first way and one prices the second.
+Both are needed: the colonoscopy quote prices plasma and buffy coat separately
+inside a single cohort.
+
+### A price carries its unit, and units are not always subjects
+
+Each cohort price names what it is quoted per — subject, draw, case,
+collection, stool, aliquot, block, slide, report, shipper — and how many of
+them each subject yields.
+
+That second number is the one that would have been missed. The adenoma quote is
+one draw per subject, so the count matches. The stool quote collects **25
+subjects but prices 50 stools**, two from each. Priced on the subject count it
+would have come out at $87,500 against a real $180,000 — half the quote, and
+wrong in a way that reads as plausible. The cost line now prints
+*"CRC — 25 subjects × 2 stools × $2,000.00"*.
+
+### Cost lines are a rate times a count
+
+`Other costs` were flat amounts. Medrio entry at $100 a subject is **$53,200 of
+the $948,425 pan-cancer quote**; shipping kits out to sites is $50 a stool;
+translated colonoscopy reports are $150 each. A line now takes a rate, a count
+and a unit, and prints *"At Enrollment Medrio Entry — 532 subjects × $100.00"*.
+Leave the count blank and it is a lump sum, as before.
+
+### Smaller, all confirmed against a real quote
+
+- **A cohort count can be marked an estimate.** The pan-cancer quote prices a
+  "negative bladder" cohort that exists only if suspicion cases come back
+  non-cancer, and totals it as *"estimating 7 cases"*.
+- **The total states what it assumes** — *"$180,000 (estimating that 100% of
+  subjects provide two stools)"*.
+- **What the sponsor provides** (§05). Streck tubes, kits, boxes, labels: named
+  in four of five quotes, and it gates the timeline — one study starts only once
+  the tubes arrive.
+- **Named documents.** A processing protocol in §05, a collection protocol in
+  §03, and §07's delivery detail now prompts for the data-format example.
+- **Where a section differs by cohort** (§05 and §07), shown only once a quote
+  has more than one cohort. The lighter of the two options in the gap note:
+  a per-cohort override in both sections would double the form for a case that
+  arises in two quotes out of five.
+
+### Still open
+
+`GAP 9` — deal-specific commitments in prose: no early termination while
+enrolling as expected, halt on four weeks' notice, freight escalation, invoice
+on actual delivery, cross-study enrolment. All five quotes carry some. §12's
+notes box holds them as one block; a short list of named clauses would make them
+consistent. Not built — it is a real choice, not an oversight.
+
+Also open: the letterhead reads Van Nuys in four quotes and Los Angeles in the
+fifth, same street.
