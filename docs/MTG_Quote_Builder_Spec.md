@@ -1141,19 +1141,30 @@ analyst — or to Claude — without handing over who the sponsors are.
 
 ### What the file does and does not carry
 
-**Not in the file at all.** Sponsor names, contact names, contact emails,
-HubSpot deal names, PO numbers, ship-to addresses, sponsor-selected case lists,
-and the §11 internal pricing notes — which exist precisely because they must not
-travel.
+John set the boundary, 2026-08-28: **confidential is the company name, the
+contact name and the email address.** Nothing else, unless it identifies the
+company by another route.
+
+**Not in the file.** Those three, and the sponsor acronym.
+
+**The acronym is the "another route."** It is not a name, but it is the name's
+key: `QTE NTA20260826 Pan-cancer - blood` and `NTA: 500 healthies - blood` both
+identify Natera to anyone who has seen one other quote. So the acronym is
+stripped out of the study and deal labels and the description survives —
+*"Pan-cancer - blood"* is the analysable half and gives nothing away.
 
 **Pseudonymised rather than dropped.** Each sponsor becomes a stable code
 (`S01`) and each study becomes one (`ST001`), consistent across rows, so *"the
-same sponsor"* and *"this study and its extensions"* remain analysable. The
-mapping lives only in the tool; nothing in the file resolves back to a name.
+same sponsor"* and *"this study and its extensions"* remain analysable.
 
-**Kept in full.** Dates, status, study shape and every number. Stripping the
-economics would leave nothing worth analysing, and the economics are not what
-makes the file sensitive.
+**Everything else travels.** MT and PO numbers, dates, status, validity, study
+design, cohort descriptions, units, timepoints, shipping destinations, every
+figure — and, behind a toggle that defaults on, the free text: inclusion and
+exclusion criteria, processing requirements, pricing notes, summary and notes.
+
+**The free-text caveat, stated on the panel.** No rule can guarantee those are
+clean: a rep may have typed a company or a person into a notes box. The toggle
+turns them off in one click, and the panel says to skim before sending.
 
 ### The study code is keyed on sponsor *and* MT number
 

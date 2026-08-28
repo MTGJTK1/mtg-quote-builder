@@ -1750,7 +1750,24 @@
     return /[",\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
   }
 
-  function analysisRows(list) {
+  /** The sponsor acronym is the one thing that leaks identity out of an
+   *  otherwise useful label: "QTE NTA20260826 Pan-cancer - blood" and
+   *  "NTA: 500 healthies - blood" both name Natera to anyone with the key.
+   *  Strip the acronym, keep the description, which is the analysable half. */
+  function stripAcronym(text, acronym) {
+    var t = String(text || '');
+    var ac = String(acronym || '').trim();
+    if (ac) {
+      t = t.replace(new RegExp('\\b' + ac + '\\b', 'gi'), '');
+    }
+    return t.replace(/^\s*QTE\s*/i, '')
+            .replace(/^[\s:–—-]+/, '')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+  }
+
+  function analysisRows(list, opts) {
+    opts = opts || {};
     // Stable codes, assigned in first-seen order over a sorted key so the same
     // register always produces the same codes.
     var sponsors = {}, studies = {}, sN = 0, tN = 0;
@@ -1778,7 +1795,8 @@
       var cohorts = q.cohorts || [];
       var specimens = orderedSpecimens(q);
       var detail = q.specimenDetail || {};
-      var tps = (q.multipleTimepoints === true ? (q.timepoints || []) : []).length;
+      var tpNames = timepointNamesFor(q);
+      var ac = q.sponsorAcronym;
 
       var subjects = cohorts.reduce(function (t, c) {
         if (c.subcohorts && c.subcohorts.length) {
@@ -1796,12 +1814,19 @@
         return t + num(leg.count) * num(String(leg.rate || '').trim() !== '' ? leg.rate
           : (leg.intl ? sh.intlRate : sh.usRate)); }, 0);
 
-      return {
+      function join(list) { return list.filter(Boolean).join(' | ').replace(/\s*\n\s*/g, ' / '); }
+
+      var row = {
         document_type: q.isFeasibility ? 'feasibility' : 'quote',
         study_code: studyCode(q),
         sponsor_code: sponsorCode(q.client),
+        mt_number: q.mtNumber || h.parentMtNumber || '',
+        po_number: h.originalStudyPo || '',
+        study_label: stripAcronym(q.quoteName, ac),
+        deal_label: stripAcronym(q.hubspotDealName, ac),
         quote_date: q.quoteDate || '',
         status: q.status || '',
+        validity: h.validity || '',
         is_extension: q.isExtension ? 'yes' : 'no',
         extension_number: q.isExtension ? (h.extensionNumber || '') : '',
         design_changed: q.isExtension ? (h.designChanged === false ? 'no' : 'yes') : '',
@@ -1810,22 +1835,41 @@
         cohort_count: cohorts.length,
         subcohort_count: cohorts.reduce(function (t, c) {
           return t + ((c.subcohorts || []).length); }, 0),
+        cohort_descriptions: cohorts.map(function (c) { return c.name; }).filter(Boolean).join(' | '),
         subject_count: subjects || '',
+        units: cohorts.map(function (c) { return c.units; }).filter(Boolean).join(' | '),
         specimen_types: specimens.join('; '),
         specimen_type_count: specimens.length,
-        timepoint_count: tps,
+        timepoint_count: tpNames.length,
+        timepoints: tpNames.join(' | '),
         max_collections_per_subject: specimens.reduce(function (m, t) {
-          return Math.max(m, collectionCount(detail[t], timepointNamesFor(q))); }, tps ? 1 : 1),
+          return Math.max(m, collectionCount(detail[t], tpNames)); }, 1),
         price_per_collection_min: prices.length ? Math.min.apply(null, prices) : '',
         price_per_collection_max: prices.length ? Math.max.apply(null, prices) : '',
         screenfail_rate: (pr.screenfail || {}).enabled ? (pr.screenfail.rate || '') : '',
         shipping_legs: (sh.legs || []).length,
+        shipping_destinations: (sh.legs || []).map(function (l) {
+          return l.dest; }).filter(Boolean).join(' | '),
         shipping_internal_cost: legCost || '',
         shipping_markup: sh.markup || '',
         shipping_quoted_as: sh.mode === 'perSubject' ? 'per subject' : 'lump sum',
         us_destination_stated: sh.usDestination ? 'yes' : 'no',
         total_cost: num(q.totalCost) || ''
       };
+
+      // Free text is where a human may have typed a name we cannot predict, so
+      // it travels only when the export is set to include it.
+      if (opts.freeText) {
+        row.inclusion_criteria = join(cohorts.map(function (c) { return c.inclusion; }));
+        row.exclusion_criteria = join(cohorts.map(function (c) { return c.exclusion; }));
+        row.processing_requirements = join(specimens.map(function (t) {
+          return (detail[t] || {}).processing; }));
+        row.pricing_notes = join(specimens.map(function (t) {
+          return ((pr.specimenPrices || {})[t] || {}).notes; }));
+        row.study_summary = stripAcronym(q.summary, ac);
+        row.additional_notes = stripAcronym(q.notes, ac);
+      }
+      return row;
     });
   }
 
@@ -1837,8 +1881,8 @@
     });
   }
 
-  function analysisCsv(list) {
-    var rows = analysisRows(list);
+  function analysisCsv(list, opts) {
+    var rows = analysisRows(list, opts);
     if (!rows.length) return '';
     var cols = Object.keys(rows[0]);
     return [cols.join(',')].concat(rows.map(function (r) {
@@ -1867,19 +1911,39 @@
     var body = el('div');
     var open = false;
 
+    var freeText = true;
+
     function paint() {
       body.replaceChildren();
       if (!open) return;
 
-      var csv = analysisCsv(quotes);
-      var rows = analysisRows(quotes);
+      var opts = { freeText: freeText };
+      var csv = analysisCsv(quotes, opts);
+      var rows = analysisRows(quotes, opts);
 
       body.appendChild(el('p', { class: 'export-note', text:
-        'Sponsors and studies become codes (S01, ST001) that stay consistent '
-        + 'across rows, so patterns by sponsor are still analysable. Names, '
-        + 'contacts, emails, deal names, PO numbers, addresses, case lists and '
-        + 'internal pricing notes are not in the file at all. Dates, study '
-        + 'shape and every number are.' }));
+        'Three things are held back: the company name, the contact name and '
+        + 'the contact email. Each sponsor becomes a stable code (S01) so '
+        + 'patterns by sponsor still read. Everything else goes — MT and PO '
+        + 'numbers, study and deal labels, dates, study design, destinations '
+        + 'and every figure.' }));
+
+      body.appendChild(el('p', { class: 'export-note', text:
+        'The sponsor acronym is stripped out of the study and deal labels, '
+        + 'because "QTE NTA20260826 Pan-cancer - blood" names Natera to anyone '
+        + 'holding the key. The description survives; the initials do not.' }));
+
+      var ftInput = el('input', { type: 'checkbox', onchange: function () {
+        freeText = ftInput.checked; paint();
+      } });
+      ftInput.checked = freeText;
+      body.appendChild(el('label', { class: 'check' }, [ftInput,
+        el('span', { text: 'Include free text \u2014 criteria, processing, '
+          + 'pricing notes, summary' })]));
+      body.appendChild(el('p', { class: 'export-note', text: freeText
+        ? 'Free text is in. Worth a skim before sending: a rep may have typed a '
+          + 'company or a person into a notes box, and no rule can catch that.'
+        : 'Free text is out. Numbers, dates and structure only.' }));
 
       var ta = el('textarea', { class: 'export-csv', rows: 10, readonly: 'readonly',
         'aria-label': 'Register extract, comma separated' });
