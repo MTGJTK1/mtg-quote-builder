@@ -858,3 +858,52 @@ default under-charged by one outbound shipment — $600 at the standard rate.
 Same class as the `pr.extMode` mismatch in §12: a default that exists for the
 eye and not for the arithmetic. Worth a standing check — where a field displays
 a default, confirm the maths reads the same value.
+
+## §15 — Seventh-pass revisions, rep review 2026-08-28
+
+### Subcohorts reach the extension track
+
+The full quote has had subcohorts since the third review; the extension track
+never got them, so a rep extending a study that has subcohorts had nowhere to
+put the split. Each cohort in §03 now takes subcohorts, labelled `1a`, `1b`, and
+the cohort's own figure locks and shows their sum — the same behaviour as the
+full quote, so the two tracks no longer disagree about what a cohort is.
+
+`extAdditional(c)` is the single reader of an extension cohort's subject count,
+used by the §03 total, the per-cohort pricing, the quote total and the
+per-subject shipping division. One helper rather than five call sites reading
+`c.additionalSubjects` directly, which is how the two tracks drifted apart in
+the first place.
+
+### The US-destination undertaking
+
+Ship-to addresses are often not known when the quote is written, and John did
+not want that gap to become a surprise international delivery later. A checkbox
+— *"The sponsor's destination is US-based"* — puts a sentence in the quote:
+
+> Shipped to a US-based destination designated by Merck.
+
+The sponsor's name comes from §01. Ticking it also fixes the MTG-to-sponsor leg
+at the US rate and disables that leg's international tick, since the quote now
+says otherwise. The rendered sentence is shown under the checkbox so the rep
+sees the wording that will appear, not just a tick.
+
+This is the cheap half of a real commercial problem: it does not discover the
+address, it makes the assumption explicit and priced.
+
+### Legs named as reps name them
+
+"Collection sites to MT Group" and "MT Group to the sponsor" become
+**Site(s) to MTG leg** and **MTG to sponsor leg**.
+
+### Tighter vertical rhythm
+
+The form was running long on negative space. Section margins, field gaps, label
+gaps, input padding, card padding, fieldset margins and the calculation blocks
+all come in. A representative quote — one cohort, two specimens — drops from
+7,937px to 7,127px, about 10%, with no change to type size or line length.
+
+### Also fixed
+
+§09 still carried **Delivery address(es)** after §10 gained **Ship-to
+address(es)**, so the form asked for the same thing twice. §09's copy is gone.

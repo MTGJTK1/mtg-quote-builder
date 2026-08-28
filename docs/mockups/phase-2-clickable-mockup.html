@@ -385,13 +385,13 @@
   }
   .quote-no-foot .link-btn { font-size: 12px; }
 
-  section.sec { margin-bottom: 34px; }
+  section.sec { margin-bottom: 24px; }
 
   .sec-head {
     display: flex; align-items: baseline; gap: 11px;
-    padding-bottom: 9px;
+    padding-bottom: 7px;
     border-bottom: 1px solid var(--rule);
-    margin-bottom: 18px;
+    margin-bottom: 13px;
   }
   .sec-num {
     font-family: var(--mono); font-size: 12px;
@@ -413,26 +413,26 @@
     text-transform: uppercase; letter-spacing: .1em;
   }
 
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 17px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 11px 16px; }
   @media (max-width: 620px) { .grid { grid-template-columns: 1fr; } }
   .grid .full { grid-column: 1 / -1; }
 
   .fld { display: flex; flex-direction: column; }
   .fld > label {
-    font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--ink);
+    font-size: 13px; font-weight: 500; margin-bottom: 4px; color: var(--ink);
   }
   .req { color: var(--danger); }
 
   input[type="text"], input[type="email"], input[type="date"], select, textarea {
     font: inherit; font-size: 14px;
-    padding: 9px 11px;
+    padding: 7px 10px;
     border: 1px solid var(--rule-strong);
     border-radius: 8px;
     background: var(--surface);
     color: var(--ink);
     width: 100%;
   }
-  textarea { resize: vertical; min-height: 62px; }
+  textarea { resize: vertical; min-height: 52px; }
   input:hover, select:hover, textarea:hover { border-color: var(--ink-faint); }
   input:focus, select:focus, textarea:focus {
     outline: none; border-color: var(--accent);
@@ -440,12 +440,12 @@
   }
   ::placeholder { color: var(--ink-faint); opacity: 1; }
 
-  .hint { font-size: 12px; color: var(--ink-faint); margin-top: 5px; }
+  .hint { font-size: 12px; color: var(--ink-faint); margin-top: 3px; line-height: 1.45; }
 
   .check { display: flex; align-items: flex-start; gap: 9px; font-size: 14px; cursor: pointer; }
   .check input { margin: 2px 0 0; width: 15px; height: 15px; accent-color: var(--accent); flex: none; cursor: pointer; }
 
-  .check-row { display: flex; flex-wrap: wrap; gap: 10px 24px; }
+  .check-row { display: flex; flex-wrap: wrap; gap: 7px 22px; }
 
   .specimen-grid {
     display: grid;
@@ -457,22 +457,22 @@
     background: var(--surface-sunk);
     border: 1px solid var(--rule);
     border-radius: 9px;
-    padding: 17px;
-    margin-bottom: 18px;
+    padding: 13px 14px;
+    margin-bottom: 12px;
   }
 
-  fieldset { border: 0; padding: 0; margin: 18px 0 0; }
-  legend { font-size: 13px; font-weight: 500; margin-bottom: 8px; padding: 0; }
+  fieldset { border: 0; padding: 0; margin: 12px 0 0; }
+  legend { font-size: 13px; font-weight: 500; margin-bottom: 6px; padding: 0; }
 
   /* ---------- empty-state note ---------- */
 
   .empty-note {
-    display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap;
+    display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
     background: var(--surface-sunk);
     border-left: 3px solid var(--rule-strong);
     border-radius: 0 7px 7px 0;
-    padding: 10px 13px;
-    margin-bottom: 16px;
+    padding: 8px 12px;
+    margin-bottom: 11px;
     font-size: 12.5px;
     color: var(--ink-soft);
   }
@@ -568,7 +568,7 @@
 
   .cohort-card-head {
     display: flex; align-items: baseline; gap: 10px;
-    padding-bottom: 10px; margin-bottom: 14px;
+    padding-bottom: 7px; margin-bottom: 10px;
     border-bottom: 1px solid var(--rule);
   }
   .cohort-card-title {
@@ -601,6 +601,31 @@
     padding-left: 2px;
   }
   .ship-intl span { font-size: 12.5px; color: var(--ink-soft); }
+  .ship-intl input:disabled + span { color: var(--ink-faint); }
+
+  .cohort-row.sub-ext {
+    grid-template-columns: 26px 1fr 84px 32px;
+    align-items: center;
+    padding-left: 14px;
+  }
+  .cohort-row.sub-add { grid-template-columns: 1fr; padding-left: 14px; }
+  .cohort-row.sub-add .add-row { margin: 2px 0 6px; }
+
+  .quoted-line {
+    display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap;
+    background: var(--accent-soft);
+    border: 1px solid var(--rule);
+    border-radius: 7px;
+    padding: 8px 12px;
+    margin-top: 8px;
+    font-size: 13.5px;
+  }
+  .quoted-tag {
+    flex: none;
+    font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .11em;
+    color: var(--accent);
+  }
   @media (max-width: 760px) {
     .cohort-row.ship { grid-template-columns: 1fr; gap: 6px; }
   }
@@ -620,14 +645,14 @@
     margin-bottom: 10px;
     border-bottom: 1px solid var(--rule);
   }
-  .spec-col .check { margin-bottom: 8px; }
+  .spec-col .check { margin-bottom: 5px; }
 
   .sub-head {
     font-size: 10.5px; font-weight: 600;
     text-transform: uppercase; letter-spacing: .11em;
     color: var(--ink-faint);
-    margin: 26px 0 12px;
-    padding-bottom: 6px;
+    margin: 18px 0 9px;
+    padding-bottom: 5px;
     border-bottom: 1px solid var(--rule);
   }
 
@@ -636,17 +661,17 @@
   .calc {
     background: var(--surface-sunk);
     border-radius: 9px;
-    padding: 14px 16px;
-    margin-top: 16px;
+    padding: 10px 14px;
+    margin-top: 11px;
   }
   .calc-row {
     display: flex; justify-content: space-between; gap: 14px;
-    padding: 5px 0; font-size: 13.5px;
+    padding: 3px 0; font-size: 13.5px;
   }
   .calc-row .v { font-variant-numeric: tabular-nums; font-family: var(--mono); font-size: 13px; }
   .calc-total {
     border-top: 1px solid var(--rule-strong);
-    margin-top: 7px; padding-top: 10px;
+    margin-top: 5px; padding-top: 8px;
     font-weight: 600; font-size: 15px;
   }
   .calc-total .v { font-size: 15px; font-weight: 600; }
@@ -1136,7 +1161,7 @@
   // drafts must survive — so a changed fixture set would otherwise sit unread in
   // the file while the browser kept serving the old one. This makes the mismatch
   // visible and offers the reset, rather than silently discarding their work.
-  var SAMPLES_VERSION = 4;
+  var SAMPLES_VERSION = 5;
   var samplesStale = false;
   var quotes = [];
   var storageWorks = true;
@@ -2085,7 +2110,7 @@
 
       function recompute() {
         totalEl.textContent = String(draft.cohorts.reduce(function (s, c) {
-          return s + num(c.additionalSubjects); }, 0));
+          return s + extAdditional(c); }, 0));
         if (pricingRefresh) pricingRefresh();
       }
 
@@ -2108,11 +2133,16 @@
             onblur: function () { nameIn.value = draft.cohorts[i].name || ''; } });
           nameIn.value = c.name || '';
 
+          c.subcohorts = c.subcohorts || [];
+          var hasSub = c.subcohorts.length > 0;
+
           var addIn = el('input', { type: 'text', inputmode: 'numeric',
             placeholder: '0',
             'aria-label': 'Additional subjects for ' + (c.name || 'cohort ' + (i + 1)),
             oninput: function () { draft.cohorts[i].additionalSubjects = addIn.value; recompute(); } });
-          addIn.value = c.additionalSubjects == null ? '' : String(c.additionalSubjects);
+          addIn.disabled = hasSub;
+          addIn.value = hasSub ? String(extAdditional(c))
+                               : (c.additionalSubjects == null ? '' : String(c.additionalSubjects));
 
           var x = el('button', { class: 'row-x', type: 'button',
             'aria-label': 'Remove ' + (c.name || 'cohort ' + (i + 1)),
@@ -2120,6 +2150,34 @@
 
           rows.appendChild(el('div', { class: 'cohort-row full' },
             [nameIn, el('span', { class: 'ca' }, [addIn]), x]));
+
+          // Subcohorts split a cohort's extra subjects. The full quote has had
+          // them since the third review; the extension track had not, so a rep
+          // extending a study with subcohorts had nowhere to put them.
+          c.subcohorts.forEach(function (sc, j) {
+            var label = (i + 1) + String.fromCharCode(97 + j);
+            var noteIn = el('input', { type: 'text',
+              'aria-label': 'Subcohort ' + label + ' note',
+              placeholder: 'What distinguishes this subcohort',
+              oninput: function () { sc.note = noteIn.value; } });
+            noteIn.value = sc.note || '';
+            var nIn = el('input', { type: 'text', inputmode: 'numeric', placeholder: '0',
+              'aria-label': 'Additional subjects for subcohort ' + label,
+              oninput: function () { sc.additionalSubjects = nIn.value; paint(); } });
+            nIn.value = sc.additionalSubjects == null ? '' : String(sc.additionalSubjects);
+            var sx = el('button', { class: 'row-x', type: 'button',
+              'aria-label': 'Remove subcohort ' + label,
+              onclick: function () { c.subcohorts.splice(j, 1); paint(); } }, ['×']);
+            rows.appendChild(el('div', { class: 'cohort-row sub-ext' }, [
+              el('span', { class: 'sub-label', text: label }), noteIn,
+              el('span', { class: 'ca' }, [nIn]), sx]));
+          });
+
+          rows.appendChild(el('div', { class: 'cohort-row sub-add' }, [
+            el('button', { class: 'add-row', type: 'button', onclick: function () {
+              c.subcohorts.push({ note: '', additionalSubjects: '' }); paint();
+            } }, ['+ Add subcohort'])
+          ]));
         });
 
         rows.appendChild(el('div', { class: 'cohort-row full cohort-total' }, [
@@ -2129,7 +2187,7 @@
       paint();
       sec.appendChild(rows);
       sec.appendChild(el('button', { class: 'add-row', type: 'button', onclick: function () {
-        draft.cohorts.push({ name: '', additionalSubjects: '' }); paint();
+        draft.cohorts.push({ name: '', additionalSubjects: '', subcohorts: [] }); paint();
       } }, ['+ Add cohort']));
       sec.appendChild(el('div', { class: 'hint',
         text: 'Filled from the original study when the lookup finds it — otherwise type them in. Just the description; the numbering is added for you.' }));
@@ -2507,10 +2565,6 @@
         hint: 'An unstated blackout makes every enrollment projection wrong.',
         get: function () { return tl.blackouts; }, set: function (v) { tl.blackouts = v; } }));
 
-      sec.appendChild(field('Delivery address(es)', { type: 'textarea', rows: 2, full: true,
-        placeholder: 'One per line if there is more than one',
-        get: function () { return tl.addresses; }, set: function (v) { tl.addresses = v; } }));
-
       sec.appendChild(batchBox);
       paintBatching();
       return sec;
@@ -2877,8 +2931,9 @@
     // Group's own numbers and every one of them is editable.
 
     var DEFAULT_LEGS = [
-      { label: 'Collection sites to MT Group', dest: '', intl: false, count: '', rate: '' },
-      { label: 'MT Group to the sponsor',      dest: '', intl: false, count: '1', rate: '' }
+      { label: 'Site(s) to MTG leg', dest: '', intl: false, count: '', rate: '' },
+      { label: 'MTG to sponsor leg', dest: '', intl: false, count: '1', rate: '',
+        toSponsor: true }
     ];
 
     function shipState() {
@@ -2898,7 +2953,21 @@
     function legRate(sh, leg) {
       var typed = String(leg.rate == null ? '' : leg.rate).trim();
       if (typed !== '') return num(typed);
-      return num(leg.intl ? sh.intlRate : sh.usRate);
+      return num(legIsIntl(sh, leg) ? sh.intlRate : sh.usRate);
+    }
+
+    /** The sponsor leg cannot be international once the quote undertakes that
+     *  the destination is US-based — that is the whole point of the sentence. */
+    function legIsIntl(sh, leg) {
+      if (leg.toSponsor && sh.usDestination) return false;
+      return !!leg.intl;
+    }
+
+    /** The sentence that goes in the quote. Named so there is no argument later
+     *  about where the specimens were going. */
+    function usDestinationSentence() {
+      var who = String(draft.client || '').trim() || 'the sponsor';
+      return 'Shipped to a US-based destination designated by ' + who + '.';
     }
 
     function shippingCost() {
@@ -2913,10 +2982,20 @@
       return shippingCost() * (num(sh.markup) || 1);
     }
 
+    /** Extra subjects on an extension cohort. Subcohorts win when present — the
+     *  cohort row then shows their sum rather than a number of its own. */
+    function extAdditional(c) {
+      if (c.subcohorts && c.subcohorts.length) {
+        return c.subcohorts.reduce(function (t, sc) {
+          return t + num(sc.additionalSubjects); }, 0);
+      }
+      return num(c.additionalSubjects);
+    }
+
     function quoteSubjects() {
       if (isMinimal()) {
         return (draft.cohorts || []).reduce(function (t, c) {
-          return t + num(c.additionalSubjects); }, 0);
+          return t + extAdditional(c); }, 0);
       }
       return (draft.cohorts || []).reduce(function (t, c) {
         if (c.subcohorts && c.subcohorts.length) {
@@ -2988,17 +3067,15 @@
 
           var rateIn = el('input', { type: 'text', inputmode: 'decimal',
             'aria-label': 'Cost per shipment for leg ' + (i + 1),
-            placeholder: money(num(leg.intl ? sh.intlRate : sh.usRate)),
+            placeholder: money(num(legIsIntl(sh, leg) ? sh.intlRate : sh.usRate)),
             oninput: function () { leg.rate = rateIn.value; refresh(); } });
           rateIn.value = leg.rate == null ? '' : String(leg.rate);
 
+          var locked = !!(leg.toSponsor && sh.usDestination);
           var intl = el('input', { type: 'checkbox', 'aria-label': 'Leg ' + (i + 1) + ' is international',
-            onchange: function () {
-              leg.intl = intl.checked;
-              rateIn.placeholder = money(num(leg.intl ? sh.intlRate : sh.usRate));
-              refresh();
-            } });
-          intl.checked = !!leg.intl;
+            onchange: function () { leg.intl = intl.checked; refresh(); } });
+          intl.checked = legIsIntl(sh, leg);
+          intl.disabled = locked;
 
           var x = el('button', { class: 'row-x', type: 'button',
             'aria-label': 'Remove leg ' + (i + 1),
@@ -3012,7 +3089,9 @@
             x
           ]));
           legsBox.appendChild(el('label', { class: 'check ship-intl' }, [
-            intl, el('span', { text: 'International \u2014 uses the international rate' })
+            intl, el('span', { text: locked
+              ? 'Domestic \u2014 the quote states a US destination'
+              : 'International \u2014 uses the international rate' })
           ]));
         });
       }
@@ -3075,6 +3154,29 @@
         get: function () { return draft.shipping.addresses; },
         set: function (v) { draft.shipping.addresses = v; } }));
 
+      var destBox = el('div');
+      function paintDest() {
+        destBox.replaceChildren();
+        if (!sh.usDestination) return;
+        destBox.appendChild(el('div', { class: 'quoted-line' }, [
+          el('span', { class: 'quoted-tag', text: 'In the quote' }),
+          el('span', { text: usDestinationSentence() })
+        ]));
+      }
+      var destToggle = checkbox(
+        'The sponsor\u2019s destination is US-based',
+        function () { return sh.usDestination; },
+        function (v) { sh.usDestination = v; },
+        function () { paintDest(); refresh(); });
+      destToggle.style.marginTop = '10px';
+      sec.appendChild(destToggle);
+      sec.appendChild(el('div', { class: 'hint',
+        text: 'Puts a sentence in the quote naming the destination as US-based, so an '
+            + 'international delivery address cannot appear later without a new quote. '
+            + 'It also fixes the sponsor leg at the US rate.' }));
+      sec.appendChild(destBox);
+      paintDest();
+
       sec.appendChild(subHead('Legs'));
       sec.appendChild(legsBox);
       sec.appendChild(el('button', { class: 'add-row', type: 'button', onclick: function () {
@@ -3116,7 +3218,7 @@
         placeholder: 'Courier, service level, TempTale\u2026',
         get: function () { return sh.detail; }, set: function (v) { sh.detail = v; } }));
 
-      shippingRefresh = function () { paintCalc(); paintMode(); };
+      shippingRefresh = function () { paintCalc(); paintMode(); paintDest(); };
       paintLegs(); paintCalc(); paintMode();
       return sec;
     }
@@ -3138,7 +3240,7 @@
 
       function subjectCount() {
         if (ext) {
-          return draft.cohorts.reduce(function (s, c) { return s + num(c.additionalSubjects); }, 0);
+          return draft.cohorts.reduce(function (s, c) { return s + extAdditional(c); }, 0);
         }
         return draft.cohorts.reduce(function (s, c) {
           if (c.subcohorts && c.subcohorts.length) {
@@ -3190,7 +3292,7 @@
           draft.cohorts.forEach(function (c, i) {
             var key = c.name || ('cohort-' + i);
             if (pr.cohortPrices[key] == null && carried) pr.cohortPrices[key] = carried;
-            var subs = num(c.additionalSubjects);
+            var subs = extAdditional(c);
             var sub = el('span', { class: 'ca' });
             var priceIn = el('input', { type: 'text', inputmode: 'decimal',
               'aria-label': '$ per subject for ' + (c.name || 'cohort ' + (i + 1)),
@@ -3332,7 +3434,7 @@
           if (pr.extMode !== 'flat') {          // undefined defaults to per-cohort
             draft.cohorts.forEach(function (c, i) {
               var key = c.name || ('cohort-' + i);
-              specimenTotal += num(c.additionalSubjects) * num(pr.cohortPrices[key]);
+              specimenTotal += extAdditional(c) * num(pr.cohortPrices[key]);
             });
             lines.push(['Biospecimens & data, by cohort', specimenTotal]);
           } else {
