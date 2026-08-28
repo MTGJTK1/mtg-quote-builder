@@ -637,6 +637,13 @@
     padding-left: 14px;
   }
   .cohort-row.sub-add { grid-template-columns: 1fr; padding-left: 14px; }
+  .cond { margin-bottom: 9px; }
+  .cond-text {
+    margin: 6px 0 4px 24px;
+    width: calc(100% - 24px);
+    font-size: 13.5px;
+  }
+
   .cohort-row.cost {
     grid-template-columns: 1.5fr 90px 62px 1fr 96px 32px;
     align-items: center;
@@ -954,6 +961,46 @@
   var CURRENT_REP = REPS[0];
   var VALIDITY = ['30 Day Quote', '60 Day Quote'];
 
+  // Deal-specific commitments, as distinct from the Terms & Conditions, which
+  // are boilerplate and identical across all five real quotes. Each of these is
+  // taken verbatim from one, with the sponsor's name as {S}. They are the terms
+  // most likely to be argued about later, so they are prompted rather than
+  // remembered — and every one stays editable once ticked.
+  var STUDY_CONDITIONS = [
+    { id: 'noEarlyTerm', label: 'No early termination while enrolling as expected',
+      text: '{S} will not terminate this study early if MT Group is enrolling '
+          + 'subjects as expected.' },
+    { id: 'halt', label: 'Sponsor may halt the study on notice',
+      text: '{S} may halt the study with 4 weeks\u2019 notice.' },
+    { id: 'updates', label: 'Regular enrollment updates',
+      text: 'MT Group will provide {S} with regular enrollment updates.' },
+    { id: 'freight', label: 'Shipping costs may rise with freight charges',
+      text: 'It is understood that if freight charges increase dramatically '
+          + 'during the study execution, shipping & handling costs may also be '
+          + 'increased.' },
+    { id: 'invoiceActual', label: 'Invoiced on samples actually delivered',
+      text: 'MT Group will invoice based upon the actual samples delivered.' },
+    { id: 'crossEnroll', label: 'Subjects may enroll in another study',
+      text: 'It is acceptable that subjects enrolled in this study also enroll '
+          + '(or be enrolled) in another {S} study with MT Group.' },
+    { id: 'priorCollect', label: 'Subjects may have been collected before',
+      text: 'It is acceptable for subjects to have been previously collected '
+          + 'for another {S} study.' },
+    { id: 'repeatDraw', label: 'Subjects may be drawn more than once',
+      text: 'It is acceptable for MT Group sites to draw subjects at multiple '
+          + 'times as long as the inclusion / exclusion criteria are met.' },
+    { id: 'mutualChange', label: 'Changes are mutually agreed',
+      text: 'Any changes to the approach described herein will be mutually '
+          + 'agreed by {S} and MT Group.' },
+    { id: 'drawLimit', label: 'Site draw limit per visit',
+      text: 'MT Group sites can only draw 4 x 10 mL tubes\u2019 worth of blood '
+          + 'per draw and each draw has the same site cost.' },
+    { id: 'confirmWindow', label: 'Diagnosis may be confirmed after enrollment',
+      text: 'For suspected cancer subjects, it is acceptable that definitive '
+          + 'confirmation of cancer / non-cancer can occur up to 6 months after '
+          + 'enrollment.' }
+  ];
+
   // What a price is quoted per. Every one of these is taken from a real Natera
   // quote: subject, draw, stool, case, report, shipper. The unit changes the
   // arithmetic as well as the wording — 120 draws is not 120 subjects.
@@ -1245,7 +1292,7 @@
   // drafts must survive — so a changed fixture set would otherwise sit unread in
   // the file while the browser kept serving the old one. This makes the mismatch
   // visible and offers the reset, rather than silently discarding their work.
-  var SAMPLES_VERSION = 11;
+  var SAMPLES_VERSION = 12;
   var samplesStale = false;
   var quotes = [];
   var storageWorks = true;
@@ -4365,10 +4412,53 @@
     function sectionNotes() {
       var sec = el('section', { class: 'sec' });
       sec.appendChild(secHead('12', 'Additional quote details'));
+
+      draft.conditions = draft.conditions || {};
+      var condBox = el('div');
+
+      function sponsorName() {
+        return String(draft.client || '').trim() || 'the sponsor';
+      }
+
+      function paintConditions() {
+        condBox.replaceChildren();
+        STUDY_CONDITIONS.forEach(function (cl) {
+          var on = Object.prototype.hasOwnProperty.call(draft.conditions, cl.id);
+          var row = el('div', { class: 'cond' });
+          var box = el('input', { type: 'checkbox', onchange: function () {
+            if (box.checked) {
+              draft.conditions[cl.id] = cl.text.replace(/\{S\}/g, sponsorName());
+            } else {
+              delete draft.conditions[cl.id];
+            }
+            paintConditions();
+          } });
+          box.checked = on;
+          row.appendChild(el('label', { class: 'check' }, [box,
+            el('span', { text: cl.label })]));
+          if (on) {
+            var ta = el('textarea', { rows: 2, class: 'cond-text',
+              'aria-label': cl.label + ' — wording',
+              oninput: function () { draft.conditions[cl.id] = ta.value; } });
+            ta.value = draft.conditions[cl.id];
+            row.appendChild(ta);
+          }
+          condBox.appendChild(row);
+        });
+      }
+
+      sec.appendChild(subHead('Study conditions'));
       sec.appendChild(el('div', { class: 'hint',
-        text: 'Anything else the quote should say. Appears on both the internal draft and the sponsor quote.' }));
+        text: 'The terms most likely to be argued about later. Tick the ones that '
+            + 'apply and edit the wording — these are not the standard Terms & '
+            + 'Conditions, which every quote carries unchanged.' }));
+      sec.appendChild(condBox);
+      paintConditions();
+
+      sec.appendChild(subHead('Anything else'));
       sec.appendChild(field('Notes', { type: 'textarea', rows: 4, full: true,
         placeholder: 'Delivery expectations, sponsor-specific terms, anything the sections above did not cover.',
+        hint: 'Appears on both the internal draft and the sponsor quote.',
         get: function () { return draft.notes; }, set: function (v) { draft.notes = v; } }));
       return sec;
     }

@@ -219,9 +219,18 @@ quote before considering formatting "done."** Rules below were derived that way.
   this, confirmed against the real PDFs.
 - **Signature line** at the very end *is* literal underscore text (short, ~20
   characters) — different from the horizontal rules above.
-- **Letterhead:** "The MT Group" / "7120 Hayvenhurst Ave. Suite 317" (one line) /
-  "Los Angeles, CA 91406" (note: some real quotes show Van Nuys, CA — sponsor-quote
-  generation should probably make this configurable rather than hardcoded, TBD).
+- **Letterhead:** "The MT Group" / "7120 Hayvenhurst Avenue, Suite 317" /
+  **"Los Angeles, CA 91406"**. Settled by John, 2026-08-28: four of the five real
+  quotes read Van Nuys and one reads Los Angeles — same street, and Van Nuys is
+  in Los Angeles, but Los Angeles is the one to print. Not configurable; one
+  address, used everywhere.
+- **Terms & Conditions are boilerplate**, not quote data. All five real quotes
+  carry them word for word: IRB & HIPAA, Research Use, Deliveries, Applicable
+  Laws, Quality Guarantee, Publications, Unknown Elements, Taxes ("There are
+  none."), "Issue Purchase Orders to: THE MT GROUP, INC.", the preparer line, and
+  "Payment terms are net 30 days. Invoices will be submitted the month after
+  biospecimen deliveries." The generator emits them; the form must never ask.
+  Deal-specific commitments are a different thing and live in §12.
 - **Content breaks get a blank line**, not just section breaks: e.g. after a bullet
   list before the next sentence within the same section, before "Exclusions" when
   it follows "Inclusions," before a concluding line like "No additional I/E
@@ -1264,3 +1273,38 @@ consistent. Not built — it is a real choice, not an oversight.
 
 Also open: the letterhead reads Van Nuys in four quotes and Los Angeles in the
 fifth, same street.
+
+## §22 — Study conditions, and the last of the five-quote gaps, 2026-08-28
+
+### The commitments that were living in prose
+
+`GAP 9` is built. §12 now carries **Study conditions**: eleven clauses, each
+lifted verbatim from one of the five real quotes, with the sponsor's name
+substituted. Ticking one reveals the wording, editable.
+
+| | |
+|---|---|
+| No early termination while enrolling as expected | *"{S} will not terminate this study early if MT Group is enrolling subjects as expected."* |
+| Sponsor may halt the study on notice | *"{S} may halt the study with 4 weeks' notice."* |
+| Regular enrollment updates | *"MT Group will provide {S} with regular enrollment updates."* |
+| Shipping costs may rise with freight charges | *"…if freight charges increase dramatically during the study execution, shipping & handling costs may also be increased."* |
+| Invoiced on samples actually delivered | *"MT Group will invoice based upon the actual samples delivered."* |
+| Subjects may enroll in another study | *"It is acceptable that subjects enrolled in this study also enroll (or be enrolled) in another {S} study with MT Group."* |
+| Subjects may have been collected before | *"It is acceptable for subjects to have been previously collected for another {S} study."* |
+| Subjects may be drawn more than once | *"It is acceptable for MT Group sites to draw subjects at multiple times as long as the inclusion / exclusion criteria are met."* |
+| Changes are mutually agreed | *"Any changes to the approach described herein will be mutually agreed by {S} and MT Group."* |
+| Site draw limit per visit | *"MT Group sites can only draw 4 x 10 mL tubes' worth of blood per draw and each draw has the same site cost."* |
+| Diagnosis may be confirmed after enrollment | *"For suspected cancer subjects, it is acceptable that definitive confirmation of cancer / non-cancer can occur up to 6 months after enrollment."* |
+
+These are **not** the Terms & Conditions. Those are identical in all five quotes
+and belong to the generator. These are the deal-specific ones — and they are the
+terms most likely to be argued about a year later, which is why they are prompted
+rather than remembered. The same reasoning as the feasibility prompt catalogue:
+make the rep consider each, let them dismiss the ones that do not apply.
+
+### All five quotes are now writable end to end
+
+Numbers matched after §21. With the conditions built and the letterhead settled,
+every narrative term in the five quotes has a field to live in. What remains
+before one could be printed is the Word generation itself, which is Phase 6 and
+was never in question here.
