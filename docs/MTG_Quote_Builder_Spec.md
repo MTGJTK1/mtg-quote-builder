@@ -1133,3 +1133,53 @@ never asks.
 
 Each card shows what the quote will say about shipping — *"Shipped on dry ice."*
 — so a rep can see the information was not lost, only moved.
+
+## §20 — Register extract for analysis, 2026-08-28
+
+A button on the register produces one CSV row per document, fit to hand to an
+analyst — or to Claude — without handing over who the sponsors are.
+
+### What the file does and does not carry
+
+**Not in the file at all.** Sponsor names, contact names, contact emails,
+HubSpot deal names, PO numbers, ship-to addresses, sponsor-selected case lists,
+and the §11 internal pricing notes — which exist precisely because they must not
+travel.
+
+**Pseudonymised rather than dropped.** Each sponsor becomes a stable code
+(`S01`) and each study becomes one (`ST001`), consistent across rows, so *"the
+same sponsor"* and *"this study and its extensions"* remain analysable. The
+mapping lives only in the tool; nothing in the file resolves back to a name.
+
+**Kept in full.** Dates, status, study shape and every number. Stripping the
+economics would leave nothing worth analysing, and the economics are not what
+makes the file sensitive.
+
+### The study code is keyed on sponsor *and* MT number
+
+Keyed on the MT number alone, `MT9920` — one number across 43 sponsors — would
+have merged unrelated studies under a single code and quietly corrupted any
+grouping done downstream. Caught in the first run of the export against the
+sample register, where two sponsors came back as one study.
+
+### Columns
+
+`document_type`, `study_code`, `sponsor_code`, `quote_date`, `status`,
+`is_extension`, `extension_number`, `design_changed`, `service_type`,
+`sponsor_selected_cases`, `cohort_count`, `subcohort_count`, `subject_count`,
+`specimen_types`, `specimen_type_count`, `timepoint_count`,
+`max_collections_per_subject`, `price_per_collection_min`,
+`price_per_collection_max`, `screenfail_rate`, `shipping_legs`,
+`shipping_internal_cost`, `shipping_markup`, `shipping_quoted_as`,
+`us_destination_stated`, `total_cost`.
+
+`document_type` already distinguishes quotes from feasibilities, so the
+feasibility builder needs no change to this export when it arrives.
+
+### Copy, not download, inside the preview
+
+The published artifact runs sandboxed and blocks any download the page starts
+itself, so the extract is shown as selectable text with a **Copy** button, which
+always works. The **Download .csv** button beside it works in the real app and
+when the file is opened locally. In the real app this becomes a route handler
+and the textarea is unnecessary.

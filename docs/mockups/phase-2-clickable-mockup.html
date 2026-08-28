@@ -440,6 +440,17 @@
   }
   .needed-key .req { margin-right: 4px; }
 
+  .export { margin-top: 18px; }
+  .export-note {
+    font-size: 12.5px; color: var(--ink-soft);
+    margin: 10px 0; max-width: 62ch; line-height: 1.55;
+  }
+  .export-csv {
+    width: 100%; font-family: var(--mono); font-size: 11.5px;
+    line-height: 1.5; white-space: pre; overflow-x: auto;
+  }
+  .export-actions { display: flex; align-items: center; gap: 14px; margin-top: 10px; }
+
   input[type="text"], input[type="email"], input[type="date"], select, textarea {
     font: inherit; font-size: 14px;
     padding: 7px 10px;
@@ -1217,7 +1228,7 @@
   // drafts must survive — so a changed fixture set would otherwise sit unread in
   // the file while the browser kept serving the old one. This makes the mismatch
   // visible and offers the reset, rather than silently discarding their work.
-  var SAMPLES_VERSION = 9;
+  var SAMPLES_VERSION = 10;
   var samplesStale = false;
   var quotes = [];
   var storageWorks = true;
@@ -1539,6 +1550,23 @@
     });
   }
 
+  /** A specimen with no explicit list is collected at every timepoint — the
+   *  common case, and the one a rep should not have to tick. */
+  function collectedAt(detail, name, tps) {
+    if (!detail || !detail.atTimepoints) return true;
+    return detail.atTimepoints.indexOf(name) > -1;
+  }
+
+  /** Collections per subject for one specimen. Never below 1: a single
+   *  collection study still collects it once. */
+  function collectionCount(detail, tps) {
+    if (!tps || tps.length < 2) return 1;
+    if (!detail || !detail.atTimepoints) return tps.length;
+    return tps.filter(function (name) {
+      return detail.atTimepoints.indexOf(name) > -1;
+    }).length;
+  }
+
   /** Study summary drafts in the real quotes' phrasing (spec §06). */
   function draftSummary(d) {
     var specs = orderedSpecimens(d).map(function (s) { return s.toLowerCase(); });
@@ -1696,7 +1724,126 @@
       el('table', {}, [el('thead', {}, [head]), body])
     ]));
     frag.appendChild(footRow());
+    frag.appendChild(exportPanel());
     return frag;
+  }
+
+
+  // ---------------------------------------------------------------- export
+  // A register extract fit to hand to an analyst — or to Claude — without
+  // handing over who the sponsors are or what we said about them internally.
+  //
+  // Removed outright: sponsor and contact names, contact emails, HubSpot deal
+  // names, PO numbers, ship-to addresses, sponsor-selected case lists, and the
+  // internal pricing notes, which exist precisely because they must not travel.
+  //
+  // Pseudonymised, not removed: each sponsor becomes a stable code (S01, S02)
+  // so "the same sponsor" is still analysable, and each study becomes a code so
+  // extensions still group with their parent. The mapping stays here, in the
+  // tool. Nothing in the file resolves back to a name.
+  //
+  // Kept in full: dates, status, study shape and every number. Stripping the
+  // economics would leave nothing worth analysing.
+
+  function csvCell(v) {
+    var t = v == null ? '' : String(v);
+    return /[",\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+  }
+
+  function analysisRows(list) {
+    // Stable codes, assigned in first-seen order over a sorted key so the same
+    // register always produces the same codes.
+    var sponsors = {}, studies = {}, sN = 0, tN = 0;
+    function sponsorCode(name) {
+      var k = String(name || '').trim().toLowerCase() || '(none)';
+      if (!sponsors[k]) sponsors[k] = 'S' + String(++sN).padStart(2, '0');
+      return sponsors[k];
+    }
+    function studyCode(q) {
+      // Keyed on sponsor as well as MT number. MT9920 is one number across 43
+      // sponsors, so keying on the number alone would merge unrelated studies
+      // into one code and quietly corrupt any grouping done downstream.
+      var mt = String(q.mtNumber || (q.header || {}).parentMtNumber || q.id).toUpperCase();
+      var k = String(q.client || '').trim().toLowerCase() + '|' + mt;
+      if (!studies[k]) studies[k] = 'ST' + String(++tN).padStart(3, '0');
+      return studies[k];
+    }
+
+    var sorted = (list || []).slice().sort(function (a, b) {
+      return String(a.quoteDate).localeCompare(String(b.quoteDate));
+    });
+
+    return sorted.map(function (q) {
+      var h = q.header || {}, pr = q.pricing || {}, sh = q.shipping || {};
+      var cohorts = q.cohorts || [];
+      var specimens = orderedSpecimens(q);
+      var detail = q.specimenDetail || {};
+      var tps = (q.multipleTimepoints === true ? (q.timepoints || []) : []).length;
+
+      var subjects = cohorts.reduce(function (t, c) {
+        if (c.subcohorts && c.subcohorts.length) {
+          return t + c.subcohorts.reduce(function (u, sc) {
+            return u + num(q.isExtension ? sc.additionalSubjects : sc.subjects); }, 0);
+        }
+        return t + num(q.isExtension ? c.additionalSubjects : c.subjects);
+      }, 0);
+
+      var prices = specimens.map(function (t) {
+        return num((pr.specimenPrices || {})[t] && pr.specimenPrices[t].price);
+      }).filter(function (n) { return n > 0; });
+
+      var legCost = (sh.legs || []).reduce(function (t, leg) {
+        return t + num(leg.count) * num(String(leg.rate || '').trim() !== '' ? leg.rate
+          : (leg.intl ? sh.intlRate : sh.usRate)); }, 0);
+
+      return {
+        document_type: q.isFeasibility ? 'feasibility' : 'quote',
+        study_code: studyCode(q),
+        sponsor_code: sponsorCode(q.client),
+        quote_date: q.quoteDate || '',
+        status: q.status || '',
+        is_extension: q.isExtension ? 'yes' : 'no',
+        extension_number: q.isExtension ? (h.extensionNumber || '') : '',
+        design_changed: q.isExtension ? (h.designChanged === false ? 'no' : 'yes') : '',
+        service_type: (h.serviceTypes || []).join('; '),
+        sponsor_selected_cases: h.sponsorSelected ? 'yes' : 'no',
+        cohort_count: cohorts.length,
+        subcohort_count: cohorts.reduce(function (t, c) {
+          return t + ((c.subcohorts || []).length); }, 0),
+        subject_count: subjects || '',
+        specimen_types: specimens.join('; '),
+        specimen_type_count: specimens.length,
+        timepoint_count: tps,
+        max_collections_per_subject: specimens.reduce(function (m, t) {
+          return Math.max(m, collectionCount(detail[t], timepointNamesFor(q))); }, tps ? 1 : 1),
+        price_per_collection_min: prices.length ? Math.min.apply(null, prices) : '',
+        price_per_collection_max: prices.length ? Math.max.apply(null, prices) : '',
+        screenfail_rate: (pr.screenfail || {}).enabled ? (pr.screenfail.rate || '') : '',
+        shipping_legs: (sh.legs || []).length,
+        shipping_internal_cost: legCost || '',
+        shipping_markup: sh.markup || '',
+        shipping_quoted_as: sh.mode === 'perSubject' ? 'per subject' : 'lump sum',
+        us_destination_stated: sh.usDestination ? 'yes' : 'no',
+        total_cost: num(q.totalCost) || ''
+      };
+    });
+  }
+
+  /** Timepoint names for an arbitrary quote, not just the one being edited. */
+  function timepointNamesFor(q) {
+    if (q.multipleTimepoints !== true) return [];
+    return (q.timepoints || []).map(function (t, i) {
+      return String(t.label || '').trim() || ('Timepoint ' + (i + 1));
+    });
+  }
+
+  function analysisCsv(list) {
+    var rows = analysisRows(list);
+    if (!rows.length) return '';
+    var cols = Object.keys(rows[0]);
+    return [cols.join(',')].concat(rows.map(function (r) {
+      return cols.map(function (c) { return csvCell(r[c]); }).join(',');
+    })).join('\n');
   }
 
   function footRow() {
@@ -1713,6 +1860,66 @@
         }
       }, ['Reset sample data'])
     ]);
+  }
+
+  function exportPanel() {
+    var box = el('div', { class: 'export' });
+    var body = el('div');
+    var open = false;
+
+    function paint() {
+      body.replaceChildren();
+      if (!open) return;
+
+      var csv = analysisCsv(quotes);
+      var rows = analysisRows(quotes);
+
+      body.appendChild(el('p', { class: 'export-note', text:
+        'Sponsors and studies become codes (S01, ST001) that stay consistent '
+        + 'across rows, so patterns by sponsor are still analysable. Names, '
+        + 'contacts, emails, deal names, PO numbers, addresses, case lists and '
+        + 'internal pricing notes are not in the file at all. Dates, study '
+        + 'shape and every number are.' }));
+
+      var ta = el('textarea', { class: 'export-csv', rows: 10, readonly: 'readonly',
+        'aria-label': 'Register extract, comma separated' });
+      ta.value = csv || 'No quotes to export yet.';
+      body.appendChild(ta);
+
+      var actions = el('div', { class: 'export-actions' });
+      actions.appendChild(el('button', { class: 'btn', type: 'button', onclick: function () {
+        ta.select();
+        var done = false;
+        try { done = document.execCommand('copy'); } catch (e) { done = false; }
+        toast(done ? 'Copied — paste it into Claude' : 'Press Ctrl+C to copy');
+      } }, ['Copy']));
+
+      // A download works in the real app and when this file is opened locally.
+      // Inside the published preview the sandbox blocks it, which is why the
+      // text above it is the thing that always works.
+      actions.appendChild(el('button', { class: 'link-btn', type: 'button', onclick: function () {
+        try {
+          var a = el('a', {
+            href: URL.createObjectURL(new Blob([csv], { type: 'text/csv' })),
+            download: 'mtg-register-extract.csv' });
+          document.body.appendChild(a); a.click(); a.remove();
+        } catch (e) {
+          toast('Download blocked here — copy the text instead');
+        }
+      } }, ['Download .csv']));
+      body.appendChild(actions);
+
+      body.appendChild(el('p', { class: 'export-note', text:
+        rows.length + (rows.length === 1 ? ' row' : ' rows') + ', one per document. '
+        + 'Feasibilities will appear here alongside quotes once that builder '
+        + 'exists — the document_type column is already there.' }));
+    }
+
+    box.appendChild(el('button', { class: 'link-btn', type: 'button', onclick: function () {
+      open = !open; paint();
+    } }, ['Export for analysis']));
+    box.appendChild(body);
+    return box;
   }
 
   // ---------------------------------------------------------------- form
@@ -2979,23 +3186,7 @@
       return box;
     }
 
-    /** A specimen with no explicit list is collected at every timepoint — the
-     *  common case, and the one a rep should not have to tick. */
-    function collectedAt(detail, name, tps) {
-      if (!detail || !detail.atTimepoints) return true;
-      return detail.atTimepoints.indexOf(name) > -1;
-    }
 
-    /** Collections per subject for one specimen. Never below 1: a single
-     *  collection study still collects it once. */
-    function collectionCount(detail, tps) {
-      if (!tps || tps.length < 2) return 1;
-      if (!detail || !detail.atTimepoints) return tps.length;
-      var n = tps.filter(function (name) {
-        return detail.atTimepoints.indexOf(name) > -1;
-      }).length;
-      return n;
-    }
 
     function chunk(arr, n) {
       var per = Math.ceil(arr.length / n), out = [];
