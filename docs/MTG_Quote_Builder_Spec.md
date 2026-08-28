@@ -246,10 +246,12 @@ quote before considering formatting "done."** Rules below were derived that way.
   values) — never used as a substitute for writing full sentences elsewhere. The
   cost section is the one place short labeled lines (not sentences) are correct,
   matching real convention.
-- **After the last cohort's inclusion / exclusion criteria, print "No other
-  inclusions or exclusions." on its own line, underlined.** It closes the
-  criteria section so a site cannot read an omission as an unstated allowance.
-  Added 2026-08-28 on rep review.
+- **After *each cohort's* inclusion / exclusion criteria, print "No additional
+  inclusions or exclusions." on its own line, underlined.** It closes that
+  cohort's criteria so a site cannot read an omission as an unstated allowance.
+  Added 2026-08-28 on rep review; corrected the same day against
+  `QTE NTA20260730`, which prints it after each cohort rather than once at the
+  end, and words it "additional" rather than "other".
 - **Shipping is stated per specimen type, never asked for on the form.** The
   form collects no storage state and no shipping temperature; the document says
   the following, fixed (`SPECIMEN_SPEC.says` in the mockup holds the same

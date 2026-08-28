@@ -1,0 +1,503 @@
+<title>Five Natera Quotes vs the Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+  :root {
+    --paper:   #fbfcfd;
+    --surface: #f2f5f7;
+    --sunk:    #e9eef2;
+    --ink:     #111820;
+    --body:    #47535f;
+    --faint:   #77848f;
+    --rule:    #dce3e9;
+    --rule-firm:#c3ced7;
+    --accent:  #0E5B57;
+    --accent-soft:#e3f0ee;
+    --gap:     #8F5C0C;
+    --gap-soft:#fbf2e1;
+    --gap-rule:#e2c895;
+    --ok:      #2F6A4F;
+    --ok-soft: #e6f1ea;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:   #0d1319;
+      --surface: #141c24;
+      --sunk:    #18222b;
+      --ink:     #eef3f7;
+      --body:    #a9b6c1;
+      --faint:   #7b8892;
+      --rule:    #23303b;
+      --rule-firm:#33434f;
+      --accent:  #57BAAE;
+      --accent-soft:#11302c;
+      --gap:     #E2A955;
+      --gap-soft:#2a2113;
+      --gap-rule:#4d3c1c;
+      --ok:      #7FC29B;
+      --ok-soft: #16281f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:   #0d1319;
+    --surface: #141c24;
+    --sunk:    #18222b;
+    --ink:     #eef3f7;
+    --body:    #a9b6c1;
+    --faint:   #7b8892;
+    --rule:    #23303b;
+    --rule-firm:#33434f;
+    --accent:  #57BAAE;
+    --accent-soft:#11302c;
+    --gap:     #E2A955;
+    --gap-soft:#2a2113;
+    --gap-rule:#4d3c1c;
+    --ok:      #7FC29B;
+    --ok-soft: #16281f;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--body);
+    font-family: 'Public Sans', system-ui, -apple-system, sans-serif;
+    font-size: 16px; line-height: 1.62;
+    margin: 0; padding: 0 24px 96px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 48rem; margin: 0 auto; }
+
+  header.top {
+    padding: 60px 0 26px;
+    border-bottom: 1px solid var(--rule-firm);
+    margin-bottom: 40px;
+  }
+  .eyebrow {
+    font-size: 11.5px; font-weight: 600; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--faint); margin: 0 0 16px;
+  }
+  h1 {
+    font-family: 'Newsreader', Georgia, serif; font-weight: 500;
+    font-size: clamp(32px, 5vw, 44px); line-height: 1.12;
+    color: var(--ink); margin: 0 0 16px; text-wrap: balance;
+    letter-spacing: -.012em;
+  }
+  .standfirst { font-size: 17.5px; max-width: 36rem; margin: 0; }
+
+  h2 {
+    font-family: 'Newsreader', Georgia, serif; font-weight: 500;
+    font-size: 26px; line-height: 1.25; color: var(--ink);
+    margin: 0 0 8px; letter-spacing: -.008em; text-wrap: balance;
+  }
+  h3 {
+    font-size: 12.5px; font-weight: 600; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--faint); margin: 26px 0 10px;
+  }
+  section { margin-bottom: 46px; }
+  p { margin: 0 0 15px; }
+  p:last-child { margin-bottom: 0; }
+  strong { color: var(--ink); font-weight: 600; }
+  em.q {
+    font-style: normal; color: var(--ink);
+    font-family: 'Newsreader', Georgia, serif; font-size: 17px;
+  }
+
+  code {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: .86em; background: var(--sunk);
+    padding: 1.5px 5px; border-radius: 4px; color: var(--ink);
+  }
+
+  .tablewrap { overflow-x: auto; margin: 0 0 8px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td {
+    text-align: left; padding: 10px 14px 10px 0;
+    border-bottom: 1px solid var(--rule); vertical-align: top;
+  }
+  th {
+    font-size: 11.5px; font-weight: 600; letter-spacing: .09em;
+    text-transform: uppercase; color: var(--faint);
+    border-bottom-color: var(--rule-firm); white-space: nowrap;
+  }
+  td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td:first-child { color: var(--ink); }
+
+  .pill {
+    display: inline-block; font-size: 11.5px; font-weight: 600;
+    padding: 2px 9px; border-radius: 20px; white-space: nowrap;
+  }
+  .pill.no  { background: var(--gap-soft); color: var(--gap); border: 1px solid var(--gap-rule); }
+  .pill.yes { background: var(--ok-soft);  color: var(--ok);  border: 1px solid transparent; }
+
+  .gap {
+    border-left: 3px solid var(--gap-rule);
+    padding: 0 0 2px 20px;
+    margin: 0 0 34px;
+  }
+  .gap.minor { border-left-color: var(--rule-firm); }
+  .gap-head {
+    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .gap-n {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 12.5px; font-weight: 500; color: var(--gap); flex: none;
+  }
+  .gap.minor .gap-n { color: var(--faint); }
+  .gap-head h2 { margin: 0; font-size: 22px; }
+  .blocks {
+    font-size: 12px; color: var(--faint);
+    margin: 0 0 12px; letter-spacing: .02em;
+  }
+
+  blockquote {
+    margin: 0 0 14px; padding: 12px 16px;
+    background: var(--surface); border-radius: 8px;
+    font-size: 15px; color: var(--ink);
+  }
+  blockquote .src {
+    display: block; margin-top: 7px;
+    font-size: 11.5px; color: var(--faint);
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+
+  .decide {
+    background: var(--accent-soft); border: 1px solid var(--rule);
+    border-radius: 8px; padding: 12px 16px; margin-top: 12px;
+    font-size: 14.5px;
+  }
+  .decide b {
+    display: block; font-size: 11px; letter-spacing: .11em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 5px;
+  }
+
+  ul { margin: 0 0 15px; padding-left: 1.15rem; display: flex;
+       flex-direction: column; gap: 7px; }
+
+  footer.end {
+    border-top: 1px solid var(--rule-firm); padding-top: 22px;
+    color: var(--faint); font-size: 14.5px;
+  }
+  @media (max-width: 620px) {
+    body { padding: 0 18px 72px; }
+    header.top { padding-top: 40px; }
+    .gap { padding-left: 14px; }
+  }
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <p class="eyebrow">MT Group · Quote builder · 28 August 2026</p>
+  <h1>Five Natera quotes, run through the builder</h1>
+  <p class="standfirst">
+    Every term in the five attached quotes, checked against the form as it
+    stands. Most of it fits. Nine things do not, and one of them is structural.
+  </p>
+</header>
+
+<section>
+  <h2>Where each quote stands</h2>
+  <p>
+    Nothing here is a formatting question — that comes with the Word generation.
+    This is only whether the form can <em>hold</em> what each quote says.
+  </p>
+  <div class="tablewrap">
+    <table>
+      <tr>
+        <th>Quote</th><th>Captured</th><th>What is missing</th>
+      </tr>
+      <tr>
+        <td>Butterfly vs. straight needle<br><span style="color:var(--faint);font-size:13px">Jan 2026 · $90,000</span></td>
+        <td><span class="pill yes">All of it</span></td>
+        <td>Four tubes, two draw techniques, two arms — the per-tube blocks built
+            last round hold this exactly.</td>
+      </tr>
+      <tr>
+        <td>Clean colonoscopy &amp; advanced adenoma<br><span style="color:var(--faint);font-size:13px">Jul 2026 · $366,000</span></td>
+        <td><span class="pill no">Pricing</span></td>
+        <td>Priced per <strong>draw</strong>, per cohort. Also a site draw
+            limit and a freight-increase clause.</td>
+      </tr>
+      <tr>
+        <td>CRC &amp; healthy — stool<br><span style="color:var(--faint);font-size:13px">Sep 2025 · $180,000</span></td>
+        <td><span class="pill no">Pricing, cohort detail</span></td>
+        <td>Priced per <strong>stool</strong>, per cohort. Specimens and clinical
+            data differ by cohort. Kits shipped <em>to</em> sites are a cost line.</td>
+      </tr>
+      <tr>
+        <td>Healthy confirmed colonoscopy<br><span style="color:var(--faint);font-size:13px">Jun 2025 · $18,000</span></td>
+        <td><span class="pill no">Pricing, conditionals</span></td>
+        <td>Priced per <strong>case</strong>, per <strong>report</strong>, per
+            <strong>shipper</strong>. Buffy coats "if available", invoiced on
+            actual delivery.</td>
+      </tr>
+      <tr>
+        <td>Pan-cancer &amp; benign diseases<br><span style="color:var(--faint);font-size:13px">Jul 2025 · $948,425</span></td>
+        <td><span class="pill no">Pricing, EDC fee</span></td>
+        <td>Three prices across two cohorts plus a cohort that only exists if
+            cases turn out negative. Medrio entry priced per subject.</td>
+      </tr>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="gap">
+    <div class="gap-head">
+      <span class="gap-n">GAP 1</span>
+      <h2>Quotes are priced per cohort, not per specimen</h2>
+    </div>
+    <p class="blocks">Blocks 4 of 5 quotes · needs your decision before I build it</p>
+    <p>
+      This is the big one. §11 prices a full quote <strong>per specimen
+      type</strong> — one price for FFPE, another for plasma. Not one of these
+      five quotes does that. Four price <strong>per cohort</strong>:
+    </p>
+    <blockquote>
+      $1,650 / subject (Cohort #1)<br>
+      $1,450 / subject (Cohort #2)<br>
+      $825 / subject (non-cancerous bladder)
+      <span class="src">Pan-cancer and benign diseases</span>
+    </blockquote>
+    <p>
+      The per-cohort table already exists — but only in the extension track. The
+      full quote has never had it. That is backwards: extensions are the simpler
+      case, and the full quote is where cohorts actually differ in price.
+    </p>
+    <div class="decide">
+      <b>Decision</b>
+      I would make per-cohort the default for a full quote and keep per-specimen
+      as the alternative, since four of five real quotes need the former and none
+      need the latter. Confirm and I will rebuild §11 that way.
+    </div>
+  </div>
+
+  <div class="gap">
+    <div class="gap-head">
+      <span class="gap-n">GAP 2</span>
+      <h2>The priced unit is not always a subject</h2>
+    </div>
+    <p class="blocks">Blocks 3 of 5 quotes · needs your decision</p>
+    <p>Across five quotes the unit priced is a subject, a draw, a stool, a case, a report, and a shipper:</p>
+    <div class="tablewrap">
+      <table>
+        <tr><th>Quote</th><th>Reads</th></tr>
+        <tr><td>Adenoma</td><td><code>$1,250 / Cohort 1 draw</code></td></tr>
+        <tr><td>Stool</td><td><code>$2,000 / Cohort 1 subject stool</code></td></tr>
+        <tr><td>Colonoscopy</td><td><code>$600 / case</code> · <code>$150 / translated colonoscopy report</code> · <code>$500 / frozen shipper</code></td></tr>
+      </table>
+    </div>
+    <p>
+      The field is labelled "$ per collection", which is closer than "per
+      subject" but still not what the document prints. The unit has to be a
+      value the rep sets, because it changes the arithmetic as well as the
+      wording — the adenoma quote is 120 <em>draws</em>, not 120 subjects, and
+      one subject can give several.
+    </p>
+    <div class="decide">
+      <b>Decision</b>
+      Add a unit alongside each price — subject, draw, stool, case, aliquot,
+      report, shipper, or free text. Any objection to that list?
+    </div>
+  </div>
+
+  <div class="gap">
+    <div class="gap-head">
+      <span class="gap-n">GAP 3</span>
+      <h2>Cost lines that are neither specimen nor shipping</h2>
+    </div>
+    <p class="blocks">Blocks 3 of 5 quotes · I can build this now</p>
+    <p>Three quotes carry a priced line the form has no home for:</p>
+    <ul>
+      <li><code>$100 / subject</code> — Medrio entry, which alone is $53,200 of a $948,425 quote</li>
+      <li><code>$50 / subject stool</code> — shipping kits <em>to</em> sites, the opposite direction from §10</li>
+      <li><code>$150 / translated colonoscopy report</code> — reports are a section in the form but carry no price</li>
+    </ul>
+    <p>
+      §11 has "other costs", but they are flat amounts. Each of these is a rate
+      times a count. Making other-cost lines optionally per-unit covers all
+      three, and the reports section can then price itself.
+    </p>
+  </div>
+
+  <div class="gap">
+    <div class="gap-head">
+      <span class="gap-n">GAP 4</span>
+      <h2>Specimens and clinical data can differ by cohort</h2>
+    </div>
+    <p class="blocks">Blocks 2 of 5 quotes · needs your decision</p>
+    <blockquote>
+      Cohort 1. One or two stools per subject… Cohort 2. Two stools per subject
+      with the second stool collected and FedExed one to two days after the first.
+      <span class="src">CRC &amp; healthy — stool</span>
+    </blockquote>
+    <blockquote>
+      Both Cohorts: age, sex, race… Cohort 1 only: stage, grade, TNM, date of
+      colonoscopy, and date of surgery.
+      <span class="src">CRC &amp; healthy — stool</span>
+    </blockquote>
+    <p>
+      §05 and §07 are study-level. Both of these are per-cohort. The adenoma
+      quote does it too — a translated path report for Cohort 2 only.
+    </p>
+    <div class="decide">
+      <b>Decision</b>
+      The cheap version is a "differs by cohort" note on each section. The honest
+      version is per-cohort overrides in §05 and §07, which is more form for the
+      rep. I lean to the cheap version first — say if you disagree.
+    </div>
+  </div>
+
+  <div class="gap">
+    <div class="gap-head">
+      <span class="gap-n">GAP 5</span>
+      <h2>A cohort that only exists if cases turn out negative</h2>
+    </div>
+    <p class="blocks">Blocks 1 of 5 quotes · I can build this now</p>
+    <blockquote>
+      Suspicion cases ultimately found to be non-cancer will be placed into a
+      "negative bladder" cohort… $825 / subject (non-cancerous bladder)…
+      $5,775 (Negative Bladder Cases, estimating 7 cases)
+      <span class="src">Pan-cancer and benign diseases</span>
+    </blockquote>
+    <p>
+      A real cohort with its own price and an <em>estimated</em> count that the
+      total depends on. The form can hold the cohort once per-cohort pricing
+      exists; what it cannot do is mark a count as an estimate, which the
+      document has to say.
+    </p>
+  </div>
+
+  <div class="gap">
+    <div class="gap-head">
+      <span class="gap-n">GAP 6</span>
+      <h2>Totals rest on stated assumptions</h2>
+    </div>
+    <p class="blocks">Blocks 2 of 5 quotes · I can build this now</p>
+    <blockquote>
+      $180,000 (estimating that 100% of subjects provide two stools)
+      <span class="src">CRC &amp; healthy — stool</span>
+    </blockquote>
+    <p>
+      The total is not a number, it is a number plus the assumption that makes
+      it true. A note field on the total covers both this and the seven bladder
+      cases above.
+    </p>
+  </div>
+
+  <div class="gap">
+    <div class="gap-head">
+      <span class="gap-n">GAP 7</span>
+      <h2>Sponsor-provided materials</h2>
+    </div>
+    <p class="blocks">Appears in 4 of 5 quotes · I can build this now</p>
+    <p>
+      <em class="q">"Streck tubes will be provided by Natera."</em>
+      <em class="q">"Collection kits, shipping boxes, and shipping labels will be provided by Natera."</em>
+      <em class="q">"Natera will provide all Streck tubes / collection kits."</em>
+    </p>
+    <p>
+      In four of five quotes, and nowhere in the form. It also drives the
+      timeline — the adenoma quote starts <em>"once tubes are received by MT
+      Group."</em> One field in §05.
+    </p>
+  </div>
+
+  <div class="gap">
+    <div class="gap-head">
+      <span class="gap-n">GAP 8</span>
+      <h2>Named reference documents</h2>
+    </div>
+    <p class="blocks">Appears in 3 of 5 quotes · I can build this now</p>
+    <p>Every one of these is named in the quote and has nowhere to live:</p>
+    <ul>
+      <li><code>Plasma Isolations for Vendor (5).doc</code> — the processing protocol</li>
+      <li><code>CRC and healthy collections_ Kit insert</code> — the collection instructions</li>
+      <li><code>Example AA data needed_21Jul2026.xls</code> — the clinical data format</li>
+    </ul>
+    <p>
+      §07's delivery detail prompts for one of the three. §05 needs the same for
+      processing, and §03 for a collection protocol.
+    </p>
+  </div>
+
+  <div class="gap minor">
+    <div class="gap-head">
+      <span class="gap-n">GAP 9</span>
+      <h2>Commitments and conditions in prose</h2>
+    </div>
+    <p class="blocks">Appears in all 5 quotes · discussion</p>
+    <p>Each quote carries commitments that sit in no section:</p>
+    <ul>
+      <li><em class="q">"Natera will not terminate this study early if MT Group is enrolling subjects as expected."</em></li>
+      <li><em class="q">"Natera may halt the study with 4 weeks' notice."</em></li>
+      <li><em class="q">"If freight charges increase dramatically during the study execution, shipping &amp; handling costs may also be increased."</em></li>
+      <li><em class="q">"MT Group will invoice based upon the actual samples delivered."</em></li>
+      <li><em class="q">"It is acceptable that subjects enrolled in this study also enroll in another Natera study with MT Group."</em></li>
+    </ul>
+    <p>
+      §12's notes box can hold them, but they would arrive as one undifferentiated
+      block. They are not Terms and Conditions — those are boilerplate and
+      identical across all five. These are deal-specific, and they are the terms
+      most likely to be argued about later.
+    </p>
+    <div class="decide">
+      <b>Decision</b>
+      A short list of named clauses a rep ticks and edits — early termination,
+      halt notice, freight escalation, invoice basis, cross-enrolment — would
+      make these consistent instead of remembered. Worth it, or is free text fine?
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>What already fits, and is worth knowing</h2>
+  <ul>
+    <li><strong>The butterfly quote replicates exactly.</strong> Four Streck
+        tubes, two drawn with a straight needle from one arm and two with a
+        butterfly from the other — the per-tube blocks hold the type, size and
+        handling of each one separately.</li>
+    <li><strong>Subcohorts hold the pan-cancer tables.</strong> Eleven cancer
+        subcohorts and six benign ones, each with its own count, summing to the
+        cohort — exactly the shape already built.</li>
+    <li><strong>Geography lives in the inclusions</strong> — <em class="q">"Collected in
+        Turkey"</em>, <em class="q">"Collected in the United States"</em> — which is
+        the call we made against the feasibility form's geography field, now
+        confirmed by four real quotes.</li>
+    <li><strong>"No additional inclusions or exclusions" appears per cohort</strong>,
+        not once at the end. I had recorded it as a closing line; the adenoma
+        quote prints it after each cohort's criteria. I have corrected the spec.</li>
+    <li><strong>The US-destination sentence is real</strong> — <em class="q">"batch
+        shipped on dry ice to a United States location designated by Natera"</em>
+        — almost exactly the wording built last round.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>One thing I would not copy</h2>
+  <p>
+    The five quotes disagree with themselves on headings and on the letterhead.
+    <em class="q">"Summary"</em> in three, <em class="q">"Study Objectives"</em> in
+    one; <em class="q">"Cohorts"</em> in two, <em class="q">"Size"</em> and
+    <em class="q">"Populations and Size"</em> elsewhere. The address reads
+    <em class="q">Van Nuys, CA 91406</em> in four and
+    <em class="q">Los Angeles, CA 91406</em> in the fifth — same street, two cities.
+  </p>
+  <p>
+    The builder should settle on one set of headings and one address rather than
+    reproduce the drift. I need you to tell me which address is right.
+  </p>
+</section>
+
+<footer class="end">
+  Gaps 3, 5, 6, 7 and 8 need no decision — say go and I will build them. Gaps 1,
+  2, 4 and 9 change the shape of the form, so I would rather have your ruling
+  first. Gap 1 is the one that matters most: four of five quotes cannot be
+  written without it.
+</footer>
+
+</div>

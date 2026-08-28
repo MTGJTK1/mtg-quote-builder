@@ -1,0 +1,255 @@
+The MT Group 
+7120 Hayvenhurst Ave. 
+Suite 317 
+Van Nuys, CA 91406 
+(818) 993-6526 
+_____________________________________________________________________________________ 
+Requestor:   Catherine Dayger 
+    cdayger@natera.com 
+Client:    Natera 
+Quote Date:   July 24, 2025 (60 Day Quote) 
+Quote Number: QTE NTA20250724 Pan-cancer and benign diseases – blood 
+_____________________________________________________________________________________ 
+ 
+Summary: The primary objective of this study is to obtain de-identified, clinically 
+characterized, whole blood specimens from US sites to evaluate 
+biomarkers associated with cancer for diagnostic assay development. 
+ 
+Service Type: Prospective collection 
+ 
+Cohort #1 (Cancer): A total of 375 cases collected from the following sub-cohorts: 
+ 
+Subcohorts for Cohort #1 # cases 
+1a. Bladder cancer or suspicion of bladder 
+malignancy.  Suspicion cases ultimately found to be 
+non-cancer will be placed into a “negative bladder” 
+cohort.  
+20 
+ 
+  
+1b. Breast cancer (at least 50 to be Stage I-II) 100 
+1c. Cervical cancer 15 
+1d. Chronic Lymphocytic Leukemia ("CLL") 10 
+1e. Gastric and gastro-esophageal junction cancer 20 
+1f. Head and neck cancer 20 
+1g. Lung cancer (any: non-small cell, small cell) 80 
+1h. Lymphoma cancer (Hodgkin’s or non-
+Hodgkins)  20 
+1i. Ovarian cancer or suspicion of ovarian 
+malignancy. Suspicion cases ultimately found to be 
+non-cancer will be placed into Cohort 2e.  
+15 
+ 
+  
+1j. Pancreatic cancer  25 
+1k. Prostate cancer (at least 20 to be Gleason 7+) 50 
+ 375 
+ 
+For suspected cancer subjects, it is acceptable that definitive 
+confirmation of cancer / non-cancer can occur up to 6 months after 
+enrollment. 
+ 
+Cohort #2 (Benign Disease):  A total of 150 cases collected from the following sub-cohorts.  Note that 
+it is acceptable that all subjects in a sub-cohort be of the same type (i.e. 
+all GERD for sub-cohort 2a) and no treatment exclusions for the benign 
+disease:  
+     
+Subcohorts for Cohort 2 # cases 
+2a. Esophageal benign disease (GERD, Barrett’s esophagus, 
+achalasia, paraoesophageal hernia) 
+25 
+  
+2b. Pancreatic benign disease (benign cysts & tumors, IPMN, 
+pancreatitis) 25 
+2d. Endometrial benign disease (endometriosis, fibroids) 25 
+2e. Ovarian benign disease (serous tubal intraepithelial 
+carcinoma, benign ovarian tumors, ovarian cyst) 
+25 
+ 
+ 
+2f. Breast benign disease (lobular neoplasia, atypical lobular 
+hyperplasia, atypical ductal hyperplasia, ductal carcinoma in 
+situ) 
+25 
+ 
+ 
+2g. Prostate benign disease (benign prostatic hyperplasia) 25 
+ 150 
+Inclusions & Exclusions: Inclusions 
+• Participant is ≥18 years of age 
+• Participant understands the study procedures and is able to provide 
+informed consent to participate in the study and authorization for 
+release of relevant protected health information to the study 
+Investigator. 
+• Participant has an untreated primary malignancy or has a suspected 
+primary malignancy of bladder or ovarian cancer (Cohort #1 only).   
+• Participant has been diagnosed by a treating physician for benign 
+disease or been evaluated for benign or malignant disease (Cohort #2 
+only) 
+• Pathology report for cancer subjects and all required clinical data 
+must be available 
+     
+Exclusions 
+• Prior or concurrent cancer diagnosis  
+• Other prior or concurrent cancer diagnosis defined as: 
+o Any previous cancer diagnosis within the past 5 years (with 
+the exceptions of basal cell or squamous cell skin cancers); 
+OR  
+o Recurrence of the same primary cancer within any 
+timeframe; OR  
+o Concurrent diagnosis of multiple primary cancers  
+• Chemotherapy and/or radiation therapy within 5 years prior to 
+enrollment/sample collection.  
+• Any treatment for the primary malignancy or sites of metastases. 
+Subject may not have started neoadjuvant chemotherapy, 
+neoadjuvant radiation therapy, immunotherapy, or other treatment 
+and/or resection surgery / excisional biopsy prior to blood sample 
+collection.  It is acceptable that Cohort 1 subjects have received 
+therapies for pre-cancerous conditions although details about these 
+therapies (especially immunomodulary ones) must be captured with 
+the clinical data.  
+• Less than 3 days between fine needle aspiration (FNA) of target 
+pathology and blood collection.  
+• Less than 7 days between biopsy (other than FNA) of target 
+pathology and blood collection.   
+• IV contrast (e.g. CT and MRI) within 1 day [or 24 hours] of blood 
+collection.  
+• Individual has a condition the Investigator believes would interfere 
+with his or her ability to provide informed consent, comply with the 
+study protocol, which might confound the interpretation of the study 
+results or put the person at undue risk.  
+• Known to be pregnant  
+• Participated or currently participating in a clinical research study in 
+which an experimental medication has been administered in the last 
+30 days   
+ 
+Biospecimens:  Whole blood collected in 4 x 10mL Streck tubes (30 mL minimum blood 
+volume). Streck tubes will be provided by Natera. 
+ 
+At Enrollment Clinical Data:  Demographics, co-morbidities, medications, and other clinical data will 
+be collected as shown below.  Pathology reports needed to document 
+disease diagnosis will be provided.   A CBC count taken within the last 
+12 months will be provided if available. 
+ 
+Demographics 
+• Age 
+• Height 
+• Weight 
+• Smoking status 
+• Sex 
+• Family history of cancer 
+• Ethnic and racial background 
+ 
+Comorbidities to note 
+• Cardiovascular disease  
+• Type II Diabetes  
+• Type I Diabetes  
+• IBD (Ulcerative colitis or Crohn's)  
+• Rheumatoid Arthritis  
+• Pancreatitis  
+• Liver disease (fatty liver/liver cirrhosis, NASH, NAFLD)  
+• Thyroid disease  
+• Chronic obstructive pulmonary disease (COPD)  
+• Other autoimmune diseases (e.g. multiple sclerosis, lupus, etc.)  
+• Germline cancer mutation carrier  
+• Other 
+ 
+Medication categories 
+• Aspirin, Ibuprofen (such as Advil, Motrin), Naproxen (such as 
+Aleve)  
+• Cholesterol lowering drugs, either “statin” or other drugs   
+• Steroids taken orally (e.g., Prednisone, Decadron, Medrol)  
+• Anticoagulants or “blood thinners” (e.g. Coumadin, Pradaxa, 
+Xarelto, Eliquis, Savaysa)  
+• Vitamin D supplements  
+• Hormone replacement therapy 
+• GLP-1 inhibitors 
+For all subjects, MT Group will attempt to collect data about what 
+symptoms were present, although this data may not always be available.  
+This information may be collected through clinical records or through 
+subject surveys. 
+These clinical data will be entered by MT Group into Medrio.  No paper-
+based case report form or spreadsheet will be provided. 
+ 
+Shipping & Handling:    Biospecimens will be shipped via FedEx Priority Overnight to a US 
+location designated by Natera. Shipping will be on room temperature gel 
+packs. 
+   
+Study Timeline: A study kick off call will be scheduled ~1 week after receipt of a 
+purchase order and the first site initiation will occur 2-3 weeks after MT 
+Group and Natera finalize the SOP / align on all study parameters and 
+delivery of all tubes. Assuming MT Group sites are able to collect 
+subjects Monday through Friday for next day delivery and there is no 
+max # of subjects collected per day and no max # of subjects collected 
+per week, we expect to complete enrollment in ~6 months.  MT Group to 
+provide Natera with regular enrollment updates.  Natera may halt the 
+study with 4 weeks’ notice.   
+ 
+At Enrollment Biospecimens & Data: $1,650 / subject (Cohort #1) 
+  $1,450 / subject (Cohort #2) 
+  $825 / subject (non-cancerous bladder) 
+ 
+At Enrollment Medrio Entry: $100 / subject  
+ 
+Shipping and Handling:  $100 / subject 
+ 
+Total Study Cost: $618,750 (Cohort #1 Biospecimens & Clinical Data) 
+ $217,500 (Cohort #2 Biospecimens & Clinical Data) 
+$5,775 (Negative Bladder Cases, estimating 7 cases) 
+ $53,200 (At Enrollment Medrio Entry) 
+ $53,200 (Shipping) 
+$948,425 (Total) 
+  
+TERMS AND CONDITIONS 
+ 
+ 
+IRB & HIPAA: The protocol is IRB approved. All patient samples and clinical data elements 
+provided to client will be de-identified and all protected health information 
+will be removed in accordance with the Health Insurance Portability and 
+Accountability Act (“HIPAA”). Client will not receive any personal 
+identifiers and will not be able to link any samples or data back to any 
+individual. 
+  
+Research Use: Biospecimens will be used solely for research and specifically not be used in 
+a commercial clinical diagnostic product, in genetic cloning, or in humans 
+(transplantation or otherwise).  
+ 
+Deliveries: When MT Group notifies Client that biospecimens are ready for shipment, 
+Client must be ready to accept those deliveries within two weeks of said 
+notification or execute an alternative arrangement with MT Group. 
+ 
+Applicable Laws: Client will comply with the applicable legal and regulatory requirements, 
+principles, guidelines and standards governing the sourcing, handling, 
+preparation, storage, banking, use, disposal, transfer, transport, import or 
+export of biospecimens and associated data including without limitation the 
+Code of Federal Regulations Title 45 Public Welfare CFR 46 Protection of 
+Human Subjects. 
+  
+Quality Guarantee: MT Group will replace or refund any out-of-specification biospecimens 
+delivered hereunder when Client communicates its claimed specification 
+deficiency within 3 months of biospecimen delivery.  MT Group’s liability 
+for out-of-specification biospecimens will be capped at the purchase order 
+value.  
+  
+Publications: Client will reference MT Group in any publication of data using 
+biospecimens and/or clinical data collected by the MT Group study network 
+by:  a) authorship of MT Group employee(s) if criteria established by 
+ICMJE are met, including but not limited to participation in study design, 
+subject inclusion, center participation and selection, and biospecimen 
+collection strategies; and/or b) reference in the Methods section as a partner 
+or vendor; and/or c) reference in the Acknowledgments section. 
+  
+Unknown Elements: Client acknowledges and agrees that the biospecimens may have unknown 
+characteristics and may potentially carry infectious diseases. 
+  
+Taxes:    There are none. 
+  
+Issue Purchase Orders to: THE MT GROUP, INC. 
+  
+This Quote is prepared and approved by John Kibler (jkibler@mtgroupbio.com). By issuing a Purchase Order 
+and signing this Quote, you are accepting this Quote’s terms and conditions. 
+  
+Payment terms are net 30 days. Invoices will be submitted the month after biospecimen deliveries. 
+  
+_______________________ 
+Authorized Signature 

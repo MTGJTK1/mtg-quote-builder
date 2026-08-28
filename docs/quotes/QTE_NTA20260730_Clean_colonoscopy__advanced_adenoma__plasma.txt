@@ -1,0 +1,129 @@
+The MT Group
+7120 Hayvenhurst Avenue, Suite 317
+Los Angeles, CA 91406
+_____________________________________________________________________________________
+Requestor: Kate Rhodes 
+krhodes@natera.com
+Client: Natera
+Quote Date: July 30, 2026 (60 Day Quote)
+Quote Number: QTE NTA20260730 Clean colonoscopy & advanced adenoma – plasma __________________________________________________________________________________________________________________________________________________________________________________________
+Study Objectives: This study will prospectively collect biospecimens from subjects with a 
+“clean” colonoscopy report and subjects with advanced adenoma.
+Size: Subjects collected in the following two Cohorts:
+ Cohort 1.  Colonoscopy-confirmed clean subjects (120 draws of 4 x 
+10 mL whole blood per draw as further described below)
+ Cohort 2:  Advanced adenoma subjects (120 subjects)
+Cohort 1 I/E Criteria: Inclusions
+ Confirmed via standard of care screening colonoscopy to not have 
+advanced adenoma (“AA”) or colorectal cancer (“CRC”)
+ Collected either 0-30 days before colonoscopy and before any 
+colonoscopy-related anesthesia or 7-30 days after the colonoscopy
+ Collected in Turkey
+Exclusions
+ Subjects recommended for symptomatic-driven colonoscopy (i.e. 
+blood in stool)
+ Subjects with an incomplete bowel preparation
+ Subjects with a known familial history of CRC
+ Subjects not providing consent
+No additional inclusions or exclusions
+Cohort 2 I/E Criteria: Inclusions
+ Subjects with AA, as defined as having one or more of the 
+pathological findings shown below:
+o adenoma with carcinoma in situ or high grade dysplasia, any 
+size (i.e. CRC stage 0) adenoma
+o villous growth pattern (>25%)
+o any adenoma >1.0 cm in size
+o serrated lesion >1.0 cm in size 
+o traditional serrated adenoma (TSA), any size
+ Collected either 0-30 days before the colonoscopy and before the 
+colonoscopy-related anesthesia or 7-30 days after the colonoscopy 
+but before all AA-associated polyps are removed
+ Collected in Turkey
+Page 1 of 3
+Exclusions
+ Subject not providing consent
+No additional inclusions or exclusions
+Biospecimens: Whole blood will be collected in 10 mL Streck tubes and processed to 
+plasma following the protocol described in “Plasma Isolations for 
+Vendor (5).doc” or as otherwise mutually agreed. All Streck tubes will 
+be provided by Natera.  One plasma aliquot of 3.5 mL – 5 mL per Streck 
+tube.  MT Group sites can only draw 4 x 10 mL tubes’ worth of blood 
+per draw and each draw has the same site cost.
+It is acceptable for MT Group sites to draw Cohort 1 subjects at multiple 
+times as long as the inclusion / exclusion criteria are met. It is also 
+acceptable for Cohort 1 subjects to have been previously collected for 
+another Natera study.
+Clinical Data: MT Group and Natera will mutually agree on all clinical data to be 
+provided for each subject but at a minimum, sample & subject IDs, 
+collection dates & times, and basic demographics will be provided.  A 
+translated colonoscopy report will also be provided as will a translated 
+path report or summary (Cohort 2 only).  Clinical data will be provided 
+in an Excel spreadsheet generally following the format of “Example AA 
+data needed_21Jul2026.xls”).
+Timeline: A study kick-off call will be scheduled within ~1 week of receipt of a 
+Natera purchase order.  Site initiation will begin ~4 weeks after the kick-
+off call and alignment on all study details.  We expect to complete 
+enrollment ~2 months after site initiation with all subjects delivered ~1 
+month after enrollment completion.  It is understood that Natera will not 
+terminate this study early if MT Group is enrolling subjects as expected.
+Shipping & Handling: Plasma will be batch shipped on dry ice to a United States location 
+designated by Natera using FedEx Priority Overnight or equivalent.  It is 
+understood that if freight charges increase dramatically during the study 
+execution, shipping & handling costs may also be increased. 
+Biospecimen & Data Costs: $1,250 / Cohort 1 draw
+$1,500 / Cohort 2 draw 
+Shipping and Handling: $150 / draw
+Total Study Costs: $330,000 (Biospecimens & Data)
+$36,000 (Shipping)
+$366,000 (Total)
+Page 2 of 3
+TERMS AND CONDITIONS 
+ 
+ 
+IRB & HIPAA: The protocol is IRB approved. All patient samples and clinical data elements 
+provided to client will be de-identified and all protected health information 
+will be removed in accordance with the Health Insurance Portability and 
+Accountability Act (“HIPAA”). Client will not receive any personal 
+identifiers and will not be able to link any samples or data back to any 
+individual. 
+  
+Research Use: Biospecimens will be used solely for research and specifically not be used in 
+a commercial clinical diagnostic product, in genetic cloning, or in humans 
+(transplantation or otherwise).  
+ 
+Deliveries: When MT Group notifies Client that biospecimens are ready for shipment, 
+Client must be ready to accept those deliveries within two weeks of said 
+notification or execute an alternative arrangement with MT Group. 
+ 
+Applicable Laws: Client will comply with the applicable legal and regulatory requirements, 
+principles, guidelines and standards governing the sourcing, handling, 
+preparation, storage, banking, use, disposal, transfer, transport, import or 
+export of biospecimens and associated data including without limitation the 
+Code of Federal Regulations Title 45 Public Welfare CFR 46 Protection of 
+Human Subjects. 
+  
+Quality Guarantee: MT Group will replace or refund any out-of-specification biospecimens 
+delivered hereunder when Client communicates its claimed specification 
+deficiency within 3 months of biospecimen delivery.  MT Group’s liability 
+for out-of-specification biospecimens will be capped at the purchase order 
+value.  
+  
+Publications: Client will reference MT Group in any publication of data using 
+biospecimens and/or clinical data collected by the MT Group study network 
+by:  a) authorship of MT Group employee(s) if criteria established by ICMJE 
+are met, including but not limited to participation in study design, subject 
+inclusion, center participation and selection, and biospecimen collection 
+strategies; and/or b) reference in the Methods section as a partner or vendor; 
+and/or c) reference in the Acknowledgments section. 
+  
+Unknown Elements: Client acknowledges and agrees that the biospecimens may have unknown 
+characteristics and may potentially carry infectious diseases. 
+  
+Taxes: There are none. 
+  
+Issue Purchase Orders to: THE MT GROUP, INC. 
+This Quote is prepared and approved by John Kibler (jkibler@mtgroupbio.com). By issuing a Purchase 
+Order and signing this Quote, you are accepting the terms and conditions.
+Payment terms for this order are net 45 days. Invoices will be submitted the month after biospecimen 
+deliveries.
+Page 3 of 3
