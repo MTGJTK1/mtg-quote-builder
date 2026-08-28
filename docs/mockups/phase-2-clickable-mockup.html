@@ -1147,7 +1147,8 @@
       cohorts: [{ name: 'NSCLC, stage III-IV', subjects: 90 }, { name: 'Normal adjacent', subjects: 52 }],
       header: { validity: '60 Day Quote', serviceTypes: ['Retrospective', 'Prospective'],
         sponsorContactName: 'Dana Whitfield', sponsorContactEmail: 'dwhitfield@guardanthealth.com',
-        sponsorSelectedCases: 'Case list GHI-2026-08 (142 cases)' } },
+        sponsorSelected: true, sponsorCasesMode: 'document',
+        sponsorCasesDoc: 'Case list GHI-2026-08 (142 cases)' } },
     { client: 'Natera', sponsorAcronym: 'NTA', quoteName: 'Pan-cancer - blood',
       preparedBy: 'John Kibler', quoteDate: '2026-08-26', status: 'sent', totalCost: '612500.00',
       specimenTypes: ['Whole blood', 'Plasma', 'Buffy coat'], isExtension: false,
@@ -1200,7 +1201,8 @@
       specimenTypes: ['Flash frozen tissue', 'Serum'], isExtension: false, hubspotDealName: '',
       cohorts: [{ name: 'Atopic dermatitis', subjects: 70 }],
       header: { validity: '30 Day Quote', serviceTypes: ['Retrospective'],
-        sponsorSelectedCases: 'RGN AD cohort, 60 archived biopsies' } }
+        sponsorSelected: true, sponsorCasesMode: 'document',
+        sponsorCasesDoc: 'RGN AD cohort, 60 archived biopsies' } }
   ];
 
   // ---------------------------------------------------------------- storage
@@ -1211,7 +1213,7 @@
   // drafts must survive — so a changed fixture set would otherwise sit unread in
   // the file while the browser kept serving the old one. This makes the mismatch
   // visible and offers the reset, rather than silently discarding their work.
-  var SAMPLES_VERSION = 7;
+  var SAMPLES_VERSION = 8;
   var samplesStale = false;
   var quotes = [];
   var storageWorks = true;
@@ -2103,18 +2105,28 @@
      *  Only ever fills blanks: a rep who has typed a contact keeps it. */
     function lookupByDealName() {
       var hit = findStudyByDealName(draft.hubspotDealName);
-      if (!hit) return;
-      var st = hit.study, filled = [];
-      if (!String(draft.client || '').trim() && st.client) {
-        draft.client = st.client; draft.sponsorAcronym = st.acronym; filled.push('client');
+      if (!hit || !hdrFields) return;
+      var st = hit.study;
+
+      // Fill the inputs in place. Rebuilding the form here would take the focus
+      // out of the field the rep is still typing into, and swallow the rest of
+      // what they type — the same trap the extension lookup hit in §9.
+      function fill(fld, current, value, assign) {
+        if (String(current || '').trim() || !value) return;
+        assign(value);
+        if (fld && fld._input && document.activeElement !== fld._input) {
+          fld._input.value = value;
+        }
       }
-      if (!String(draft.header.sponsorContactName || '').trim() && st.contactName) {
-        draft.header.sponsorContactName = st.contactName; filled.push('contact');
-      }
-      if (!String(draft.header.sponsorContactEmail || '').trim() && st.contactEmail) {
-        draft.header.sponsorContactEmail = st.contactEmail; filled.push('email');
-      }
-      if (filled.length) renderBody();
+      fill(hdrFields.client, draft.client, st.client, function (v) { draft.client = v; });
+      fill(hdrFields.acronym, draft.sponsorAcronym, st.acronym,
+           function (v) { draft.sponsorAcronym = v; });
+      fill(hdrFields.contact, draft.header.sponsorContactName, st.contactName,
+           function (v) { draft.header.sponsorContactName = v; });
+      fill(hdrFields.email, draft.header.sponsorContactEmail, st.contactEmail,
+           function (v) { draft.header.sponsorContactEmail = v; });
+      refreshNumber();
+      if (shippingRefresh) shippingRefresh();
     }
 
     function sponsorFields() {
@@ -2159,37 +2171,31 @@
           draft.header.emailEdited = true;
         } });
 
-      return { client: clientFld, acronym: acronymFld, contact: contactFld, email: emailFld };
+      hdrFields = { client: clientFld, acronym: acronymFld,
+                    contact: contactFld, email: emailFld };
+      return hdrFields;
+    }
+
+    function dealNameField(placeholder) {
+      return field('HubSpot deal name', { full: true, placeholder: placeholder,
+        hint: 'Start here — the sponsor and their contact fill in from the deal.',
+        get: function () { return draft.hubspotDealName; },
+        set: function (v) { draft.hubspotDealName = v; },
+        then: queueDealLookup, onblur: lookupByDealName });
     }
 
     function renderFullHeader() {
       var f = sponsorFields();
       headerBody.appendChild(el('div', { class: 'grid' }, [
+        dealNameField('NTA: 500 healthies - blood'),
         f.client, f.acronym,
+        f.contact, f.email,
         field('Quote date', { type: 'date', required: true, autofilled: true,
           get: function () { return draft.quoteDate; }, set: function (v) { draft.quoteDate = v; } }),
         field('Validity', { type: 'select', options: VALIDITY,
           get: function () { return draft.header.validity || VALIDITY[0]; },
-          set: function (v) { draft.header.validity = v; } }),
-        field('HubSpot deal name', { placeholder: 'NTA: 500 healthies - blood',
-          hint: 'Paste it and the sponsor contact fills in from the deal.',
-          get: function () { return draft.hubspotDealName; },
-          set: function (v) { draft.hubspotDealName = v; },
-          onblur: lookupByDealName }),
-        f.contact, f.email
+          set: function (v) { draft.header.validity = v; } })
       ]));
-
-      var casesBox = el('div');
-      function renderCases() {
-        casesBox.replaceChildren();
-        if (draft.header.serviceTypes.indexOf('Retrospective') === -1) return;
-        var fl = field('Sponsor-selected cases', { type: 'textarea', rows: 2,
-          placeholder: 'Document name, or case / biospecimen numbers',
-          get: function () { return draft.header.sponsorSelectedCases; },
-          set: function (v) { draft.header.sponsorSelectedCases = v; } });
-        fl.style.marginTop = '17px';
-        casesBox.appendChild(fl);
-      }
 
       var svc = el('fieldset', {}, [el('legend', { text: 'Service type' })]);
       svc.appendChild(el('div', { class: 'check-row' }, SERVICE_TYPES.map(function (t) {
@@ -2199,25 +2205,20 @@
             var i = draft.header.serviceTypes.indexOf(t);
             if (on && i === -1) draft.header.serviceTypes.push(t);
             if (!on && i > -1) draft.header.serviceTypes.splice(i, 1);
-          }, renderCases);
+          }, function () { if (casesRefresh) casesRefresh(); });
       })));
       headerBody.appendChild(svc);
-      headerBody.appendChild(casesBox);
-      renderCases();
     }
 
     function renderMinimalHeader() {
       var f = sponsorFields();
       headerBody.appendChild(el('div', { class: 'grid' }, [
+        dealNameField('NTA: Multi-cancer - blood (MT2291 extension #1)'),
         f.client, f.acronym,
         field('Validity', { type: 'select', options: VALIDITY,
           get: function () { return draft.header.validity || VALIDITY[0]; },
           set: function (v) { draft.header.validity = v; } }),
-        field('HubSpot deal name', { placeholder: 'NTA: Multi-cancer - blood (MT2291 extension #1)',
-          hint: 'Paste it and the sponsor contact fills in from the deal.',
-          get: function () { return draft.hubspotDealName; },
-          set: function (v) { draft.hubspotDealName = v; },
-          onblur: lookupByDealName }),
+
         field('Quote date', { type: 'date', required: true, autofilled: true,
           get: function () { return draft.quoteDate; }, set: function (v) { draft.quoteDate = v; } })
       ]));
@@ -2324,6 +2325,14 @@
     }
 
     // Declared up here because §03 and §05 call it as their values change.
+    var dealTimer = null;
+    function queueDealLookup() {
+      clearTimeout(dealTimer);
+      dealTimer = setTimeout(lookupByDealName, 400);
+    }
+
+    var hdrFields = null;
+    var casesRefresh = null;
     var pricingRefresh = null;
     var specimensRefresh = null;
     var shippingRefresh = null;
@@ -2705,6 +2714,49 @@
     function sectionPopulation() {
       var sec = el('section', { class: 'sec' });
       sec.appendChild(secHead('03', 'Population & cohorts'));
+
+      // Sponsor-selected cases belong with the population, not the header — the
+      // sponsor has already decided who is in the study, and the cohorts below
+      // describe what they picked.
+      var h = draft.header;
+      var casesBox = el('div');
+
+      function paintCases() {
+        casesBox.replaceChildren();
+        if (!h.sponsorSelected) return;
+
+        var byDoc = h.sponsorCasesMode === 'document';
+        casesBox.appendChild(el('div', { class: 'check-row' }, [
+          radio('cases', 'List the biospecimens here', !byDoc, function () {
+            h.sponsorCasesMode = 'list'; paintCases(); }),
+          radio('cases', 'Name the document that lists them', byDoc, function () {
+            h.sponsorCasesMode = 'document'; paintCases(); })
+        ]));
+
+        if (byDoc) {
+          casesBox.appendChild(field('Document name', { full: true,
+            placeholder: 'e.g. Case list GHI-2026-08 (142 cases)',
+            hint: 'Named in the quote so both sides agree which list was priced.',
+            get: function () { return h.sponsorCasesDoc; },
+            set: function (v) { h.sponsorCasesDoc = v; } }));
+        } else {
+          casesBox.appendChild(field('Case or biospecimen numbers', {
+            type: 'textarea', rows: 3, full: true,
+            placeholder: 'One per line',
+            hint: CRITERIA_HINT,
+            get: function () { return h.sponsorSelectedCases; },
+            set: function (v) { h.sponsorSelectedCases = v; } }));
+        }
+      }
+
+      var casesToggle = checkbox('The sponsor has selected the cases',
+        function () { return h.sponsorSelected; },
+        function (on) { h.sponsorSelected = on; },
+        paintCases);
+      sec.appendChild(casesToggle);
+      sec.appendChild(casesBox);
+      casesRefresh = paintCases;
+      paintCases();
 
       draft.cohorts = draft.cohorts || [];
       var cards = el('div');

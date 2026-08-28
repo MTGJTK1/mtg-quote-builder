@@ -1028,3 +1028,42 @@ exercised. The real app reads the association live rather than holding a copy.
 Section renumbering in §14 left three stale references to "§10" that now mean
 shipping: the outcome-data hint in §07 and two validation messages. They point
 at §11.
+
+## §18 — Tenth-pass revisions, 2026-08-28
+
+### The HubSpot deal name leads §01
+
+It is the first field on the form, full width, in both the full quote and the
+extension. Everything HubSpot holds follows from it — sponsor, acronym, contact
+name, contact email — filled as the rep types, on a 400 ms debounce rather than
+waiting for them to leave the field.
+
+It fills blanks only. A rep who typed a contact first keeps it.
+
+**The trap this walked into, and the fix.** Filling those fields by calling
+`renderBody()` rebuilt the header underneath the rep, taking focus out of the
+field they were still typing into and swallowing everything they typed after the
+lookup fired. Verified in a browser: focus landed on `BODY` and two trailing
+keystrokes vanished.
+
+The lookup now writes into the existing inputs and never touches the one that
+has focus. This is the third time this form has been bitten by a repaint during
+typing (§9's extension lookup, and the pricing repaint before it) — the rule is
+now explicit: **a background lookup updates inputs in place; only a deliberate
+user action rebuilds a section.**
+
+### Sponsor-selected cases move to §03
+
+They were a textarea in the header, shown only for retrospective studies. They
+belong with the population: when the sponsor has already picked the cases, that
+*is* the population definition, and the cohorts below describe what was picked.
+
+A checkbox at the top of §03 — *"The sponsor has selected the cases"* — opens
+two ways to record them:
+
+- **List the biospecimens here** — one case or biospecimen number per line.
+- **Name the document that lists them** — a reference, named in the quote so
+  both sides agree which list was priced.
+
+The two seeded quotes that carried a case list now carry it as a named document,
+which is what both of them actually were.
