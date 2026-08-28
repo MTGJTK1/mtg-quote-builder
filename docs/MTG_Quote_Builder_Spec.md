@@ -907,3 +907,73 @@ all come in. A representative quote — one cohort, two specimens — drops from
 
 §09 still carried **Delivery address(es)** after §10 gained **Ship-to
 address(es)**, so the form asked for the same thing twice. §09's copy is gone.
+
+## §16 — Eighth-pass revisions, rep review 2026-08-28
+
+Nineteen items. The last one was a defect.
+
+### The bug: # subjects went dead with no explanation
+
+Adding a subcohort disables the cohort's own subject count — correct, it is
+summed from the subcohorts. But the explanatory hint only rendered if the
+cohort *already had* subcohorts when the card was built, so a rep who added one
+watched the field stop accepting input and say nothing about why.
+
+`field()` now exposes its hint node, and the subcohort handlers keep it
+truthful: *"Summed from the subcohorts below — edit them instead"* against
+*"Or add subcohorts below and this adds itself up."* The field explains itself
+in both states rather than only one.
+
+### Required fields, and being honest about them
+
+Two fields wore a required asterisk that `submit()` never checked — cohort
+description and # subjects. Marking is now aligned to what is actually
+enforced: **client / sponsor, quote date, quote name**. A required field shows
+an amber label and border while empty and goes quiet once filled, with a key
+under the form title.
+
+Deliberately not enforced: cohorts, specimens, prices. A rep saves partial
+drafts and comes back, which the form promises in its own subtitle.
+
+### Criteria
+
+- The standalone *"Prose, one criterion per line"* note is gone. It sat above
+  the fields it described; the message now rides on each box, where the rep is
+  looking: **"Put each criterion on its own line — every line becomes a bullet
+  in the quote."**
+- **Subcohorts take their own inclusion and exclusion criteria**, in both the
+  full quote and the extension track, prompted for *"only what differs from the
+  cohort above."*
+- The subcohort's free-text field is labelled a **description**.
+
+### Biospecimens
+
+- **"Other tissue"** ends the tissue column and **"Other blood product"** ends
+  the blood column, rather than one "Other" stranded in the third.
+- **Fresh tissue** loses aliquots, container and storage state. It ships as
+  collected; there is nothing to aliquot it into and nothing to store it in.
+- **Fresh blood** likewise loses storage state and defaults to ambient gel
+  packs. PAXgene is the exception, so both fresh types carry a **"Frozen before
+  shipping"** tick that brings container and storage back.
+- **Blood is described by its tubes**, because a 10 mL tube does not always
+  fill: *"3 × 10 mL EDTA"* rather than a volume nobody can promise. A tick
+  switches to a volume instead, where a range like *8–10 mL* is fine.
+- **Shipping temperatures** are the four MT Group actually ships in — ambient
+  gel packs, 2–8 °C Nanocool, dry ice, LN2 dry shipper — plus **Other**, which
+  opens a field rather than quietly standing for something nobody wrote down.
+
+### Wording
+
+| Was | Now |
+|---|---|
+| Site / study initiation | Study initiation |
+| "The leading number drives batching below" | "This range guides the batching plan below" |
+| Legs | Shipping legs |
+| Cost | Our cost |
+| MT Group cost | MT Group internal cost |
+| Shipping on this quote | Shipping price for sponsor |
+
+§07's **Delivery detail** now prompts *"Reference the processing instruction
+file if there is one."* §10's ship-to box prompts **"To a US location designated
+by Merck"** — the sponsor's name, following §01 as it is typed, so a rep who has
+no address still records the undertaking.
