@@ -1390,3 +1390,50 @@ produced nothing.
 Known limitation: *"frozen and FFPE biopsies"* suggests fresh tissue and FFPE
 rather than frozen tissue, because a bare *"frozen"* matches things like a
 frozen shipment. A wrong suggestion costs one click.
+
+## §24 — The register was fabricated; rebuilt from the real quotes, 2026-08-28
+
+John, on the sample register: *"why do you say 'Elsevier Biobank'? these are
+exact sciences quotes. how did you pick the sales rep for each quote (many are
+wrong)."*
+
+Both fair. The register was invented. The acronyms were lifted from real HubSpot
+deal titles, but everything hung on them was made up:
+
+- **Sponsor names guessed from initials.** "Elsevier Biobank" for ELS and "EMC
+  Biosciences" for EMC were guesses at what the letters stood for. EXS is Exact
+  Sciences.
+- **Reps assigned at random** from a list of four, three of whom do not exist.
+- **Totals, PO numbers and MT numbers** invented to look plausible.
+- **A contact directory of five people who do not exist**, at real companies,
+  with plausible work email addresses.
+
+That last one is the worst of it. Plausible-looking records are worse than
+obviously fake ones, because nobody checks them.
+
+### What replaced it
+
+The five real Natera quotes, transcribed from the PDFs. Client, requestor,
+date, quote number, cohorts, specimens, prices and totals exactly as issued;
+John Kibler on all five, because all five say *"prepared and approved by John
+Kibler"*. The generated quote numbers come out matching the real ones.
+
+Status is **sent** on all five, because the documents record no outcome.
+Guessing won or lost would repeat the mistake. That leaves the register's status
+filter with one populated bucket, which is honest and slightly less pretty.
+
+Draft samples are gone: they existed to demonstrate the draft state, and John
+does not need them before launch.
+
+Also removed: the invented contact directory, now five real people (the two
+Natera requestors on the quotes, three Merck contacts from portal 7423331), and
+the three fabricated pre-tool studies in `STUDY_INDEX`, which is now empty —
+extension lookups run off the register of real quotes and the real HubSpot deal
+index instead.
+
+### The rule this should have followed
+
+**Sample data in a tool that displays records must be real or obviously
+synthetic — never plausible invention.** A register of quotes is a record; a
+reader has no way to tell a transcribed row from an imagined one. Where real
+data is not available, leave the field empty and say so.

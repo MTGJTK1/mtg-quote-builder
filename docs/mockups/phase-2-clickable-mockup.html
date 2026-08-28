@@ -996,7 +996,9 @@
   var REPORT_TYPES = ['Pathology', 'Radiology report', 'Biomarkers', 'Other'];
   var PATHOLOGY_FORMATS = ['Report or summary', 'Full report only', 'Summary only'];
 
-  var REPS = ['John Kibler', 'Heather Shahzade', 'Joshua Taylor', 'Karen Krantz'];
+  // Only the one name that appears in a real quote. The other three were
+  // invented, and invented names on a register look like records.
+  var REPS = ['John Kibler'];
 
   // The rep is the signed-in user, never a question on the form. It survives in
   // the register only as a way to find your own quotes. This stands in for the
@@ -1073,17 +1075,21 @@
     'johnson & johnson': 'JNJ', 'johnson and johnson': 'JNJ', 'pfizer': 'PFZ',
     'amgen': 'AMG', 'gilead': 'GIL', 'eli lilly': 'LLY', 'lilly': 'LLY',
     'astrazeneca': 'AZA', 'genentech': 'GNT', 'takeda': 'TKD', 'novartis': 'NVT',
-    'abbvie': 'ABV', 'elsevier biobank': 'ELS', 'iovance': 'IOV', 'qiagen': 'QIA',
+    'abbvie': 'ABV', 'iovance': 'IOV', 'qiagen': 'QIA',
     'illumina': 'ILM', 'roche': 'RCH', 'kite pharma': 'KTE', 'kite': 'KTE'
   };
 
   // Stand-in for the HubSpot contact lookup (needs crm.objects.contacts.read).
+  // Real people only: the two Natera requestors named on John's five quotes,
+  // and three Merck contacts read from portal 7423331. An earlier version of
+  // this list held five invented people at real companies, which on a screen
+  // is indistinguishable from a record.
   var CONTACTS = [
-    { name: 'Dana Whitfield', email: 'dwhitfield@guardanthealth.com', client: 'Guardant Health' },
-    { name: 'Marcus Reyes', email: 'mreyes@natera.com', client: 'Natera' },
-    { name: 'Priya Raman', email: 'praman@merck.com', client: 'Merck' },
-    { name: 'Tom Alderton', email: 'talderton@exactsciences.com', client: 'Exact Sciences' },
-    { name: 'Sofia Lindqvist', email: 'slindqvist@regeneron.com', client: 'Regeneron' }
+    { name: 'Catherine Dayger', email: 'cdayger@natera.com', client: 'Natera' },
+    { name: 'Kate Rhodes', email: 'krhodes@natera.com', client: 'Natera' },
+    { name: 'Heather Llewellyn', email: 'heather.llewellyn@merck.com', client: 'Merck' },
+    { name: 'Veronique Schulten', email: 'veronique.schulten@merck.com', client: 'Merck' },
+    { name: 'Ling Pang', email: 'ling.pang@merck.com', client: 'Merck' }
   ];
 
   // Stand-in for the PO# / MT# lookup. Real sources, in order of preference:
@@ -1290,95 +1296,116 @@
       .trim();
   }
 
-  var STUDY_INDEX = [
-    { po: 'PO-88214', mt: 'MT2291', quote: 'QTE NTA20260826 Pan-cancer - blood',
-      client: 'Natera', acronym: 'NTA', preparedBy: 'John Kibler',
-      contactName: 'Marcus Reyes', contactEmail: 'mreyes@natera.com',
-      dealName: 'NTA: 500 healthies - blood',
-      specimens: ['Whole blood', 'Plasma', 'Buffy coat'], perSubject: '1225.00',
-      cohorts: [{ name: 'Colorectal cancer', subjects: 200 },
-                { name: 'Pancreatic cancer', subjects: 150 },
-                { name: 'Healthy controls', subjects: 150 }] },
-    { po: 'PO15216', mt: 'MT9920', quote: 'QTE ELS20260814 NSCLC - fresh tissue',
-      client: 'Elsevier Biobank', acronym: 'ELS', preparedBy: 'Heather Shahzade',
-      contactName: '', contactEmail: '',
-      dealName: 'ELS: NSCLC - Fresh Tissue (MT9920)',
-      specimens: ['Fresh tissue'], perSubject: '3400.00',
-      cohorts: [{ name: 'NSCLC', subjects: 60 }] },
-    { po: 'EM1706', mt: 'MT9920', quote: 'QTE EMC20260813 PDAC - fresh tissue',
-      client: 'EMC Biosciences', acronym: 'EMC', preparedBy: 'Joshua Taylor',
-      contactName: '', contactEmail: '',
-      dealName: 'EMC: PDAC - Fresh Tissue (MT9920)',
-      specimens: ['Fresh tissue'], perSubject: '3650.00',
-      cohorts: [{ name: 'PDAC', subjects: 40 }] }
-  ];
+  // Pre-tool studies, which in the real app come from OneDrive. Empty here:
+  // the three entries that used to sit in it were invented, down to their PO
+  // numbers and the reps who wrote them. An extension lookup now works off the
+  // register of real quotes and off the HubSpot deals above, both of which are
+  // real data.
+  var STUDY_INDEX = [];
 
   // ---------------------------------------------------------------- samples
 
+  // The five real Natera quotes John supplied, transcribed from the PDFs:
+  // client, contact, date, quote number, cohorts, specimens and totals are all
+  // as issued. Nothing here is invented.
+  //
+  // The register these replaced was fabricated — sponsor names, reps and totals
+  // all made up around acronyms lifted from real HubSpot deal names. "Elsevier
+  // Biobank" for ELS and "EMC Biosciences" for EMC were guesses at what the
+  // letters stood for, and EXS is Exact Sciences, not Elsevier.
+  //
+  // Status is 'sent' on all five because the documents do not record an
+  // outcome. Guessing won or lost would be the same mistake again.
   var SAMPLES = [
-    { client: 'Guardant Health', sponsorAcronym: 'GHI', quoteName: 'NSCLC - FFPE & plasma',
-      preparedBy: 'Joshua Taylor', quoteDate: '2026-08-27', status: 'draft', totalCost: '342750.00',
-      specimenTypes: ['FFPE', 'Plasma'], isExtension: false,
-      hubspotDealName: 'GHI: NSCLC tissue + plasma',
-      cohorts: [{ name: 'NSCLC, stage III-IV', subjects: 90 }, { name: 'Normal adjacent', subjects: 52 }],
-      header: { validity: '60 Day Quote', serviceTypes: ['Retrospective', 'Prospective'],
-        sponsorContactName: 'Dana Whitfield', sponsorContactEmail: 'dwhitfield@guardanthealth.com',
-        sponsorSelected: true, sponsorCasesMode: 'document',
-        sponsorCasesDoc: 'Case list GHI-2026-08 (142 cases)' } },
-    { client: 'Natera', sponsorAcronym: 'NTA', quoteName: 'Pan-cancer - blood',
-      preparedBy: 'John Kibler', quoteDate: '2026-08-26', status: 'sent', totalCost: '612500.00',
-      specimenTypes: ['Whole blood', 'Plasma', 'Buffy coat'], isExtension: false,
-      hubspotDealName: 'NTA: 500 healthies - blood', mtNumber: 'MT2291',
-      cohorts: [{ name: 'Colorectal cancer', subjects: 200 },
-                { name: 'Pancreatic cancer', subjects: 150 },
-                { name: 'Healthy controls', subjects: 150 }],
-      pricing: { specimenPrices: {
-        'Whole blood': { price: '400.00' }, 'Plasma': { price: '525.00' },
-        'Buffy coat': { price: '300.00' } } },
-      header: { validity: '30 Day Quote', serviceTypes: ['Prospective'],
-        sponsorContactName: 'Marcus Reyes', sponsorContactEmail: 'mreyes@natera.com' } },
-    { client: 'Natera', sponsorAcronym: 'NTA', quoteName: 'Pan-cancer - blood (MT2291 extension #1)',
-      preparedBy: 'John Kibler', quoteDate: '2026-08-25', status: 'draft', totalCost: '122500.00',
-      specimenTypes: ['Whole blood'], isExtension: true,
-      hubspotDealName: 'NTA: Multi-cancer - blood (MT2291 extension #1)',
-      cohorts: [{ name: 'Colorectal cancer', subjects: 200, additionalSubjects: 60 },
-                { name: 'Pancreatic cancer', subjects: 150, additionalSubjects: 40 },
-                { name: 'Healthy controls', subjects: 150, additionalSubjects: 0 }],
-      header: { validity: '30 Day Quote', serviceTypes: ['Prospective'],
-        originalStudyQuote: 'QTE NTA20260826 Pan-cancer - blood',
-        originalStudyPo: 'PO-88214', parentMtNumber: 'MT2291', extensionNumber: '1',
-        designChanged: false, perSubject: '1225.00' } },
-    { client: 'Elsevier Biobank', sponsorAcronym: 'ELS', quoteName: 'NSCLC - fresh tissue',
-      preparedBy: 'Heather Shahzade', quoteDate: '2026-08-14', status: 'won', totalCost: '204000.00',
-      specimenTypes: ['Fresh tissue'], isExtension: false,
-      hubspotDealName: 'ELS: NSCLC - Fresh Tissue (MT9920)', mtNumber: 'MT9920',
-      cohorts: [{ name: 'NSCLC', subjects: 60 }],
-      header: { validity: '30 Day Quote', serviceTypes: ['Prospective'] } },
-    { client: 'Elsevier Biobank', sponsorAcronym: 'ELS', quoteName: 'NSCLC - fresh tissue (MT9920 extension #2)',
-      preparedBy: 'Heather Shahzade', quoteDate: '2026-08-18', status: 'sent', totalCost: '68000.00',
-      specimenTypes: ['Fresh tissue'], isExtension: true,
-      hubspotDealName: 'ELS: NSCLC - Fresh Tissue (MT9920 extension #2)',
-      cohorts: [{ name: 'NSCLC', subjects: 60, additionalSubjects: 20 }],
-      header: { validity: '30 Day Quote', serviceTypes: ['Prospective'],
-        parentMtNumber: 'MT9920', extensionNumber: '2', designChanged: false,
-        perSubject: '3400.00' } },
-    { client: 'Exact Sciences', sponsorAcronym: 'EXS', quoteName: 'CRC - plasma & buffy',
-      preparedBy: 'Heather Shahzade', quoteDate: '2026-08-19', status: 'internal_reviewed',
-      totalCost: '288400.00', specimenTypes: ['Plasma', 'Buffy coat'], isExtension: false,
-      hubspotDealName: '', cohorts: [{ name: 'Colorectal cancer', subjects: 260 }],
-      header: { validity: '60 Day Quote', serviceTypes: ['Prospective'] } },
-    { client: 'Merck', sponsorAcronym: 'MRK', quoteName: 'Multi-tumor fresh tissue',
-      preparedBy: 'John Kibler', quoteDate: '2026-08-12', status: 'won', totalCost: '1140000.00',
-      specimenTypes: ['Fresh tissue', 'Whole blood'], isExtension: false, hubspotDealName: '',
-      mtNumber: 'MT9920', cohorts: [{ name: 'Multi-tumor, mixed', subjects: 400 }],
-      header: { validity: '30 Day Quote', serviceTypes: ['Prospective'] } },
-    { client: 'Regeneron', sponsorAcronym: 'RGN', quoteName: 'Atopic dermatitis - biopsy & serum',
-      preparedBy: 'Karen Krantz', quoteDate: '2026-07-30', status: 'lost', totalCost: '175000.00',
-      specimenTypes: ['Flash frozen tissue', 'Serum'], isExtension: false, hubspotDealName: '',
-      cohorts: [{ name: 'Atopic dermatitis', subjects: 70 }],
-      header: { validity: '30 Day Quote', serviceTypes: ['Retrospective'],
-        sponsorSelected: true, sponsorCasesMode: 'document',
-        sponsorCasesDoc: 'RGN AD cohort, 60 archived biopsies' } }
+    { client: 'Natera', sponsorAcronym: 'NTA',
+      quoteName: 'Healthy confirmed colonoscopy - plasma & buffy',
+      preparedBy: 'John Kibler', quoteDate: '2025-06-06', status: 'sent',
+      totalCost: '18000.00', specimenTypes: ['Plasma', 'Buffy coat'],
+      isExtension: false, hubspotDealName: '',
+      cohorts: [{ name: 'No cancer or advanced adenoma per colonoscopy', subjects: 20,
+                  subcohorts: [] }],
+      pricing: { fullMode: 'specimen',
+        specimenPrices: { 'Plasma': { price: '600.00' }, 'Buffy coat': { price: '100.00' } },
+        otherCosts: [{ label: 'Translated colonoscopy reports', amount: '150.00',
+                       count: '20', unit: 'reports' }] },
+      shipping: { legs: [{ label: 'MTG to sponsor leg', dest: 'US-based Natera location',
+                           intl: false, count: '2', rate: '500.00', toSponsor: true }],
+                  markup: '1', usDestination: true, mode: 'lump' },
+      header: { validity: '60 Day Quote', serviceTypes: ['Retrospective'],
+        sponsorContactName: 'Cat Dayger', sponsorContactEmail: 'cdayger@natera.com' } },
+
+    { client: 'Natera', sponsorAcronym: 'NTA',
+      quoteName: 'Pan-cancer and benign diseases - blood',
+      preparedBy: 'John Kibler', quoteDate: '2025-07-24', status: 'sent',
+      totalCost: '948425.00', specimenTypes: ['Whole blood'],
+      isExtension: false, hubspotDealName: '',
+      cohorts: [
+        { name: 'Cancer', subjects: 375, subcohorts: [] },
+        { name: 'Benign disease', subjects: 150, subcohorts: [] },
+        { name: 'Negative bladder', subjects: 7, estimated: true, subcohorts: [] }],
+      pricing: { fullMode: 'cohort',
+        cohortPrices: { 'Cancer': '1650.00', 'Benign disease': '1450.00',
+                        'Negative bladder': '825.00' },
+        cohortUnits: { 'Cancer': 'subject', 'Benign disease': 'subject',
+                       'Negative bladder': 'subject' },
+        otherCosts: [{ label: 'At Enrollment Medrio Entry', amount: '100.00',
+                       count: '532', unit: 'subjects' }],
+        totalAssumption: 'estimating 7 negative bladder cases' },
+      shipping: { legs: [], markup: '2', usDestination: true, mode: 'perSubject',
+                  override: '100.00' },
+      header: { validity: '60 Day Quote', serviceTypes: ['Prospective'],
+        sponsorContactName: 'Catherine Dayger', sponsorContactEmail: 'cdayger@natera.com' } },
+
+    { client: 'Natera', sponsorAcronym: 'NTA', quoteName: 'CRC & healthy - stool',
+      preparedBy: 'John Kibler', quoteDate: '2025-09-12', status: 'sent',
+      totalCost: '180000.00', specimenTypes: ['Stool'],
+      isExtension: false, hubspotDealName: '',
+      cohorts: [{ name: 'CRC', subjects: 25, subcohorts: [] },
+                { name: 'Healthy', subjects: 25, subcohorts: [] }],
+      pricing: { fullMode: 'cohort',
+        cohortPrices: { 'CRC': '2000.00', 'Healthy': '1500.00' },
+        cohortUnits: { 'CRC': 'stool', 'Healthy': 'stool' },
+        cohortPer: { 'CRC': '2', 'Healthy': '2' },
+        otherCosts: [{ label: 'Shipping Kits to Sites', amount: '50.00',
+                       count: '100', unit: 'subject stools' }],
+        totalAssumption: 'estimating that 100% of subjects provide two stools' },
+      shipping: { legs: [], markup: '2', mode: 'lump' },
+      header: { validity: '60 Day Quote', serviceTypes: ['Prospective'],
+        sponsorContactName: 'Catherine Dayger', sponsorContactEmail: 'cdayger@natera.com' } },
+
+    { client: 'Natera', sponsorAcronym: 'NTA',
+      quoteName: 'Butterfly vs. straight needle healthy - blood',
+      preparedBy: 'John Kibler', quoteDate: '2026-01-13', status: 'sent',
+      totalCost: '90000.00', specimenTypes: ['Whole blood'],
+      isExtension: false, hubspotDealName: '',
+      cohorts: [{ name: 'Self-reported healthy', subjects: 75, subcohorts: [] }],
+      specimenDetail: { 'Whole blood': { byTubes: true, tubeCount: '4', tubes: [
+        { type: 'Streck', size: '10 mL', processing: '21 gauge straight needle, one arm' },
+        { type: 'Streck', size: '10 mL', processing: '21 gauge straight needle, one arm' },
+        { type: 'Streck', size: '10 mL', processing: '21 gauge butterfly needle, opposite arm' },
+        { type: 'Streck', size: '10 mL', processing: '21 gauge butterfly needle, opposite arm' }] } },
+      pricing: { fullMode: 'cohort',
+        cohortPrices: { 'Self-reported healthy': '1100.00' },
+        cohortUnits: { 'Self-reported healthy': 'subject' } },
+      shipping: { legs: [], markup: '2', mode: 'perSubject', override: '100.00' },
+      header: { validity: '60 Day Quote', serviceTypes: ['Prospective'],
+        sponsorContactName: 'Catherine Dayger', sponsorContactEmail: 'cdayger@natera.com' } },
+
+    { client: 'Natera', sponsorAcronym: 'NTA',
+      quoteName: 'Clean colonoscopy & advanced adenoma - plasma',
+      preparedBy: 'John Kibler', quoteDate: '2026-07-30', status: 'sent',
+      totalCost: '366000.00', specimenTypes: ['Plasma'],
+      isExtension: false, hubspotDealName: '',
+      cohorts: [{ name: 'Colonoscopy-confirmed clean', subjects: 120, subcohorts: [] },
+                { name: 'Advanced adenoma', subjects: 120, subcohorts: [] }],
+      pricing: { fullMode: 'cohort',
+        cohortPrices: { 'Colonoscopy-confirmed clean': '1250.00',
+                        'Advanced adenoma': '1500.00' },
+        cohortUnits: { 'Colonoscopy-confirmed clean': 'draw', 'Advanced adenoma': 'draw' } },
+      shipping: { legs: [], markup: '2', usDestination: true, mode: 'perSubject',
+                  override: '150.00' },
+      header: { validity: '60 Day Quote', serviceTypes: ['Prospective'],
+        sponsorContactName: 'Kate Rhodes', sponsorContactEmail: 'krhodes@natera.com' } }
   ];
 
   // ---------------------------------------------------------------- storage
@@ -1389,7 +1416,7 @@
   // drafts must survive — so a changed fixture set would otherwise sit unread in
   // the file while the browser kept serving the old one. This makes the mismatch
   // visible and offers the reset, rather than silently discarding their work.
-  var SAMPLES_VERSION = 14;
+  var SAMPLES_VERSION = 15;
   var samplesStale = false;
   var quotes = [];
   var storageWorks = true;
