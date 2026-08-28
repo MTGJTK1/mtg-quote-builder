@@ -637,6 +637,33 @@
     padding-left: 14px;
   }
   .cohort-row.sub-add { grid-template-columns: 1fr; padding-left: 14px; }
+  .data-rows { display: flex; flex-direction: column; }
+  .data-row {
+    display: grid; grid-template-columns: 1fr 92px 92px 96px;
+    align-items: center; gap: 8px;
+    padding: 5px 0; border-bottom: 1px solid var(--rule);
+  }
+  .data-row.head {
+    font-size: 10.5px; font-weight: 600; letter-spacing: .09em;
+    text-transform: uppercase; color: var(--ink-faint);
+    border-bottom-color: var(--rule-strong); padding-bottom: 6px;
+  }
+  .data-row.head span { text-align: center; }
+  .data-row.head span:first-child { text-align: left; }
+  .data-row .lbl { font-size: 14px; }
+  .data-opt {
+    display: flex; justify-content: center; cursor: pointer; padding: 3px 0;
+  }
+  .data-opt input { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; }
+  .sr {
+    position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip: rect(0 0 0 0); white-space: nowrap;
+  }
+  @media (max-width: 560px) {
+    .data-row { grid-template-columns: 1fr 56px 56px 60px; }
+    .data-row .lbl { font-size: 13px; }
+  }
+
   .cond { margin-bottom: 9px; }
   .cond-text {
     margin: 6px 0 4px 24px;
@@ -959,7 +986,8 @@
   // the register only as a way to find your own quotes. This stands in for the
   // session user until auth exists (build brief §6).
   var CURRENT_REP = REPS[0];
-  var VALIDITY = ['30 Day Quote', '60 Day Quote'];
+  // 60 day first: all five real Natera quotes are 60 Day Quotes.
+  var VALIDITY = ['60 Day Quote', '30 Day Quote'];
 
   // Deal-specific commitments, as distinct from the Terms & Conditions, which
   // are boilerplate and identical across all five real quotes. Each of these is
@@ -1292,7 +1320,7 @@
   // drafts must survive — so a changed fixture set would otherwise sit unread in
   // the file while the browser kept serving the old one. This makes the mismatch
   // visible and offers the reset, rather than silently discarding their work.
-  var SAMPLES_VERSION = 12;
+  var SAMPLES_VERSION = 13;
   var samplesStale = false;
   var quotes = [];
   var storageWorks = true;
@@ -2884,29 +2912,43 @@
       draft.clinicalData = draft.clinicalData || { required: [], ifAvailable: [] };
       var cd = draft.clinicalData;
 
-      var grid = el('div', { class: 'spec-cols', style: 'grid-template-columns:1fr 1fr' });
+      // One row per category with three states, rather than the same eight
+      // categories listed twice as sixteen checkboxes — which took twice the
+      // space and let a rep tick "required" and "if available" at once.
+      var grid = el('div', { class: 'data-rows' });
       function inList(list, item) { return list.indexOf(item) > -1; }
-      function toggle(list, other, item, on) {
-        var i = list.indexOf(item);
-        if (on && i === -1) list.push(item);
-        if (!on && i > -1) list.splice(i, 1);
-        var j = other.indexOf(item);            // checking one clears the other
-        if (on && j > -1) other.splice(j, 1);
+      function setState(item, state) {
+        [cd.required, cd.ifAvailable].forEach(function (l) {
+          var i = l.indexOf(item);
+          if (i > -1) l.splice(i, 1);
+        });
+        if (state === 'required') cd.required.push(item);
+        if (state === 'ifAvailable') cd.ifAvailable.push(item);
       }
 
       function paint() {
         grid.replaceChildren();
-        [['Required', cd.required, cd.ifAvailable], ['If available', cd.ifAvailable, cd.required]]
-          .forEach(function (col) {
-            grid.appendChild(el('div', { class: 'spec-col' }, [
-              el('div', { class: 'spec-col-title', text: col[0] })
-            ].concat(CLINICAL_DATA_CATEGORIES.map(function (c) {
-              return checkbox(c,
-                function () { return inList(col[1], c); },
-                function (on) { toggle(col[1], col[2], c, on); },
-                paint);
-            }))));
-          });
+        grid.appendChild(el('div', { class: 'data-row head' }, [
+          el('span', {}),
+          el('span', { text: 'Not needed' }),
+          el('span', { text: 'Required' }),
+          el('span', { text: 'If available' })
+        ]));
+        CLINICAL_DATA_CATEGORIES.forEach(function (c, i) {
+          var state = inList(cd.required, c) ? 'required'
+                    : inList(cd.ifAvailable, c) ? 'ifAvailable' : 'no';
+          var row = el('div', { class: 'data-row' }, [el('span', { class: 'lbl', text: c })]);
+          [['no', 'Not needed'], ['required', 'Required'], ['ifAvailable', 'If available']]
+            .forEach(function (opt) {
+              var id = 'cd' + i + opt[0];
+              var r = el('input', { type: 'radio', id: id, name: 'cd' + i,
+                onchange: function () { setState(c, opt[0]); paint(); } });
+              r.checked = state === opt[0];
+              row.appendChild(el('label', { class: 'data-opt', for: id }, [
+                r, el('span', { class: 'sr', text: c + ' — ' + opt[1] })]));
+            });
+          grid.appendChild(row);
+        });
       }
       paint();
       sec.appendChild(grid);
@@ -3026,6 +3068,8 @@
           get: function () { return tl.kickoffTrigger; },
           set: function (v) { tl.kickoffTrigger = v; } }));
       }
+      // On by default: all five real quotes open with a kick-off call.
+      if (tl.kickoffCall == null) tl.kickoffCall = true;
       sec.appendChild(checkbox('Kickoff call required',
         function () { return tl.kickoffCall; },
         function (v) { tl.kickoffCall = v; }, paintKick));
@@ -3049,7 +3093,11 @@
             ? 'Enrollment runs ' + months + ' months or more, so a midpoint batch is available.'
             : 'Under three months of enrollment, so a single end-of-study batch is the only option.',
           get: function () { return opts.indexOf(tl.batching) > -1 ? tl.batching : opts[0]; },
-          set: function (v) { tl.batching = v; } }));
+          set: function (v) { tl.batching = v; },
+          then: function () {
+            if (shippingRefresh) shippingRefresh();
+            if (pricingRefresh) pricingRefresh();
+          } }));
       }
 
       sec.appendChild(el('div', { class: 'grid' }, [
@@ -3190,13 +3238,23 @@
           subjFld._input.value = String(cohortSubjects(c));
         }
 
-        // Some counts are a forecast, not a commitment — the pan-cancer quote
-        // prices a "negative bladder" cohort that only exists if suspicion
-        // cases come back non-cancer, and the total says "estimating 7 cases".
-        var estBox = checkbox('This count is an estimate',
-          function () { return c.estimated; },
-          function (on) { c.estimated = on; },
-          function () { refreshDrafts(); if (pricingRefresh) pricingRefresh(); });
+        // "Up to this number" and "this is an estimate" were two checkboxes
+        // hedging one number, and nothing stopped a rep ticking both. One
+        // control, three states, and it is the wording the quote prints — the
+        // pan-cancer quote totals its negative-bladder cohort as
+        // "estimating 7 cases".
+        var countBasis = field('This count is', { type: 'select',
+          options: ['exact', 'a maximum — up to this number', 'an estimate'],
+          get: function () {
+            if (c.upTo) return 'a maximum — up to this number';
+            if (c.estimated) return 'an estimate';
+            return 'exact';
+          },
+          set: function (v) {
+            c.upTo = v.indexOf('maximum') > -1;
+            c.estimated = v === 'an estimate';
+          },
+          then: function () { refreshDrafts(); if (pricingRefresh) pricingRefresh(); } });
 
         var top;
         if (casesPicked()) {
@@ -3218,17 +3276,14 @@
               then: function () { refreshDrafts();
                                   if (shippingRefresh) shippingRefresh();
                                   if (pricingRefresh) pricingRefresh(); } }),
-            subjFld
+            subjFld, countBasis
           ]);
         }
         card.appendChild(top);
-        if (!casesPicked()) card.appendChild(estBox);
 
-        var upTo = checkbox('Up to this number',
-          function () { return c.upTo; }, function (v) { c.upTo = v; });
-        upTo.style.margin = '2px 0 14px';
-        card.appendChild(upTo);
-
+        // "Up to this number" and "this is an estimate" were two checkboxes
+        // hedging one number, and nothing stopped a rep ticking both. One
+        // control, three states, and the wording the quote prints.
         // Population group, subpopulation and severity used to sit here, lifted
         // from HubSpot's `population_2` and `sub_population` enums. Removed on
         // rep review: a cohort is described in free text, and the I/E criteria
@@ -3602,9 +3657,15 @@
 
     var DEFAULT_LEGS = [
       { label: 'Site(s) to MTG leg', dest: '', intl: false, count: '', rate: '' },
-      { label: 'MTG to sponsor leg', dest: '', intl: false, count: '1', rate: '',
+      { label: 'MTG to sponsor leg', dest: '', intl: false, count: '', rate: '',
         toSponsor: true }
     ];
+
+    /** Batches out to the sponsor, as chosen in §09. The link existed before
+     *  shipping became its own section and was lost in that move. */
+    function batchCount() {
+      return /2 batches/.test((draft.timeline || {}).batching || '') ? 2 : 1;
+    }
 
     function shipState() {
       var sh = draft.shipping = draft.shipping || {};
@@ -3620,6 +3681,13 @@
 
     /** A blank leg rate means "use the standard for that destination", so the
      *  rep types only the ones that differ. */
+    /** A sponsor leg with no count typed follows §09's batching. */
+    function legCount(sh, leg) {
+      var typed = String(leg.count == null ? '' : leg.count).trim();
+      if (typed !== '') return num(typed);
+      return leg.toSponsor ? batchCount() : 0;
+    }
+
     function legRate(sh, leg) {
       var typed = String(leg.rate == null ? '' : leg.rate).trim();
       if (typed !== '') return num(typed);
@@ -3643,7 +3711,7 @@
     function shippingCost() {
       var sh = shipState();
       return sh.legs.reduce(function (t, leg) {
-        return t + num(leg.count) * legRate(sh, leg);
+        return t + legCount(sh, leg) * legRate(sh, leg);
       }, 0);
     }
 
@@ -3730,7 +3798,8 @@
             oninput: function () { leg.dest = destIn.value; } });
           destIn.value = leg.dest || '';
 
-          var countIn = el('input', { type: 'text', inputmode: 'numeric', placeholder: '0',
+          var countIn = el('input', { type: 'text', inputmode: 'numeric',
+            placeholder: leg.toSponsor ? String(batchCount()) : '0',
             'aria-label': 'Number of shipments for leg ' + (i + 1),
             oninput: function () { leg.count = countIn.value; refresh(); } });
           countIn.value = leg.count == null ? '' : String(leg.count);
@@ -3755,7 +3824,7 @@
             nameIn, destIn,
             el('span', { class: 'ca' }, [countIn]),
             el('span', { class: 'ca' }, [rateIn]),
-            el('span', { class: 'ca dim', text: money(num(leg.count) * legRate(sh, leg)) }),
+            el('span', { class: 'ca dim', text: money(legCount(sh, leg) * legRate(sh, leg)) }),
             x
           ]));
           legsBox.appendChild(el('label', { class: 'check ship-intl' }, [
@@ -4333,16 +4402,8 @@
         set: function (v) { pr.totalAssumption = v; } }));
 
       sec.appendChild(subHead('Total'));
-      sec.appendChild(el('div', { class: 'grid' }, [
-        field('Status', { type: 'select', options: STATUSES,
-          get: function () { return draft.status; }, set: function (v) { draft.status = v; } })
-      ]));
       sec.appendChild(totalsBox);
       recalc();
-
-      sec.appendChild(field('Additional costs not itemised above', { type: 'textarea', rows: 2, full: true,
-        get: function () { return pr.additionalNotes; },
-        set: function (v) { pr.additionalNotes = v; } }));
 
       return sec;
     }
@@ -4482,6 +4543,9 @@
         save(); go('register'); toast('Quote deleted');
       } }, ['Delete quote']));
     }
+    actions.insertBefore(field('Status', { type: 'select', options: STATUSES,
+      get: function () { return draft.status; },
+      set: function (v) { draft.status = v; } }), actions.firstChild);
     wrap.appendChild(actions);
 
     function submit() {

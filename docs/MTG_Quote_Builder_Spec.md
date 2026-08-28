@@ -1308,3 +1308,63 @@ Numbers matched after §21. With the conditions built and the letterhead settled
 every narrative term in the five quotes has a field to live in. What remains
 before one could be printed is the Word generation itself, which is Phase 6 and
 was never in question here.
+
+## §23 — Audit for superfluous and automatable fields, 2026-08-28
+
+Every control in the form, counted and judged: **128 down to 110**, with two
+defaults corrected and one lost link restored.
+
+### Two defaults that every real quote contradicted
+
+- **Validity opened on "30 Day Quote". All five real quotes are 60 Day Quotes.**
+  60 is now first in the list and therefore the default.
+- **The kick-off call started unticked. All five real quotes open with one.**
+  It now starts ticked.
+
+Both are the same mistake: a default chosen by guessing rather than by looking
+at what MT Group actually sends. Worth re-checking the others against real
+quotes as they accumulate.
+
+### A link lost in a refactor
+
+§09's delivery batching used to drive the outbound shipment count. When shipping
+moved out of §11 into its own §10, the link went with it and nobody noticed —
+the leg count became a hard-coded `1`. Choosing "2 batches (midpoint + end)" now
+sets the MTG-to-sponsor leg to 2, still overridable by typing.
+
+### Fewer controls for the same information
+
+- **Clinical data: sixteen checkboxes become eight rows of three.** The same
+  eight categories were listed twice, as "Required" and "If available" columns —
+  double the height, and nothing stopped a rep ticking both. One row per
+  category with three states says the same thing in half the space and cannot
+  contradict itself.
+- **Two hedges on one number become one dropdown.** "Up to this number" and
+  "This count is an estimate" were separate checkboxes qualifying the same
+  count, and both could be ticked. Now `This count is: exact / a maximum — up to
+  this number / an estimate`, which is also the wording the quote prints.
+- **"Additional costs not itemised above" is gone.** It duplicated the other-cost
+  table, which since §21 takes a rate, a count and a unit and can carry anything
+  that used to be typed into a box beneath it.
+- **Status moved out of §11 to sit beside the save buttons.** Where a quote sits
+  in the pipeline is not a price, and it was the only workflow field buried in a
+  pricing section.
+
+### Left alone deliberately
+
+- **§02 Quote approach** — the "defined dollar amount" path (a PO total, and how
+  many subjects it buys) is not exercised by any of the five sample quotes. It
+  comes from spec §2 and may well be real; five quotes from one sponsor is not
+  evidence it is dead. Flagged for John rather than removed.
+- **The 23 specimen checkboxes.** A vocabulary list, not redundancy.
+- **The 11 study-condition clauses.** Long, but each is a real term from a real
+  quote and the whole point is prompting.
+
+### The automation still on the table
+
+The HubSpot deal name is already the first field and already fills the sponsor
+and contact. It also names the specimens — *"NTA: 500 healthies - blood"*,
+*"MRK: IBD biopsies - fresh pinch biopsies"* — so §05 could arrive pre-ticked
+from it, as a suggestion the rep corrects. Not built: it is a guess dressed as
+an answer, and the cost of a wrong pre-tick is a specimen quoted that nobody
+asked for. Worth doing only if John wants it.
