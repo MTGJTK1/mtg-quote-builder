@@ -246,6 +246,23 @@ quote before considering formatting "done."** Rules below were derived that way.
   values) — never used as a substitute for writing full sentences elsewhere. The
   cost section is the one place short labeled lines (not sentences) are correct,
   matching real convention.
+- **After the last cohort's inclusion / exclusion criteria, print "No other
+  inclusions or exclusions." on its own line, underlined.** It closes the
+  criteria section so a site cannot read an omission as an unstated allowance.
+  Added 2026-08-28 on rep review.
+- **Shipping is stated per specimen type, never asked for on the form.** The
+  form collects no storage state and no shipping temperature; the document says
+  the following, fixed (`SPECIMEN_SPEC.says` in the mockup holds the same
+  strings):
+
+  | Specimen | The quote says |
+  |---|---|
+  | FFPE, slides, buccal swab | Shipped ambient. |
+  | Fresh tissue, synovial tissue, fresh bone marrow | Shipped at 2-8 °C. |
+  | Whole blood | Shipped ambient on gel packs. |
+  | Flash frozen and frozen tissue, plasma, serum, buffy coat, urine, stool, saliva, nasal swab, synovial fluid, frozen marrow | Shipped on dry ice. |
+  | PBMCs, BMMCs | Shipped in an LN2 dry shipper. |
+
 - Native `.docx` generation (via the `docx` npm library or a server-side
   equivalent) is required to hit this spec precisely — the artifact prototype's
   in-browser export currently uses an HTML-based `.doc` trick as a stopgap, which
@@ -1067,3 +1084,52 @@ two ways to record them:
 
 The two seeded quotes that carried a case list now carry it as a named document,
 which is what both of them actually were.
+
+## §19 — Eleventh-pass revisions, 2026-08-28
+
+The governing idea, stated by John across fifteen items: **if the quote always
+says the same thing, it is a statement in the document, not a question on the
+form.** Applied to §05, it removed more fields than it added.
+
+### §03 — a picked-cases quote counts units, not subjects
+
+- **Sponsor-selected cases appears only for a retrospective study.** A
+  prospective study cannot have cases already chosen.
+- **When it is ticked, cohort description and # subjects disappear** and
+  **# units** takes their place — *"140 blocks, 300 mL, 60 slides"*. Nothing is
+  being enrolled; a list already exists and what is being priced is its size.
+- **Inclusion and exclusion stay**, with prompts that match: *"Block age ≤ 5
+  years, fully consented"* rather than geography and treatment status.
+- Subcohorts follow the same rule — units, not subjects.
+
+### §05 — what each specimen actually needs asked
+
+| Specimen | Now asks |
+|---|---|
+| FFPE | Blocks per subject, additional processing |
+| Fresh tissue | Size or weight, additional processing |
+| Flash frozen tissue | Size or weight, additional processing |
+| Frozen tissue in media | Size or weight, **media**, additional processing |
+| Slides | One box: *"5 unstained slides and 1 H&E slide with each subject"* |
+| Other tissue | One box, everything in it |
+| Whole blood and blood products | Tubes per subject, then a block per tube |
+
+Gone from every one of them: aliquots-per-subject as a standing field, container
+/ tube, storage state, shipping temperature, block age limit, minimum tumour
+content, the matching-H&E tick, and the *"frozen before shipping"* tick — which
+was wrong on its own terms, since frozen tissue is a different specimen type and
+whole blood is never frozen before shipping.
+
+Block age and tumour content moved where they belong: the inclusion criteria.
+
+**Tubes get their own blocks.** Entering "3" opens three blocks, each asking
+tube type, tube size and processing instructions. Blood is drawn into named
+tubes and each can be handled differently, which a single "container" field
+could not express. Aliquots are part of processing, not a separate count.
+
+**Aliquots survive only where they are a real question:** a blood product
+described by volume rather than by tubes. Whole blood is never aliquoted, so it
+never asks.
+
+Each card shows what the quote will say about shipping — *"Shipped on dry ice."*
+— so a rep can see the information was not lost, only moved.

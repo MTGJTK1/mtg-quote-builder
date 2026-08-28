@@ -626,6 +626,18 @@
     padding-left: 14px;
   }
   .cohort-row.sub-add { grid-template-columns: 1fr; padding-left: 14px; }
+
+  .says {
+    margin-left: auto;
+    font-size: 12px; color: var(--ink-faint);
+    font-style: italic;
+  }
+  .tubes { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+  .tube-row {
+    display: grid; grid-template-columns: 54px 1fr; gap: 10px; align-items: start;
+    padding-top: 10px; border-top: 1px solid var(--rule);
+  }
+  @media (max-width: 620px) { .tube-row { grid-template-columns: 1fr; } }
   .sub-criteria {
     display: flex; flex-direction: column; gap: 9px;
     padding: 0 0 10px 26px;
@@ -829,72 +841,64 @@
   //   holder   default container or tube
   //   process  true where a processing protocol is a real decision. Sites
   //            decline over these more than over anything else in the form.
-  var STORAGE_STATES = ['Ambient', '2-8 \u00b0C', '-20 \u00b0C', '-80 \u00b0C',
-                        'LN2 vapour phase'];
-  // The four MT Group actually ships in. "Other" opens a field rather than
-  // quietly standing for something nobody wrote down.
-  var SHIP_TEMPS = ['Ambient gel packs', '2-8 \u00b0C Nanocool', 'Dry ice',
-                    'LN2 dry shipper', 'Other'];
+  // Storage state and shipping temperature used to be asked per specimen. They
+  // are not any more: what the quote says about shipping is fixed per specimen
+  // type (SPECIMEN_SPEC.says), and storage follows from it. Recorded in the
+  // spec's document rules rather than collected on the form.
 
   var VOLUME = { label: 'Volume per subject', hint: 'e.g. 10 mL' };
   var MASS = { label: 'Minimum size or weight', hint: 'e.g. 100 mg, or 0.5 cm\u00b3' };
 
+  // What each specimen type actually needs asked, after the tenth rep review.
+  // The principle: if the quote always says the same thing, it is a statement
+  // in the document, not a question on the form.
+  //
+  //   amount     the one quantity worth asking for, or null
+  //   tubes      drawn into tubes — asks per-tube type, size and processing
+  //   aliquoted  aliquots are a real question when described by volume
+  //   media      needs the transport or freezing medium named
+  //   freeform   one box, everything in it
+  //   says       what the quote states about shipping, fixed, not asked
   var SPECIMEN_SPEC = {
-    // Fresh tissue ships the moment it is collected: no aliquoting, no
-    // container to specify and nothing to store it in.
-    'Fresh tissue': { amount: MASS, holder: '', store: '',
-      ship: '2-8 \u00b0C Nanocool', process: true, fresh: true, noAliquots: true },
-    'Flash frozen tissue': { amount: MASS, holder: 'Cryovial',
-      store: '-80 \u00b0C', ship: 'Dry ice', process: true },
-    'Other tissue': { amount: MASS, holder: '', store: 'Ambient',
-      ship: '2-8 \u00b0C Nanocool', process: true },
-    'Frozen tissue in media': { amount: MASS, holder: 'Cryovial with OCT or RNAlater',
-      store: '-80 \u00b0C', ship: 'Dry ice', process: true },
+    'Fresh tissue': { amount: MASS, says: 'Shipped at 2-8 \u00b0C.', process: true },
+    'Flash frozen tissue': { amount: MASS, says: 'Shipped on dry ice.', process: true },
+    'Frozen tissue in media': { amount: MASS, media: true,
+      says: 'Shipped on dry ice.', process: true },
     'FFPE': { amount: { label: 'Blocks per subject', hint: 'e.g. 1' },
-      holder: 'Paraffin block', store: 'Ambient', ship: 'Ambient gel packs', ffpe: true },
-    'Slides': { amount: { label: 'Slides per subject', hint: 'e.g. 10' },
-      holder: 'Charged unstained slides', store: 'Ambient', ship: 'Ambient gel packs',
-      slides: true },
+      says: 'Shipped ambient.', process: true },
+    'Slides': { freeform: true,
+      freeformLabel: 'What is needed per subject',
+      freeformHint: 'e.g. 5 unstained slides and 1 H&E slide with each subject',
+      says: 'Shipped ambient.' },
+    'Other tissue': { freeform: true,
+      freeformLabel: 'Describe what is needed',
+      freeformHint: 'Everything about it \u2014 amount, handling, storage, shipping' },
 
-    // Fresh blood is not stored either — it goes out overnight on gel packs.
-    // PAXgene is the exception, which is what "frozen before shipping" is for.
-    'Whole blood': { amount: VOLUME, holder: 'EDTA (K2) tube', store: '',
-      ship: 'Ambient gel packs', process: true, fresh: true, tubes: true },
-    'Plasma': { amount: VOLUME, holder: 'EDTA (K2) tube, spun',
-      store: '-80 \u00b0C', ship: 'Dry ice', process: true, tubes: true },
-    'Serum': { amount: VOLUME, holder: 'SST / red top',
-      store: '-80 \u00b0C', ship: 'Dry ice', process: true, tubes: true },
-    'Buffy coat': { amount: VOLUME, holder: 'Cryovial',
-      store: '-80 \u00b0C', ship: 'Dry ice', process: true, tubes: true },
-    'PBMCs': { amount: { label: 'Cells per subject', hint: 'e.g. 10 x 10\u2076' },
-      holder: 'CPT tube, cryopreserved', store: 'LN2 vapour phase',
-      ship: 'LN2 dry shipper', process: true },
-    'Other blood product': { amount: VOLUME, holder: '', store: '-80 \u00b0C',
-      ship: 'Dry ice', process: true, tubes: true },
+    'Whole blood': { tubes: true, says: 'Shipped ambient on gel packs.' },
+    'Plasma': { tubes: true, aliquoted: true, says: 'Shipped on dry ice.' },
+    'Serum': { tubes: true, aliquoted: true, says: 'Shipped on dry ice.' },
+    'Buffy coat': { tubes: true, aliquoted: true, says: 'Shipped on dry ice.' },
+    'PBMCs': { tubes: true, aliquoted: true, says: 'Shipped in an LN2 dry shipper.' },
+    'Other blood product': { tubes: true, aliquoted: true, says: 'Shipped on dry ice.' },
 
-    'Fresh bone marrow aspirate': { amount: VOLUME, holder: 'Heparin or EDTA tube',
-      store: '', ship: '2-8 \u00b0C Nanocool', process: true, fresh: true, tubes: true },
-    'Frozen bone marrow aspirate': { amount: VOLUME, holder: 'Cryovial',
-      store: '-80 \u00b0C', ship: 'Dry ice', process: true },
-    'BMMCs': { amount: { label: 'Cells per subject', hint: 'e.g. 10 x 10\u2076' },
-      holder: 'Cryovial, cryopreserved', store: 'LN2 vapour phase',
-      ship: 'LN2 dry shipper', process: true },
-    'Urine': { amount: VOLUME, holder: 'Sterile collection cup',
-      store: '-80 \u00b0C', ship: 'Dry ice', process: true },
-    'Saliva': { amount: VOLUME, holder: 'Saliva collection kit',
-      store: '-20 \u00b0C', ship: '2-8 \u00b0C Nanocool' },
+    'Fresh bone marrow aspirate': { tubes: true, says: 'Shipped at 2-8 \u00b0C.' },
+    'Frozen bone marrow aspirate': { tubes: true, aliquoted: true, says: 'Shipped on dry ice.' },
+    'BMMCs': { tubes: true, aliquoted: true, says: 'Shipped in an LN2 dry shipper.' },
+    'Urine': { amount: VOLUME, aliquoted: true, says: 'Shipped on dry ice.', process: true },
+    'Saliva': { amount: VOLUME, holder: 'Saliva collection kit', says: 'Shipped on dry ice.',
+      process: true },
     'Buccal swab': { amount: { label: 'Swabs per subject', hint: 'e.g. 2' },
-      holder: 'Swab in transport tube', store: 'Ambient', ship: 'Ambient gel packs' },
+      says: 'Shipped ambient.', process: true },
     'Nasal swab': { amount: { label: 'Swabs per subject', hint: 'e.g. 2' },
-      holder: 'Swab in viral transport medium', store: '-80 \u00b0C', ship: 'Dry ice' },
+      says: 'Shipped on dry ice.', process: true },
     'Stool': { amount: { label: 'Amount per subject', hint: 'e.g. 2 g' },
-      holder: 'Stool collection kit', store: '-80 \u00b0C', ship: 'Dry ice', process: true },
-    'Synovial fluid': { amount: VOLUME, holder: 'Sterile tube',
-      store: '-80 \u00b0C', ship: 'Dry ice', process: true },
-    'Synovial tissue': { amount: MASS, holder: 'Sterile container with transport media',
-      store: 'Ambient', ship: '2-8 \u00b0C Nanocool', process: true },
-    'Other': { amount: { label: 'Amount per subject', hint: '' },
-      holder: '', store: 'Ambient', ship: 'Ambient gel packs', process: true }
+      says: 'Shipped on dry ice.', process: true },
+    'Synovial fluid': { amount: VOLUME, aliquoted: true, says: 'Shipped on dry ice.',
+      process: true },
+    'Synovial tissue': { amount: MASS, says: 'Shipped at 2-8 \u00b0C.', process: true },
+    'Other': { freeform: true,
+      freeformLabel: 'Describe what is needed',
+      freeformHint: 'Everything about it \u2014 amount, handling, storage, shipping' }
   };
 
 
@@ -1213,7 +1217,7 @@
   // drafts must survive — so a changed fixture set would otherwise sit unread in
   // the file while the browser kept serving the old one. This makes the mismatch
   // visible and offers the reset, rather than silently discarding their work.
-  var SAMPLES_VERSION = 8;
+  var SAMPLES_VERSION = 9;
   var samplesStale = false;
   var quotes = [];
   var storageWorks = true;
@@ -2723,7 +2727,9 @@
 
       function paintCases() {
         casesBox.replaceChildren();
-        if (!h.sponsorSelected) return;
+        casesToggle.style.display =
+          h.serviceTypes.indexOf('Retrospective') > -1 ? '' : 'none';
+        if (h.serviceTypes.indexOf('Retrospective') === -1 || !h.sponsorSelected) return;
 
         var byDoc = h.sponsorCasesMode === 'document';
         casesBox.appendChild(el('div', { class: 'check-row' }, [
@@ -2751,8 +2757,8 @@
 
       var casesToggle = checkbox('The sponsor has selected the cases',
         function () { return h.sponsorSelected; },
-        function (on) { h.sponsorSelected = on; },
-        paintCases);
+        function (on) { h.sponsorSelected = on; paintCards(); },
+        function () { paintCases(); paintCards(); });
       sec.appendChild(casesToggle);
       sec.appendChild(casesBox);
       casesRefresh = paintCases;
@@ -2776,6 +2782,14 @@
         // Allocation note appears only once there is more than one cohort.
         paintAllocation();
         refreshDrafts();
+      }
+
+      /** With the cases already chosen, there is no population to describe and
+       *  no subjects to count — there are units, and the criteria that make a
+       *  unit acceptable. */
+      function casesPicked() {
+        return draft.header.serviceTypes.indexOf('Retrospective') > -1
+            && !!draft.header.sponsorSelected;
       }
 
       function cohortCard(c, i) {
@@ -2810,19 +2824,29 @@
           subjFld._input.value = String(cohortSubjects(c));
         }
 
-        var top = el('div', { class: 'grid' }, [
-          field('Cohort description', { placeholder: 'e.g. Colorectal cancer',
-            hint: 'Just the description — "Cohort 1" is added for you.',
-            get: function () { return c.name; },
-            set: function (v) {
-              c.name = cleanCohortName(v);
-              head.children[1].textContent = c.name || 'Untitled cohort';
-            },
-            then: function () { refreshDrafts();
-                                if (shippingRefresh) shippingRefresh();
-                                if (pricingRefresh) pricingRefresh(); } }),
-          subjFld
-        ]);
+        var top;
+        if (casesPicked()) {
+          top = el('div', { class: 'grid' }, [
+            field('# units', { placeholder: 'e.g. 140 blocks, 300 mL, 60 slides',
+              get: function () { return c.units; },
+              set: function (v) { c.units = v; },
+              then: function () { refreshDrafts(); if (pricingRefresh) pricingRefresh(); } })
+          ]);
+        } else {
+          top = el('div', { class: 'grid' }, [
+            field('Cohort description', { placeholder: 'e.g. Colorectal cancer',
+              hint: 'Just the description — "Cohort 1" is added for you.',
+              get: function () { return c.name; },
+              set: function (v) {
+                c.name = cleanCohortName(v);
+                head.children[1].textContent = c.name || 'Untitled cohort';
+              },
+              then: function () { refreshDrafts();
+                                  if (shippingRefresh) shippingRefresh();
+                                  if (pricingRefresh) pricingRefresh(); } }),
+            subjFld
+          ]);
+        }
         card.appendChild(top);
 
         var upTo = checkbox('Up to this number',
@@ -2842,11 +2866,15 @@
         // Criteria belong to the cohort, not the study — a cancer cohort and its
         // healthy controls do not share them.
         card.appendChild(field('Inclusion criteria', { type: 'textarea', rows: 4, full: true,
-          placeholder: 'Where you are collecting, any lab-value gate (which assay, how recent a result counts), treatment status.',
+          placeholder: casesPicked()
+            ? 'Block age \u2264 5 years, fully consented, \u2026'
+            : 'Where you are collecting, any lab-value gate (which assay, how recent a result counts), treatment status.',
           hint: CRITERIA_HINT,
           get: function () { return c.inclusion; }, set: function (v) { c.inclusion = v; } }));
         card.appendChild(field('Exclusion criteria', { type: 'textarea', rows: 4, full: true,
-          placeholder: 'Name excluded therapies individually, and say whether any become acceptable after a washout — and how long.',
+          placeholder: casesPicked()
+            ? 'Decalcified blocks, prior neoadjuvant therapy, \u2026'
+            : 'Name excluded therapies individually, and say whether any become acceptable after a washout — and how long.',
           hint: CRITERIA_HINT,
           get: function () { return c.exclusion; }, set: function (v) { c.exclusion = v; } }));
 
@@ -2857,7 +2885,8 @@
           if (!c.subcohorts.length) return;
           var rows = el('div', { class: 'cohorts' });
           rows.appendChild(el('div', { class: 'cohort-row ext cohort-head' }, [
-            el('span', { text: 'Subcohort' }), el('span', { class: 'ca', text: '# subjects' }),
+            el('span', { text: 'Subcohort' }),
+            el('span', { class: 'ca', text: casesPicked() ? '# units' : '# subjects' }),
             el('span', {}), el('span', {}), el('span', {})]));
           c.subcohorts.forEach(function (sc, j) {
             var label = (i + 1) + String.fromCharCode(97 + j);
@@ -2866,8 +2895,10 @@
               placeholder: 'What distinguishes this subcohort',
               oninput: function () { sc.note = noteIn.value; refreshDrafts(); } });
             noteIn.value = sc.note || '';
-            var nIn = el('input', { type: 'text', inputmode: 'numeric',
-              'aria-label': 'Subjects for subcohort ' + label,
+            var nIn = el('input', { type: 'text',
+              inputmode: casesPicked() ? 'text' : 'numeric',
+              placeholder: casesPicked() ? 'e.g. 60 blocks' : '',
+              'aria-label': (casesPicked() ? 'Units' : 'Subjects') + ' for subcohort ' + label,
               oninput: function () {
                 sc.subjects = nIn.value;
                 subjFld._input.value = String(cohortSubjects(c));
@@ -2990,11 +3021,9 @@
           d = draft.specimenDetail[t] = {
             amount: '', aliquots: '', holder: spec.holder,
             store: spec.store, ship: spec.ship, processing: '',
-            blockAge: '', tumourContent: '', heRequired: false,
-            thickness: '', stain: 'Unstained',
             atTimepoints: null,  // null = every timepoint
-            frozen: false,       // a fresh specimen frozen before shipping
-            byTubes: !!spec.tubes, tubeCount: '', tubeSize: '', shipOther: ''
+            byTubes: !!spec.tubes, tubeCount: '', tubes: [],
+            media: '', freeform: ''
           };
         }
         return d;
@@ -3018,83 +3047,66 @@
         var spec = SPECIMEN_SPEC[t] || SPECIMEN_SPEC['Other'];
         var d = detailFor(t);
         var card = el('div', { class: 'toggle-box' });
-        card.appendChild(el('div', { class: 'cohort-card-head' }, [
+        var head = el('div', { class: 'cohort-card-head' }, [
           el('span', { class: 'sec-num', text: String(i + 1) }),
           el('span', { class: 'cohort-card-title', text: t })
-        ]));
+        ]);
+        // What the quote will say about shipping this type. Fixed, so it is
+        // shown rather than asked — the rep can see nothing has been lost.
+        if (spec.says) {
+          head.appendChild(el('span', { class: 'says', text: spec.says }));
+        }
+        card.appendChild(head);
+
+        // --- one box, everything in it
+        if (spec.freeform) {
+          card.appendChild(field(spec.freeformLabel, { type: 'textarea', rows: 2, full: true,
+            placeholder: spec.freeformHint,
+            get: function () { return d.freeform; },
+            set: function (v) { d.freeform = v; } }));
+          card.appendChild(timepointPicker(d, t));
+          return card;
+        }
 
         var rows = [];
 
-        // Blood is described by the tubes it is drawn into, not by a volume
-        // nobody can guarantee — a 10 mL tube does not always fill.
+        // --- drawn into tubes: each tube is its own small block
         if (spec.tubes && d.byTubes) {
           rows.push(field('Tubes per subject', { placeholder: 'e.g. 3',
             inputmode: 'numeric',
             get: function () { return d.tubeCount; },
             set: function (v) { d.tubeCount = v; }, then: paintDetail }));
-          rows.push(field('Tube size and type', { placeholder: 'e.g. 10 mL EDTA',
-            get: function () { return d.tubeSize; },
-            set: function (v) { d.tubeSize = v; }, then: paintDetail }));
-        } else {
-          rows.push(field(spec.amount.label, {
-            placeholder: spec.tubes ? 'e.g. 8-10 mL' : spec.amount.hint,
-            hint: spec.tubes ? 'A range is fine \u2014 tubes do not always fill.' : '',
+        } else if (spec.tubes) {
+          rows.push(field('Volume per subject', { placeholder: 'e.g. 8-10 mL',
+            hint: 'A range is fine \u2014 tubes do not always fill.',
             get: function () { return d.amount; },
             set: function (v) { d.amount = v; } }));
+          // Whole blood is never aliquoted; the frozen products often are.
+          if (spec.aliquoted) {
+            rows.push(field('Aliquots per subject', { placeholder: 'Leave blank if not aliquoted',
+              inputmode: 'numeric',
+              get: function () { return d.aliquots; },
+              set: function (v) { d.aliquots = v; } }));
+          }
+        } else if (spec.amount) {
+          rows.push(field(spec.amount.label, { placeholder: spec.amount.hint,
+            get: function () { return d.amount; },
+            set: function (v) { d.amount = v; } }));
+          if (spec.aliquoted) {
+            rows.push(field('Aliquots per subject', { placeholder: 'Leave blank if not aliquoted',
+              inputmode: 'numeric',
+              get: function () { return d.aliquots; },
+              set: function (v) { d.aliquots = v; } }));
+          }
         }
 
-        if (!spec.noAliquots) {
-          rows.push(field('Aliquots per subject', { placeholder: 'Leave blank if not aliquoted',
-            inputmode: 'numeric',
-            get: function () { return d.aliquots; },
-            set: function (v) { d.aliquots = v; } }));
+        if (spec.media) {
+          rows.push(field('Media', { placeholder: 'e.g. OCT, RNAlater, Hypothermosol',
+            get: function () { return d.media; },
+            set: function (v) { d.media = v; } }));
         }
 
-        if (!spec.fresh || d.frozen) {
-          rows.push(field('Container / tube', {
-            get: function () { return d.holder; },
-            set: function (v) { d.holder = v; } }));
-        }
-
-        // A fresh specimen ships as collected, so there is nothing to store it
-        // in — unless it is frozen first, which PAXgene blood often is.
-        if (!spec.fresh || d.frozen) {
-          rows.push(field('Storage state', { type: 'select', options: STORAGE_STATES,
-            get: function () { return d.store || STORAGE_STATES[0]; },
-            set: function (v) { d.store = v; } }));
-        }
-
-        rows.push(field('Shipping temperature', { type: 'select', options: SHIP_TEMPS,
-          hint: i === 0 ? 'Prefilled with what we normally use. Change it only if the '
-                        + 'sponsor asks for something else.' : '',
-          get: function () { return d.ship; },
-          set: function (v) { d.ship = v; }, then: paintDetail }));
-
-        if (d.ship === 'Other') {
-          rows.push(field('Shipping temperature \u2014 describe', {
-            placeholder: 'e.g. controlled -20 \u00b0C with a validated shipper',
-            get: function () { return d.shipOther; },
-            set: function (v) { d.shipOther = v; } }));
-        }
-
-        if (spec.ffpe) {
-          rows.push(field('Block age limit', { placeholder: 'e.g. collected within 5 years',
-            get: function () { return d.blockAge; },
-            set: function (v) { d.blockAge = v; } }));
-          rows.push(field('Minimum tumour content', { placeholder: 'e.g. 30%',
-            get: function () { return d.tumourContent; },
-            set: function (v) { d.tumourContent = v; } }));
-        }
-        if (spec.slides) {
-          rows.push(field('Section thickness', { placeholder: 'e.g. 5 \u00b5m',
-            get: function () { return d.thickness; },
-            set: function (v) { d.thickness = v; } }));
-          rows.push(field('Stain', { type: 'select',
-            options: ['Unstained', 'H&E', 'Unstained + one H&E per block'],
-            get: function () { return d.stain; },
-            set: function (v) { d.stain = v; } }));
-        }
-        card.appendChild(el('div', { class: 'grid' }, rows));
+        if (rows.length) card.appendChild(el('div', { class: 'grid' }, rows));
 
         if (spec.tubes) {
           card.appendChild(checkbox('Describe by tube count rather than volume',
@@ -3102,46 +3114,43 @@
             function (on) { d.byTubes = on; },
             paintDetail));
         }
-        if (spec.fresh) {
-          card.appendChild(checkbox('Frozen before shipping',
-            function () { return d.frozen; },
-            function (on) { d.frozen = on; },
-            paintDetail));
+
+        // --- one block per tube: type, size, and how it is handled
+        if (spec.tubes && d.byTubes) {
+          var n = Math.max(0, Math.min(12, parseInt(d.tubeCount, 10) || 0));
+          d.tubes = d.tubes || [];
+          while (d.tubes.length < n) d.tubes.push({ type: '', size: '', processing: '' });
+          var tubeBox = el('div', { class: 'tubes' });
+          for (var k = 0; k < n; k++) {
+            (function (tube, k) {
+              var row = el('div', { class: 'tube-row' });
+              row.appendChild(el('span', { class: 'sub-label', text: 'Tube ' + (k + 1) }));
+              row.appendChild(el('div', { class: 'grid' }, [
+                field('Tube type', { placeholder: 'e.g. EDTA (K2)',
+                  get: function () { return tube.type; },
+                  set: function (v) { tube.type = v; } }),
+                field('Tube size', { placeholder: 'e.g. 10 mL',
+                  get: function () { return tube.size; },
+                  set: function (v) { tube.size = v; } }),
+                field('Processing instructions', { type: 'textarea', rows: 2, full: true,
+                  placeholder: 'Double-spin, aliquoting, time to process\u2026',
+                  hint: k === 0 ? 'Non-standard processing is one of the most common reasons '
+                                + 'a site declines.' : '',
+                  get: function () { return tube.processing; },
+                  set: function (v) { tube.processing = v; }, then: refreshDrafts })
+              ]));
+              tubeBox.appendChild(row);
+            })(d.tubes[k], k);
+          }
+          if (n) card.appendChild(tubeBox);
         }
 
-        if (spec.ffpe) {
-          card.appendChild(checkbox('A matching H&E is required with each block',
-            function () { return !!d.heRequired; },
-            function (on) { d.heRequired = on; }));
-        }
-        // Specimens can differ by timepoint — blood at every visit, a biopsy
-        // only at baseline — and the count drives the pricing in §10.
-        var tps = timepointNames();
-        if (tps.length > 1) {
-          var fs = el('fieldset', {}, [el('legend', { text: 'Collected at' })]);
-          fs.appendChild(el('div', { class: 'check-row' }, tps.map(function (name) {
-            return checkbox(name,
-              function () { return collectedAt(d, name, tps); },
-              function (on) {
-                var list = d.atTimepoints ? d.atTimepoints.slice() : tps.slice();
-                var k = list.indexOf(name);
-                if (on && k === -1) list.push(name);
-                if (!on && k > -1) list.splice(k, 1);
-                d.atTimepoints = list;
-              },
-              function () { paintDetail(); if (pricingRefresh) pricingRefresh(); });
-          })));
-          var n = collectionCount(d, tps);
-          fs.appendChild(el('div', { class: 'hint', text: n === tps.length
-            ? 'Every timepoint — ' + n + ' collections per subject.'
-            : n + (n === 1 ? ' collection' : ' collections') + ' per subject, of ' + tps.length + '.' }));
-          card.appendChild(fs);
-        }
+        card.appendChild(timepointPicker(d, t));
 
         if (spec.process) {
-          card.appendChild(field('Processing requirements', { type: 'textarea', rows: 2,
-            full: true,
-            placeholder: 'e.g. double-spin plasma within 2 hours of draw, 1,500 g for 10 min',
+          card.appendChild(field('Additional processing requirements', {
+            type: 'textarea', rows: 2, full: true,
+            placeholder: 'e.g. sterile collection, time-to-ship limit, on-site aliquoting',
             hint: 'Non-standard processing is one of the most common reasons a site '
                 + 'declines. Say it here rather than assuming the site will ask.',
             get: function () { return d.processing; },
@@ -3149,6 +3158,33 @@
             then: refreshDrafts }));
         }
         return card;
+      }
+
+      /** Which timepoints this specimen is collected at. Only worth asking once
+       *  there is more than one. */
+      function timepointPicker(d, t) {
+        var box = el('div');
+        var tps = timepointNames();
+        if (tps.length < 2) return box;
+        var fs = el('fieldset', {}, [el('legend', { text: 'Collected at' })]);
+        fs.appendChild(el('div', { class: 'check-row' }, tps.map(function (name) {
+          return checkbox(name,
+            function () { return collectedAt(d, name, tps); },
+            function (on) {
+              var list = d.atTimepoints ? d.atTimepoints.slice() : tps.slice();
+              var k = list.indexOf(name);
+              if (on && k === -1) list.push(name);
+              if (!on && k > -1) list.splice(k, 1);
+              d.atTimepoints = list;
+            },
+            function () { paintDetail(); if (pricingRefresh) pricingRefresh(); });
+        })));
+        var n = collectionCount(d, tps);
+        fs.appendChild(el('div', { class: 'hint', text: n === tps.length
+          ? 'Every timepoint \u2014 ' + n + ' collections per subject.'
+          : n + (n === 1 ? ' collection' : ' collections') + ' per subject, of ' + tps.length + '.' }));
+        box.appendChild(fs);
+        return box;
       }
 
       // Three parallel columns, unlabelled — the grouping is only there to keep
