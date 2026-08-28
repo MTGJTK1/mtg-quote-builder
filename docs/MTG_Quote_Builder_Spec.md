@@ -1318,12 +1318,14 @@ defaults corrected and one lost link restored.
 
 - **Validity opened on "30 Day Quote". All five real quotes are 60 Day Quotes.**
   60 is now first in the list and therefore the default.
-- **The kick-off call started unticked. All five real quotes open with one.**
-  It now starts ticked.
+- **The kick-off call** was changed to start ticked on the same evidence, then
+  **reverted** the same day: John's five samples are the complicated studies
+  that warrant a call, and more than half of MT Group's do not. It stays off.
 
-Both are the same mistake: a default chosen by guessing rather than by looking
-at what MT Group actually sends. Worth re-checking the others against real
-quotes as they accumulate.
+The first change was right and the second was wrong, from identical reasoning.
+Five quotes are enough to fix a default that every one of them contradicts, and
+not enough to set one that merely suits all five — a sample chosen because it is
+interesting is not a sample of the ordinary case.
 
 ### A link lost in a refactor
 
@@ -1352,19 +1354,39 @@ sets the MTG-to-sponsor leg to 2, still overridable by typing.
 
 ### Left alone deliberately
 
-- **§02 Quote approach** — the "defined dollar amount" path (a PO total, and how
-  many subjects it buys) is not exercised by any of the five sample quotes. It
-  comes from spec §2 and may well be real; five quotes from one sponsor is not
-  evidence it is dead. Flagged for John rather than removed.
+- **§02 Quote approach** — confirmed real by John, 2026-08-28: *"I quote $500K
+  for as many cases as possible, with fresh tissue most commonly."* None of the
+  five sample quotes uses it, which is exactly why it was flagged rather than
+  cut. Verified working: $500,000 against a $3,400 fresh-tissue case gives 147
+  subjects.
 - **The 23 specimen checkboxes.** A vocabulary list, not redundancy.
 - **The 11 study-condition clauses.** Long, but each is a real term from a real
   quote and the whole point is prompting.
 
-### The automation still on the table
+### Specimens suggested from the deal name — built
 
-The HubSpot deal name is already the first field and already fills the sponsor
-and contact. It also names the specimens — *"NTA: 500 healthies - blood"*,
-*"MRK: IBD biopsies - fresh pinch biopsies"* — so §05 could arrive pre-ticked
-from it, as a suggestion the rep corrects. Not built: it is a guess dressed as
-an answer, and the cost of a wrong pre-tick is a specimen quoted that nobody
-asked for. Worth doing only if John wants it.
+Approved by John, 2026-08-28, on the condition it stays changeable.
+
+Typing a deal name ticks the specimens it names. Longest phrases match first, so
+*"flash frozen tissue"* is not read as *"tissue"* and *"whole blood"* is not read
+as *"blood"*. Checked against eight real deal names:
+
+| Deal name | Suggested |
+|---|---|
+| NTA: 500 healthies - blood | Whole blood |
+| GHI: Non-advanced & advanced adenoma - plasma, & buffy | Plasma, Buffy coat |
+| XRA: Dermatologic disease & normal - tissue, plasma, PBMCs | Fresh tissue, Plasma, PBMCs |
+| SBS: Multiple Myeloma and Normal - bone marrow aspirate, plasma | Plasma, Fresh bone marrow aspirate |
+
+Three rules keep it a suggestion rather than an answer: it fills only an **empty**
+§05, a banner over the specimens says where they came from, and touching any
+checkbox clears the banner. It also ticks in place rather than repainting §05,
+so it cannot pull focus out of the field being typed in.
+
+It runs on **any** deal name, not only the Merck deals held in the mockup — the
+first build had it behind the HubSpot lookup, so six of the eight names above
+produced nothing.
+
+Known limitation: *"frozen and FFPE biopsies"* suggests fresh tissue and FFPE
+rather than frozen tissue, because a bare *"frozen"* matches things like a
+frozen shipment. A wrong suggestion costs one click.

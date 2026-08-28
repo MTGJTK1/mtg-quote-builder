@@ -664,6 +664,22 @@
     .data-row .lbl { font-size: 13px; }
   }
 
+  .suggested {
+    display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap;
+    background: var(--accent-soft);
+    border: 1px solid var(--rule);
+    border-radius: 7px;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+  }
+  .suggested-tag {
+    flex: none; font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .11em;
+    color: var(--accent);
+  }
+
   .cond { margin-bottom: 9px; }
   .cond-text {
     margin: 6px 0 4px 24px;
@@ -1214,6 +1230,59 @@
   // cannot identify one study. Named here rather than inferred from the count.
   var UMBRELLA_MT = ['MT9920', 'MT9923', 'MT0893', 'MT0892', 'MT9925'];
 
+  // What a deal name says about the specimens. Longest phrases first, so
+  // "flash frozen tissue" is not read as "tissue" and "whole blood" is not read
+  // as "blood". A suggestion only — every one of these is a guess from a label
+  // a person typed, and the rep corrects it.
+  var SPECIMEN_HINTS = [
+    ['flash frozen tissue', 'Flash frozen tissue'],
+    ['frozen tissue in media', 'Frozen tissue in media'],
+    ['frozen tumor', 'Flash frozen tissue'],
+    ['frozen tissue', 'Flash frozen tissue'],
+    ['fresh tissue', 'Fresh tissue'],
+    ['fresh tumor', 'Fresh tissue'],
+    ['fresh marrow', 'Fresh bone marrow aspirate'],
+    ['bone marrow aspirate', 'Fresh bone marrow aspirate'],
+    ['bone marrow', 'Fresh bone marrow aspirate'],
+    ['whole blood', 'Whole blood'],
+    ['buffy coat', 'Buffy coat'],
+    ['buffy', 'Buffy coat'],
+    ['synovial fluid', 'Synovial fluid'],
+    ['synovial tissue', 'Synovial tissue'],
+    ['buccal swab', 'Buccal swab'],
+    ['nasal swab', 'Nasal swab'],
+    ['np swab', 'Nasal swab'],
+    ['ffpe', 'FFPE'],
+    ['slides', 'Slides'],
+    ['pbmc', 'PBMCs'],
+    ['bmmc', 'BMMCs'],
+    ['plasma', 'Plasma'],
+    ['serum', 'Serum'],
+    ['stool', 'Stool'],
+    ['urine', 'Urine'],
+    ['saliva', 'Saliva'],
+    ['marrow', 'Fresh bone marrow aspirate'],
+    ['biopsies', 'Fresh tissue'],
+    ['biopsy', 'Fresh tissue'],
+    ['cores', 'Fresh tissue'],
+    ['resections', 'Fresh tissue'],
+    ['tumor', 'Fresh tissue'],
+    ['tissue', 'Fresh tissue'],
+    ['blood', 'Whole blood']
+  ];
+
+  function specimensFromDealName(name) {
+    var t = ' ' + String(name || '').toLowerCase() + ' ';
+    var found = [];
+    SPECIMEN_HINTS.forEach(function (h) {
+      if (t.indexOf(h[0]) === -1) return;
+      if (found.indexOf(h[1]) === -1) found.push(h[1]);
+      // Blank out the matched words so a longer phrase wins over its own parts.
+      t = t.split(h[0]).join(' ');
+    });
+    return ALL_SPECIMENS.filter(function (x) { return found.indexOf(x) > -1; });
+  }
+
   function hubspotStudyLabel(dealName) {
     return String(dealName || '')
       .replace(/^[A-Z0-9&]{2,4}\s*[:\-]\s*/, '')
@@ -1320,7 +1389,7 @@
   // drafts must survive — so a changed fixture set would otherwise sit unread in
   // the file while the browser kept serving the old one. This makes the mismatch
   // visible and offers the reset, rather than silently discarding their work.
-  var SAMPLES_VERSION = 13;
+  var SAMPLES_VERSION = 14;
   var samplesStale = false;
   var quotes = [];
   var storageWorks = true;
@@ -2494,6 +2563,7 @@
     /** Fills the sponsor contact from the HubSpot deal a rep has just named.
      *  Only ever fills blanks: a rep who has typed a contact keeps it. */
     function lookupByDealName() {
+      suggestSpecimens();
       var hit = findStudyByDealName(draft.hubspotDealName);
       if (!hit || !hdrFields) return;
       var st = hit.study;
@@ -2515,6 +2585,7 @@
            function (v) { draft.header.sponsorContactName = v; });
       fill(hdrFields.email, draft.header.sponsorContactEmail, st.contactEmail,
            function (v) { draft.header.sponsorContactEmail = v; });
+
       refreshNumber();
       if (shippingRefresh) shippingRefresh();
     }
@@ -2715,6 +2786,24 @@
     }
 
     // Declared up here because §03 and §05 call it as their values change.
+    /** The deal name names the specimens as well as the sponsor, and it does so
+     *  whether or not the deal is one we hold. Suggested, never imposed: only
+     *  into an empty §05, ticked in place so focus stays where the rep is
+     *  typing, and the note above them says where they came from. */
+    function suggestSpecimens() {
+      if ((draft.specimenTypes || []).length) return;
+      var guess = specimensFromDealName(draft.hubspotDealName);
+      if (!guess.length) return;
+      draft.specimenTypes = guess.slice();
+      draft.specimensSuggested = true;
+      guess.forEach(function (t) {
+        if (specimenBoxes[t]) specimenBoxes[t].checked = true;
+      });
+      if (specimensRefresh) specimensRefresh();
+      if (pricingRefresh) pricingRefresh();
+      refreshDrafts();
+    }
+
     var dealTimer = null;
     function queueDealLookup() {
       clearTimeout(dealTimer);
@@ -2725,6 +2814,7 @@
     var casesRefresh = null;
     var pricingRefresh = null;
     var specimensRefresh = null;
+    var specimenBoxes = {};
     var shippingRefresh = null;
 
     // ---- 02 quote approach ---------------------------------------------
@@ -3068,8 +3158,8 @@
           get: function () { return tl.kickoffTrigger; },
           set: function (v) { tl.kickoffTrigger = v; } }));
       }
-      // On by default: all five real quotes open with a kick-off call.
-      if (tl.kickoffCall == null) tl.kickoffCall = true;
+      // Off by default. All five sample quotes have one, but they are the
+      // complicated studies; more than half of MT Group's do not need one.
       sec.appendChild(checkbox('Kickoff call required',
         function () { return tl.kickoffCall; },
         function (v) { tl.kickoffCall = v; }, paintKick));
@@ -3445,6 +3535,13 @@
 
       function paintDetail() {
         detailBox.replaceChildren();
+        if (draft.specimensSuggested && (draft.specimenTypes || []).length) {
+          detailBox.appendChild(el('div', { class: 'suggested' }, [
+            el('span', { class: 'suggested-tag', text: 'Suggested' }),
+            el('span', { text: 'Read from the HubSpot deal name. Tick or untick '
+              + 'anything that is wrong \u2014 nothing is fixed.' })
+          ]));
+        }
         var picked = pickedSpecimens();
         if (!picked.length) {
           detailBox.appendChild(emptyNote(
@@ -3603,17 +3700,23 @@
 
       // Three parallel columns, unlabelled — the grouping is only there to keep
       // the list short, not to tell the rep anything.
+      specimenBoxes = {};
       sec.appendChild(el('div', { class: 'spec-cols' }, SPECIMEN_GROUPS.map(function (g) {
         return el('div', { class: 'spec-col' }, [].concat(g.items.map(function (t) {
-          return checkbox(t,
+          var row = checkbox(t,
             function () { return draft.specimenTypes.indexOf(t) > -1; },
             function (on) {
               var i = draft.specimenTypes.indexOf(t);
               if (on && i === -1) draft.specimenTypes.push(t);
               if (!on && i > -1) draft.specimenTypes.splice(i, 1);
             },
-            function () { refreshDrafts(); paintDetail();
-                          if (pricingRefresh) pricingRefresh(); });
+            function () {
+              draft.specimensSuggested = false;
+              refreshDrafts(); paintDetail();
+              if (pricingRefresh) pricingRefresh();
+            });
+          specimenBoxes[t] = row.querySelector('input');
+          return row;
         })));
       })));
 
