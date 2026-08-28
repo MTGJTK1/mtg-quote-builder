@@ -1437,3 +1437,40 @@ index instead.
 synthetic — never plausible invention.** A register of quotes is a record; a
 reader has no way to tell a transcribed row from an imagined one. Where real
 data is not available, leave the field empty and say so.
+
+## §25 — "Reset sample data" never worked in the published mockup, 2026-08-28
+
+John: *"why does the register still say Karen Krantz and Elsevier Biobank? … I've
+been trying to reset but that button doesn't work."*
+
+Not caching. A real defect, and mine.
+
+`window.confirm()` is suppressed inside a sandboxed frame — which is exactly how
+the mockup is published — and it **returns false**. So
+
+```js
+if (!confirm('Reset the mockup back to its sample quotes?')) return;
+```
+
+returned every time, silently. The button had never worked for John in the
+published artifact. Delete quote had the same guard and the same fault.
+
+Both are now a two-step button in the page: the first click arms it and shows
+the question, the second does it, and either can be cancelled. No native dialog.
+
+### Why the tests missed it
+
+Every browser test ran the file directly, where `confirm()` works, and
+Playwright auto-accepted the dialog. The tests proved the reset worked in a
+context no user is ever in.
+
+There is now a sandboxed-frame harness — the mockup loaded inside
+`<iframe sandbox="allow-scripts allow-same-origin">`, without `allow-modals`,
+which is the artifact viewer's configuration. Run against the previous commit it
+reproduces the failure exactly: click reset, and Karen Krantz is still there.
+
+**The rule: test the mockup the way it is published, not the way it is
+convenient to load.** Anything that depends on a browser capability — dialogs,
+downloads, clipboard, storage — behaves differently in the sandbox, and the
+download button in the export panel is already known to be inert there for the
+same reason.

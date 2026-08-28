@@ -680,6 +680,10 @@
     color: var(--accent);
   }
 
+  .confirm-wrap { display: inline-flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .confirm-q { font-size: 12.5px; color: var(--ink-soft); }
+  .link-btn.danger { color: var(--danger); font-weight: 600; }
+
   .cond { margin-bottom: 9px; }
   .cond-text {
     margin: 6px 0 4px 24px;
@@ -1416,7 +1420,7 @@
   // drafts must survive — so a changed fixture set would otherwise sit unread in
   // the file while the browser kept serving the old one. This makes the mismatch
   // visible and offers the reset, rather than silently discarding their work.
-  var SAMPLES_VERSION = 15;
+  var SAMPLES_VERSION = 16;
   var samplesStale = false;
   var quotes = [];
   var storageWorks = true;
@@ -2101,19 +2105,37 @@
     })).join('\n');
   }
 
+  /** A confirmation that does not use window.confirm(). A sandboxed frame —
+   *  which is how this mockup is published — suppresses the native dialog and
+   *  returns false, so anything guarded by one silently did nothing. Two
+   *  clicks in the page work everywhere. */
+  function confirmButton(label, question, confirmLabel, run, cls) {
+    var wrap = el('span', { class: 'confirm-wrap' });
+    function paintIdle() {
+      wrap.replaceChildren(el('button', { class: cls || 'link-btn', type: 'button',
+        onclick: paintArmed }, [label]));
+    }
+    function paintArmed() {
+      wrap.replaceChildren(
+        el('span', { class: 'confirm-q', text: question }),
+        el('button', { class: 'link-btn danger', type: 'button',
+          onclick: function () { paintIdle(); run(); } }, [confirmLabel]),
+        el('button', { class: 'link-btn', type: 'button', onclick: paintIdle }, ['Cancel'])
+      );
+    }
+    paintIdle();
+    return wrap;
+  }
+
   function footRow() {
     var total = quotes.reduce(function (sum, q) { return sum + num(q.totalCost); }, 0);
     return el('div', { class: 'table-foot' }, [
       el('span', { text: quotes.length + (quotes.length === 1 ? ' quote' : ' quotes') +
         (quotes.length ? ' · ' + money(total) + ' quoted' : '') }),
-      el('button', {
-        class: 'link-btn', type: 'button',
-        onclick: function () {
-          if (!confirm('Reset the mockup back to its sample quotes? Any quotes '
-                       + 'you have created will be discarded.')) return;
-          resetSamples(); go('register'); toast('Sample quotes restored');
-        }
-      }, ['Reset sample data'])
+      confirmButton('Reset sample data',
+        'Reset? Quotes you have created will be discarded.',
+        'Yes, reset',
+        function () { resetSamples(); go('register'); toast('Sample quotes restored'); })
     ]);
   }
 
@@ -4667,11 +4689,14 @@
       onclick: function () { go('register'); } }, ['Cancel']));
 
     if (existing) {
-      actions.appendChild(el('button', { class: 'btn btn-danger spacer', type: 'button', onclick: function () {
-        if (!confirm('Delete this quote? This cannot be undone.')) return;
-        quotes = quotes.filter(function (q) { return q.id !== existing.id; });
-        save(); go('register'); toast('Quote deleted');
-      } }, ['Delete quote']));
+      var del = confirmButton('Delete quote', 'Delete this quote? It cannot be undone.',
+        'Yes, delete',
+        function () {
+          quotes = quotes.filter(function (q) { return q.id !== existing.id; });
+          save(); go('register'); toast('Quote deleted');
+        }, 'btn btn-danger');
+      del.classList.add('spacer');
+      actions.appendChild(del);
     }
     actions.insertBefore(field('Status', { type: 'select', options: STATUSES,
       get: function () { return draft.status; },
