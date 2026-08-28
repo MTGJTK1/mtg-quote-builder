@@ -1083,6 +1083,17 @@
   // Grouped by MT number. A base deal (no extension in its name) is the study;
   // the rest are its prior extensions, which is how the next extension number
   // is worked out.
+  // The contact HubSpot holds against a deal, keyed by MT number. Measured
+  // 2026-08-28: 2,610 of 2,843 deals carry an associated contact and only 7
+  // carry more than one, so the deal identifies one contact almost every time.
+  // Three real examples are seeded here so the auto-fill can be exercised; the
+  // real app reads the association live rather than holding a copy.
+  var HUBSPOT_CONTACTS = {
+    'MT0438': { name: 'Heather Llewellyn', email: 'heather.llewellyn@merck.com' },
+    'MT0433': { name: 'Veronique Schulten', email: 'veronique.schulten@merck.com' },
+    'MT9920': { name: 'Ling Pang',         email: 'ling.pang@merck.com' }
+  };
+
   var HUBSPOT_BY_MT = (function () {
     var by = {};
     HUBSPOT_DEALS.forEach(function (d) {
@@ -1200,7 +1211,7 @@
   // drafts must survive — so a changed fixture set would otherwise sit unread in
   // the file while the browser kept serving the old one. This makes the mismatch
   // visible and offers the reset, rather than silently discarding their work.
-  var SAMPLES_VERSION = 6;
+  var SAMPLES_VERSION = 7;
   var samplesStale = false;
   var quotes = [];
   var storageWorks = true;
@@ -1404,6 +1415,43 @@
     return null;
   }
 
+  /** A deal name is the thing a rep pastes out of HubSpot, so it works as a
+   *  lookup key like the PO and the MT number do. */
+  function findStudyByDealName(name) {
+    // Reps retype these as often as they paste them, so punctuation, casing and
+    // whether the MT number is in brackets must not decide whether it matches.
+    function norm(t) {
+      return String(t || '')
+        .replace(/[\u2018\u2019]/g, "'")
+        .replace(/[()\[\]]/g, ' ')
+        .replace(/[^a-z0-9']+/gi, ' ')
+        .trim().toLowerCase();
+    }
+    var n = norm(name);
+    if (n.length < 6) return null;
+    var hit = HUBSPOT_DEALS.filter(function (d) { return norm(d[1]) === n; })[0]
+           || HUBSPOT_DEALS.filter(function (d) {
+                var dn = norm(d[1]);
+                return dn.indexOf(n) > -1 || n.indexOf(dn) > -1;
+              })[0];
+    if (!hit) return null;
+    var base = hit[0].split('-')[0];
+    return {
+      study: {
+        po: '', mt: hit[0], quote: '',
+        client: 'Merck', acronym: 'MRK', preparedBy: '',
+        contactName: (HUBSPOT_CONTACTS[base] || {}).name || '',
+        contactEmail: (HUBSPOT_CONTACTS[base] || {}).email || '',
+        dealName: hit[1],
+        specimens: [], perSubject: '', cohorts: [],
+        fromHubspot: true,
+        priorExtensions: (HUBSPOT_BY_MT[base] || []).filter(function (d) {
+          return !!d.ext; }).length
+      },
+      via: 'HubSpot deal name'
+    };
+  }
+
   function findStudy(po, mt) {
     po = String(po || '').trim().toLowerCase();
     mt = String(mt || '').trim().toUpperCase();
@@ -1444,7 +1492,8 @@
           study: {
             po: '', mt: pick.mt, quote: '',
             client: 'Merck', acronym: 'MRK', preparedBy: '',
-            contactName: '', contactEmail: '',
+            contactName: (HUBSPOT_CONTACTS[base] || {}).name || '',
+            contactEmail: (HUBSPOT_CONTACTS[base] || {}).email || '',
             dealName: pick.deal,
             specimens: [], perSubject: '', cohorts: [],
             fromHubspot: true,
@@ -1901,14 +1950,13 @@
     function buildExtFields() {
       var quoteFld = field('Original study quote', { full: true,
         placeholder: 'QTE NTA20260826 Pan-cancer - blood',
-        hint: 'Free text — type or paste the reference. It fills the study in on its own; the PO or MT number below does the same. OneDrive becomes the real source for this.',
+        hint: 'Any one of these three finds the study.',
         get: function () { return draft.header.originalStudyQuote; },
         set: function (v) { draft.header.originalStudyQuote = v; },
         then: queueLookup, onblur: runLookup });
 
       var poFld = field('Original study PO #', {
         placeholder: 'PO-88214',
-        hint: 'Blank if the sponsor has not issued one yet.',
         get: function () { return draft.header.originalStudyPo; },
         set: function (v) { draft.header.originalStudyPo = v; },
         then: queueLookup, onblur: runLookup });
@@ -2051,6 +2099,24 @@
 
     // ---- header variants ---------------------------------------------
 
+    /** Fills the sponsor contact from the HubSpot deal a rep has just named.
+     *  Only ever fills blanks: a rep who has typed a contact keeps it. */
+    function lookupByDealName() {
+      var hit = findStudyByDealName(draft.hubspotDealName);
+      if (!hit) return;
+      var st = hit.study, filled = [];
+      if (!String(draft.client || '').trim() && st.client) {
+        draft.client = st.client; draft.sponsorAcronym = st.acronym; filled.push('client');
+      }
+      if (!String(draft.header.sponsorContactName || '').trim() && st.contactName) {
+        draft.header.sponsorContactName = st.contactName; filled.push('contact');
+      }
+      if (!String(draft.header.sponsorContactEmail || '').trim() && st.contactEmail) {
+        draft.header.sponsorContactEmail = st.contactEmail; filled.push('email');
+      }
+      if (filled.length) renderBody();
+    }
+
     function sponsorFields() {
       var acronymFld, emailFld;
 
@@ -2069,7 +2135,6 @@
         } });
 
       acronymFld = field('Sponsor acronym', { placeholder: 'NTA', autofilled: true,
-        hint: 'Fills in from the sponsor name when we know it. Type over it — a new sponsor may not have one yet.',
         get: function () { return draft.sponsorAcronym; },
         set: function (v) {
           draft.sponsorAcronym = v.toUpperCase();
@@ -2088,7 +2153,6 @@
         } });
 
       emailFld = field('Sponsor contact email', { type: 'email', autofilled: true,
-        hint: 'Looked up from the contact name in HubSpot. Always editable.',
         get: function () { return draft.header.sponsorContactEmail; },
         set: function (v) {
           draft.header.sponsorContactEmail = v;
@@ -2103,14 +2167,15 @@
       headerBody.appendChild(el('div', { class: 'grid' }, [
         f.client, f.acronym,
         field('Quote date', { type: 'date', required: true, autofilled: true,
-          hint: 'Today, unless you change it.',
           get: function () { return draft.quoteDate; }, set: function (v) { draft.quoteDate = v; } }),
         field('Validity', { type: 'select', options: VALIDITY,
           get: function () { return draft.header.validity || VALIDITY[0]; },
           set: function (v) { draft.header.validity = v; } }),
         field('HubSpot deal name', { placeholder: 'NTA: 500 healthies - blood',
+          hint: 'Paste it and the sponsor contact fills in from the deal.',
           get: function () { return draft.hubspotDealName; },
-          set: function (v) { draft.hubspotDealName = v; } }),
+          set: function (v) { draft.hubspotDealName = v; },
+          onblur: lookupByDealName }),
         f.contact, f.email
       ]));
 
@@ -2149,10 +2214,11 @@
           get: function () { return draft.header.validity || VALIDITY[0]; },
           set: function (v) { draft.header.validity = v; } }),
         field('HubSpot deal name', { placeholder: 'NTA: Multi-cancer - blood (MT2291 extension #1)',
+          hint: 'Paste it and the sponsor contact fills in from the deal.',
           get: function () { return draft.hubspotDealName; },
-          set: function (v) { draft.hubspotDealName = v; } }),
+          set: function (v) { draft.hubspotDealName = v; },
+          onblur: lookupByDealName }),
         field('Quote date', { type: 'date', required: true, autofilled: true,
-          hint: 'Today, unless you change it.',
           get: function () { return draft.quoteDate; }, set: function (v) { draft.quoteDate = v; } })
       ]));
     }
@@ -2499,7 +2565,7 @@
         outBox.replaceChildren();
         if (!cd.outcomeData) return;
         outBox.appendChild(field('Outcome / follow-up description', { type: 'textarea', rows: 2, full: true,
-          hint: 'Description lives here; the fee for it lives in §10.',
+          hint: 'Description lives here; the fee for it lives in §11.',
           get: function () { return cd.outcomeDetail; },
           set: function (v) { cd.outcomeDetail = v; } }));
       }
@@ -2707,7 +2773,7 @@
         ]);
         card.appendChild(top);
 
-        var upTo = checkbox('Up to this number (not a firm target)',
+        var upTo = checkbox('Up to this number',
           function () { return c.upTo; }, function (v) { c.upTo = v; });
         upTo.style.margin = '2px 0 14px';
         card.appendChild(upTo);
@@ -2800,7 +2866,6 @@
         if (draft.cohorts.length <= 1) return;
         allocBox.appendChild(field('Allocation note', { type: 'textarea', rows: 2, full: true,
           placeholder: 'e.g. MT Group and the sponsor will mutually agree in writing on enrollment allocations per cancer type',
-          hint: 'Shown because this quote has more than one cohort.',
           get: function () { return draft.allocationNote; },
           set: function (v) { draft.allocationNote = v; } }));
       }
@@ -3779,9 +3844,9 @@
       if (!String(draft.quoteName).trim()) errs.push('Quote name is required (§06).');
       if (!String(draft.quoteDate).trim()) errs.push('Quote date is required (§01).');
       if (String(draft.totalCost).trim() !== '' && isNaN(Number(String(draft.totalCost).replace(/[$,]/g, '')))) {
-        errs.push('Total cost must be a number (§10).');
+        errs.push('Total cost must be a number (§11).');
       } else if (num(draft.totalCost) < 0) {
-        errs.push('Total cost cannot be negative (§10).');
+        errs.push('Total cost cannot be negative (§11).');
       }
 
       errorBox.replaceChildren();

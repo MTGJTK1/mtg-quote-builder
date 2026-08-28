@@ -977,3 +977,54 @@ drafts and comes back, which the form promises in its own subtitle.
 file if there is one."* §10's ship-to box prompts **"To a US location designated
 by Merck"** — the sponsor's name, following §01 as it is typed, so a rep who has
 no address still records the undertaking.
+
+## §17 — Ninth-pass revisions, 2026-08-28
+
+### Hints that told the rep nothing
+
+Removed: *"Today, unless you change it"* on the quote date, *"Fills in from the
+sponsor name when we know it"* on the acronym, *"Looked up from the contact name
+in HubSpot. Always editable"* on the contact email, *"Blank if the sponsor has
+not issued one yet"* on the PO, and *"Shown because this quote has more than one
+cohort"* on the allocation note. The `auto` badge already says a field filled
+itself; saying it twice is noise. *"Up to this number (not a firm target)"*
+becomes **"Up to this number."**
+
+The lookup hint keeps only its non-obvious half: **"Any one of these three finds
+the study."**
+
+The test for what stays: does it name a consequence the rep would not otherwise
+know? *"Non-standard processing is one of the most common reasons a site
+declines"* earns its place. *"Free text — type or paste the reference"* does not.
+
+### Sponsor contact fills from the HubSpot deal
+
+Asked whether the contact could auto-fill once the deal name is entered.
+Measured first, on portal 7423331, 2026-08-28:
+
+| | Deals |
+|---|---|
+| Carry at least one associated contact | **2,610 of 2,843 (92%)** |
+| Carry more than one | **7** |
+
+So the deal identifies exactly one contact in 2,603 cases. Auto-fill is
+reliable, not a guess.
+
+The HubSpot deal name is now a lookup key in its own right, alongside the quote
+reference, the PO and the MT number. Leaving the field fills the sponsor, the
+contact name and the contact email — **but only where they are still blank.** A
+rep who has typed a contact keeps it; the lookup fills the gaps around it.
+
+Matching is deliberately forgiving. Reps retype these names as often as they
+paste them, so casing, punctuation, curly apostrophes and whether the MT number
+sits in brackets are all normalised away before comparing, and a typed name that
+is a superset or subset of the stored one still matches.
+
+Three real contacts are seeded from the portal so the behaviour can be
+exercised. The real app reads the association live rather than holding a copy.
+
+### Also fixed
+
+Section renumbering in §14 left three stale references to "§10" that now mean
+shipping: the outcome-data hint in §07 and two validation messages. They point
+at §11.
