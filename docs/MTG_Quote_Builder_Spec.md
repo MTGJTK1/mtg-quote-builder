@@ -1474,3 +1474,89 @@ convenient to load.** Anything that depends on a browser capability — dialogs,
 downloads, clipboard, storage — behaves differently in the sandbox, and the
 download button in the export panel is already known to be inert there for the
 same reason.
+
+## §26 — Internal draft preview, and four fixes from rep review, 2026-08-31
+
+Five items from John, all of them from actually using the form.
+
+### 1 & 3. "Other" biospecimens had no name
+
+Ticking **Other tissue**, **Other blood product** or **Other** recorded only
+that a box was ticked. There was nowhere to say *what* it was, so the study
+summary read "…collect and evaluate other from ovarian cancer subjects."
+
+Those three types now carry `named: true` and a **What is it** field
+(`specimenDetail[type].otherName`), with a placeholder drawn from what MT Group
+actually collects — ascites, CSF, synovial biopsy; leukopak, PAXgene RNA, dried
+blood spot; skin tape strips, aqueous humor, tonsil.
+
+A module-scope `specimenLabel(draft, type)` returns that name when it is set and
+the type name otherwise. It is used by the quote name, the study summary (both
+the specimen list and the processing sentence) and the internal draft, so the
+name flows everywhere the type used to. Verified: the summary reads "…collect
+and evaluate ascites from ovarian cancer subjects."
+
+### 2. The lump-sum shipping box took one character at a time
+
+The shipping override's `then:` handler called `paintMode()`, which rebuilt the
+container holding the input being typed into. The input was destroyed on every
+keystroke, so the field kept only the last character.
+
+The total line is now a `totalV` span updated directly; nothing repaints. This
+is the **fourth** occurrence of this trap. The rule, restated: **a `then:`
+handler must never repaint its own container.** Update the specific node that
+changed.
+
+### 4. Nowhere to record site costs
+
+**Site cost + stipend**, **Source** and **Pricing notes (internal)** existed
+only on the per-specimen pricing blocks. Switching the default to per-cohort —
+which is how four of the five real quotes price — left a rep with no field for
+what a site charges. Per-cohort rows now carry the same three fields
+(`pricing.cohortInternal[key]`), and the analysis export gained a `site_costs`
+column and reads cohort notes into `pricing_notes`.
+
+### 5. The internal draft preview
+
+`renderInternalDraft()` lays the quote out as the document will read: letterhead,
+requestor, client, quote date and validity, quote number, summary, service type,
+cohorts with subcohorts and bulleted I/E, biospecimens with their fixed shipping
+statements, processing, sponsor-provided materials, clinical data, timeline,
+shipping, the cost table, study conditions, notes and the T&C footnote.
+
+The cost table carries two extra columns — **Site cost** and **Internal note** —
+in the accent colour and a sans face, because they are annotations on the
+document rather than part of it. *The sponsor quote is this document with those
+two columns removed.* This is not the `.docx`; that is Phase 6 and has
+formatting rules of its own (§3). This shows what the document will **contain**.
+
+It previews **what is on the form, not what was last saved** — a rep wants to
+see the document before committing to it. `previewDraft` holds the in-progress
+quote for the preview and `resumeDraft` carries the half-filled form back, so
+nothing is retyped. Leaving by the top nav clears both.
+
+Verified on the pan-cancer quote: the preview reproduces the issued document,
+$948,425.00 to the cent.
+
+### Two regressions found while verifying
+
+**Extensions carried no price.** `parentPerSubject()` only read
+`pricing.specimenPrices`, but every real quote prices per cohort, so an
+extension of any of them started at zero. Each extension cohort now resumes at
+**its own** rate from the parent (`header.parentCohortPrices`); a single blended
+figure would be wrong wherever cohorts were priced differently, which is most of
+them. `parentPerSubject()` returns a flat rate only when every cohort was
+charged the same. Verified: an extension of the pan-cancer quote adding 50
+Cancer subjects prices at $1,650 each.
+
+**The analysis export leaked the sponsor's name.** `shipping_destinations`
+carried "US-based Natera location" — a structured column, so it travelled even
+with free text switched off. Patching that one field would only have left the
+next one. Every row now goes through `redactSponsor()` as a last pass, which
+replaces the sponsor's name and acronym with its code in **every** string value,
+longest term first. Verified: no company name or acronym anywhere in the file.
+
+### Sample data unchanged
+
+`SAMPLES_VERSION` is deliberately **not** bumped. Nothing in the seeded quotes
+changed, and bumping it would discard the quotes John has been testing with.

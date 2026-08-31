@@ -684,6 +684,69 @@
   .confirm-q { font-size: 12.5px; color: var(--ink-soft); }
   .link-btn.danger { color: var(--danger); font-weight: 600; }
 
+  /* ---------- internal draft preview ---------- */
+  .draft {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: 26px 28px 30px;
+    font-family: var(--serif);
+    font-size: 14.5px; line-height: 1.55;
+    max-width: 780px;
+  }
+  .draft-stamp {
+    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+    background: var(--accent-soft); border: 1px solid var(--rule);
+    border-radius: 7px; padding: 9px 13px; margin-bottom: 22px;
+    font-family: var(--sans); font-size: 12.5px; color: var(--ink-soft);
+  }
+  .draft-stamp strong { color: var(--accent); }
+  .draft-head {
+    text-align: center; margin-bottom: 8px;
+    padding-bottom: 14px; border-bottom: 1px solid var(--ink-faint);
+    font-size: 14px;
+  }
+  .draft-row {
+    display: grid; grid-template-columns: 150px 1fr; gap: 14px;
+    padding: 5px 0; align-items: baseline;
+  }
+  .draft-label { font-weight: 600; color: var(--ink); }
+  .draft-value { color: var(--ink); }
+  .draft-value ul { margin: 0; padding-left: 1.1rem; }
+  .draft-costs { display: flex; flex-direction: column; margin-top: 4px; }
+  .draft-cost {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) 104px 86px minmax(0, 1fr);
+    gap: 10px;
+    padding: 4px 0; border-bottom: 1px solid var(--rule);
+    /* The cost lines are document text, so they read in the document's face.
+       The two internal columns stay sans — they are annotations on the
+       document, not part of it, and the sponsor version drops them. */
+    font-family: var(--serif); font-size: 14px;
+  }
+  .draft-cost.head {
+    font-family: var(--sans);
+    font-size: 10.5px; font-weight: 600; letter-spacing: .09em;
+    text-transform: uppercase; color: var(--ink-faint);
+  }
+  .draft-cost.total { font-weight: 600; border-bottom: 0; padding-top: 8px; }
+  .draft-cost .ca { text-align: right; font-variant-numeric: tabular-nums; }
+  .draft-cost .internal {
+    color: var(--accent); font-family: var(--sans); font-size: 12px;
+  }
+  .draft-cost.head .internal { color: var(--accent); }
+  .draft-tc {
+    margin-top: 24px; padding-top: 16px;
+    border-top: 1px solid var(--ink-faint);
+    font-family: var(--sans); font-size: 12.5px; color: var(--ink-faint);
+    display: flex; flex-direction: column; gap: 5px;
+  }
+  @media (max-width: 640px) {
+    .draft-row { grid-template-columns: 1fr; gap: 2px; }
+    .draft-cost { grid-template-columns: 1fr 80px; }
+    .draft-cost .internal { display: none; }
+  }
+
   .cond { margin-bottom: 9px; }
   .cond-text {
     margin: 6px 0 4px 24px;
@@ -696,6 +759,12 @@
     align-items: center;
   }
   @media (max-width: 760px) { .cohort-row.cost { grid-template-columns: 1fr; gap: 6px; } }
+  .cohort-internal {
+    padding: 10px 0 14px;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 4px;
+  }
+
   .cohort-row.unit {
     grid-template-columns: 1fr 64px 130px 78px 32px;
     align-items: center; padding: 0 0 8px;
@@ -946,7 +1015,8 @@
       freeformLabel: 'What is needed per subject',
       freeformHint: 'e.g. 5 unstained slides and 1 H&E slide with each subject',
       says: 'Shipped ambient.' },
-    'Other tissue': { freeform: true,
+    'Other tissue': { freeform: true, named: true,
+      namedHint: 'e.g. skin tape strips, aqueous humor, tonsil',
       freeformLabel: 'Describe what is needed',
       freeformHint: 'Everything about it \u2014 amount, handling, storage, shipping' },
 
@@ -955,7 +1025,9 @@
     'Serum': { tubes: true, aliquoted: true, says: 'Shipped on dry ice.' },
     'Buffy coat': { tubes: true, aliquoted: true, says: 'Shipped on dry ice.' },
     'PBMCs': { tubes: true, aliquoted: true, says: 'Shipped in an LN2 dry shipper.' },
-    'Other blood product': { tubes: true, aliquoted: true, says: 'Shipped on dry ice.' },
+    'Other blood product': { tubes: true, aliquoted: true, named: true,
+      namedHint: 'e.g. leukopak, PAXgene RNA, dried blood spot',
+      says: 'Shipped on dry ice.' },
 
     'Fresh bone marrow aspirate': { tubes: true, says: 'Shipped at 2-8 \u00b0C.' },
     'Frozen bone marrow aspirate': { tubes: true, aliquoted: true, says: 'Shipped on dry ice.' },
@@ -972,7 +1044,8 @@
     'Synovial fluid': { amount: VOLUME, aliquoted: true, says: 'Shipped on dry ice.',
       process: true },
     'Synovial tissue': { amount: MASS, says: 'Shipped at 2-8 \u00b0C.', process: true },
-    'Other': { freeform: true,
+    'Other': { freeform: true, named: true,
+      namedHint: 'e.g. ascites, CSF, synovial biopsy',
       freeformLabel: 'Describe what is needed',
       freeformHint: 'Everything about it \u2014 amount, handling, storage, shipping' }
   };
@@ -1496,7 +1569,19 @@
       var n = num((prices[k] || {}).price);
       if (n) { sum += n; seen = true; }
     });
-    return seen ? sum.toFixed(2) : '';
+    if (seen) return sum.toFixed(2);
+
+    // Quotes priced per cohort (the default, and what all five real quotes do)
+    // have no single rate unless every cohort was charged the same. Returning a
+    // blend would be worse than returning nothing, so only an unambiguous rate
+    // is carried; the per-cohort rates come across separately.
+    var cp = ((q.pricing || {}).cohortPrices) || {};
+    var rates = Object.keys(cp).map(function (k) { return num(cp[k]); })
+      .filter(function (n) { return n > 0; });
+    if (rates.length && rates.every(function (n) { return n === rates[0]; })) {
+      return rates[0].toFixed(2);
+    }
+    return '';
   }
 
   /** A cost line with no count is a lump sum; with one it is rate x count. */
@@ -1727,7 +1812,8 @@
     var indication = (d.cohorts || [])
       .map(function (c) { return String(c.name || '').trim(); })
       .filter(Boolean)[0] || '';
-    var specs = orderedSpecimens(d).map(function (s) { return s.toLowerCase(); });
+    var specs = orderedSpecimens(d).map(function (t) {
+      return specimenLabel(d, t).toLowerCase(); });
     var specPart = specs.length > 2
       ? specs.slice(0, -1).join(', ') + ' & ' + specs[specs.length - 1]
       : specs.join(' & ');
@@ -1747,6 +1833,14 @@
     return ALL_SPECIMENS.filter(function (t) {
       return (d.specimenTypes || []).indexOf(t) > -1;
     });
+  }
+
+  /** What to call a specimen in prose. An "other" that has been named reads as
+   *  its name; everything else reads as itself. Without this the summary says
+   *  "other", which tells a sponsor nothing. */
+  function specimenLabel(d, t) {
+    var name = String((((d || {}).specimenDetail || {})[t] || {}).otherName || '').trim();
+    return name || t;
   }
 
   /** Priced units in a cohort: subjects times units per subject, which is one
@@ -1784,7 +1878,8 @@
 
   /** Study summary drafts in the real quotes' phrasing (spec §06). */
   function draftSummary(d) {
-    var specs = orderedSpecimens(d).map(function (s) { return s.toLowerCase(); });
+    var specs = orderedSpecimens(d).map(function (t) {
+      return specimenLabel(d, t).toLowerCase(); });
     var specPart = specs.length > 2
       ? specs.slice(0, -1).join(', ') + ' and ' + specs[specs.length - 1]
       : specs.join(' and ');
@@ -1809,7 +1904,8 @@
     var detail = d.specimenDetail || {};
     var protocols = orderedSpecimens(d).map(function (t) {
       var note = String((detail[t] || {}).processing || '').trim();
-      return note ? t.toLowerCase() + ' requires ' + note.replace(/\.$/, '') : '';
+      return note ? specimenLabel(d, t).toLowerCase() +
+        ' requires ' + note.replace(/\.$/, '') : '';
     }).filter(Boolean);
     if (protocols.length) {
       out += ' Processing is not standard: ' + protocols.join('; ') + '.';
@@ -1823,6 +1919,12 @@
   var route = { name: 'register', id: null };
   var statusFilter = 'all';
 
+  // The internal draft previews what is on the form, not what was last saved —
+  // a rep wants to see the document before committing to it. `resumeDraft`
+  // carries the half-filled form across the round trip so nothing is retyped.
+  var previewDraft = null;
+  var resumeDraft = null;
+
   function go(name, id) {
     route = { name: name, id: id || null };
     document.querySelectorAll('[data-nav]').forEach(function (b) {
@@ -1835,12 +1937,254 @@
   }
 
   document.querySelectorAll('[data-nav]').forEach(function (b) {
-    b.addEventListener('click', function () { go(b.dataset.nav); });
+    // Leaving by the top nav abandons whatever was on the form, so the
+    // half-filled draft must not reappear on the next quote.
+    b.addEventListener('click', function () {
+      previewDraft = null; resumeDraft = null;
+      go(b.dataset.nav);
+    });
   });
 
   function render() {
     view.replaceChildren();
-    view.appendChild(route.name === 'register' ? renderRegister() : renderForm(route.id));
+    if (route.name === 'register') { view.appendChild(renderRegister()); return; }
+    if (route.name === 'draft') { view.appendChild(renderInternalDraft(route.id)); return; }
+    view.appendChild(renderForm(route.id));
+  }
+
+  // ---------------------------------------------------------------- internal draft
+  // A preview of the internal draft, laid out as the document will read. Not
+  // the .docx — that is Phase 6 and has formatting rules of its own (spec §3).
+  // This shows what the document will *contain*, including the pricing workings
+  // and the internal notes, which is the half a rep needs to check before the
+  // sponsor version is generated.
+
+  function renderInternalDraft(id) {
+    var q = previewDraft ||
+      quotes.filter(function (x) { return x.id === id; })[0];
+    var frag = document.createDocumentFragment();
+    if (!q) { frag.appendChild(el('p', { text: 'Quote not found.' })); return frag; }
+
+    frag.appendChild(el('button', { class: 'back', type: 'button',
+      onclick: function () {
+        previewDraft = null;
+        go(id ? 'edit' : 'new', id);
+      } }, ['\u2190 Back to the form']));
+
+    var doc = el('div', { class: 'draft' });
+
+    doc.appendChild(el('div', { class: 'draft-stamp' }, [
+      el('strong', { text: 'Internal draft' }),
+      el('span', { text: 'Shows the pricing workings and internal notes. '
+        + 'The sponsor quote is the same document with this column removed.' })
+    ]));
+
+    doc.appendChild(el('div', { class: 'draft-head' }, [
+      el('div', { text: 'The MT Group' }),
+      el('div', { text: '7120 Hayvenhurst Avenue, Suite 317' }),
+      el('div', { text: 'Los Angeles, CA 91406' })
+    ]));
+
+    function row(label, value) {
+      if (!value) return null;
+      return el('div', { class: 'draft-row' }, [
+        el('div', { class: 'draft-label', text: label }),
+        el('div', { class: 'draft-value' }, [].concat(
+          String(value).split('\n').map(function (line) {
+            return el('div', { text: line });
+          })))
+      ]);
+    }
+    function bullets(label, text) {
+      var lines = String(text || '').split('\n')
+        .map(function (l) { return l.trim(); }).filter(Boolean);
+      if (!lines.length) return null;
+      return el('div', { class: 'draft-row' }, [
+        el('div', { class: 'draft-label', text: label }),
+        el('div', { class: 'draft-value' }, [
+          el('ul', {}, lines.map(function (l) { return el('li', { text: l }); }))
+        ])
+      ]);
+    }
+    function add(node) { if (node) doc.appendChild(node); }
+
+    var h = q.header || {}, pr = q.pricing || {}, sh = q.shipping || {};
+
+    add(row('Requestor', [h.sponsorContactName, h.sponsorContactEmail]
+      .filter(Boolean).join('\n')));
+    add(row('Client', q.client));
+    add(row('Quote Date', prettyDate(q.quoteDate) +
+      (h.validity ? ' (' + h.validity + ')' : '')));
+    add(row('Quote Number', quoteNumber(q)));
+    add(row('Summary', q.summary));
+    add(row('Service Type', (h.serviceTypes || []).join(' and ') +
+      ((h.serviceTypes || []).length ? ' collection' : '')));
+
+    (q.cohorts || []).forEach(function (c, i) {
+      var n = cohortSubjects(c);
+      var basis = c.upTo ? 'up to ' : c.estimated ? 'estimating ' : '';
+      add(row('Cohort ' + (i + 1), (c.name || '') +
+        (n ? ' (' + basis + n + ' subjects)' : '')));
+      (c.subcohorts || []).forEach(function (sc, j) {
+        add(row('  ' + (i + 1) + String.fromCharCode(97 + j),
+          (sc.note || '') + (num(sc.subjects) ? ' (' + num(sc.subjects) + ')' : '')));
+      });
+      add(bullets('Inclusions', c.inclusion));
+      add(bullets('Exclusions', c.exclusion));
+      if (c.inclusion || c.exclusion) {
+        add(el('div', { class: 'draft-row' }, [
+          el('div', { class: 'draft-label' }),
+          el('div', { class: 'draft-value' }, [
+            el('u', { text: 'No additional inclusions or exclusions' })])
+        ]));
+      }
+    });
+
+    var specs = orderedSpecimens(q);
+    if (specs.length) {
+      add(row('Biospecimens', specs.map(function (t) {
+        var d = (q.specimenDetail || {})[t] || {};
+        var spec = SPECIMEN_SPEC[t] || {};
+        var bits = [specimenLabel(q, t)];
+        if (d.tubeCount) bits.push(d.tubeCount + ' tubes per subject');
+        else if (d.amount) bits.push(d.amount);
+        if (d.freeform) bits.push(d.freeform);
+        if (spec.says) bits.push(spec.says.replace(/\.$/, ''));
+        return bits.join(' \u2014 ');
+      }).join('\n')));
+      var processing = specs.map(function (t) {
+        return ((q.specimenDetail || {})[t] || {}).processing; }).filter(Boolean);
+      if (processing.length) add(row('Processing', processing.join('\n')));
+    }
+    add(row('Provided by sponsor', q.sponsorProvides));
+    var cd = q.clinicalData || {};
+    add(row('Clinical Data', [
+      (cd.required || []).join(', '),
+      (cd.ifAvailable || []).length
+        ? 'If available: ' + cd.ifAvailable.join(', ') : '',
+      cd.detail].filter(Boolean).join('\n')));
+
+    var tl = q.timeline || {};
+    add(row('Study Timeline', [
+      tl.kickoffCall ? 'A study kick-off call will be scheduled.' : '',
+      tl.initiation ? 'Study initiation ' + tl.initiation + '.' : '',
+      tl.enrollmentCompletion ? 'Enrollment complete ' + tl.enrollmentCompletion + '.' : '',
+      tl.delivery ? 'Delivery ' + tl.delivery + '.' : ''
+    ].filter(Boolean).join(' ')));
+
+    add(row('Shipping & Handling', [
+      sh.usDestination ? usDestinationSentenceFor(q) : '',
+      sh.addresses, sh.detail
+    ].filter(Boolean).join('\n')));
+
+    // --- the costs, with the internal column the sponsor never sees
+    var lines = draftCostLines(q);
+    var table = el('div', { class: 'draft-costs' });
+    table.appendChild(el('div', { class: 'draft-cost head' }, [
+      el('span', { text: 'Cost' }), el('span', { class: 'ca', text: 'Amount' }),
+      el('span', { class: 'ca internal', text: 'Site cost' }),
+      el('span', { class: 'internal', text: 'Internal note' })]));
+    lines.rows.forEach(function (r) {
+      table.appendChild(el('div', { class: 'draft-cost' }, [
+        el('span', { text: r.label }),
+        el('span', { class: 'ca', text: money(r.amount) }),
+        el('span', { class: 'ca internal', text: r.siteCost ? money(num(r.siteCost)) : '' }),
+        el('span', { class: 'internal', text: r.note || '' })]));
+    });
+    table.appendChild(el('div', { class: 'draft-cost total' }, [
+      el('span', { text: 'Total Study Cost' + (pr.totalAssumption
+        ? ' (' + pr.totalAssumption + ')' : '') }),
+      el('span', { class: 'ca', text: money(lines.total) }),
+      el('span', {}), el('span', {})]));
+    doc.appendChild(el('div', { class: 'draft-row' }, [
+      el('div', { class: 'draft-label', text: 'Costs' }),
+      el('div', { class: 'draft-value' }, [table])
+    ]));
+
+    var conds = Object.keys(q.conditions || {}).map(function (k) { return q.conditions[k]; });
+    if (conds.length) add(row('Study conditions', conds.join('\n')));
+    add(row('Notes', q.notes));
+
+    doc.appendChild(el('div', { class: 'draft-tc' }, [
+      el('strong', { text: 'Terms and Conditions' }),
+      el('span', { text: 'IRB & HIPAA, Research Use, Deliveries, Applicable Laws, '
+        + 'Quality Guarantee, Publications, Unknown Elements, Taxes, purchase '
+        + 'orders, payment terms \u2014 identical on every quote, added by the '
+        + 'generator.' })
+    ]));
+
+    frag.appendChild(doc);
+    return frag;
+  }
+
+  function usDestinationSentenceFor(q) {
+    var who = String(q.client || '').trim() || 'the sponsor';
+    return 'Shipped to a US-based destination designated by ' + who + '.';
+  }
+
+  /** The cost lines as the document prints them, each carrying the internal
+   *  figures alongside so the draft can show both. */
+  function draftCostLines(q) {
+    var pr = q.pricing || {}, rows = [], total = 0;
+    var byCohort = pr.fullMode !== 'specimen';
+
+    if (byCohort) {
+      (q.cohorts || []).forEach(function (c, i) {
+        var key = c.name || ('cohort-' + i);
+        var p = num((pr.cohortPrices || {})[key]);
+        if (!p) return;
+        var per = num((pr.cohortPer || {})[key]) || 1;
+        var n = cohortSubjects(c) * per;
+        var unit = (pr.cohortUnits || {})[key] || 'subject';
+        var ic = (pr.cohortInternal || {})[key] || {};
+        rows.push({ label: money(p) + ' / ' + (c.name || 'Cohort ' + (i + 1)) + ' ' + unit,
+          amount: n * p, siteCost: ic.siteCost, note: ic.notes });
+        total += n * p;
+      });
+    } else {
+      orderedSpecimens(q).forEach(function (t) {
+        var sp = (pr.specimenPrices || {})[t] || {};
+        var p = num(sp.price);
+        if (!p) return;
+        var n = (q.cohorts || []).reduce(function (a, c) { return a + cohortSubjects(c); }, 0);
+        rows.push({ label: money(p) + ' / ' + specimenLabel(q, t).toLowerCase(),
+          amount: n * p, siteCost: sp.siteCost, note: sp.notes });
+        total += n * p;
+      });
+    }
+
+    (pr.otherCosts || []).forEach(function (o) {
+      var a = otherCostAmount(o);
+      if (!a) return;
+      var c = String(o.count == null ? '' : o.count).trim();
+      rows.push({ label: (o.label || 'Other cost') +
+        (c ? ' \u2014 ' + money(num(o.amount)) + ' \u00d7 ' + c + ' ' + (o.unit || '') : ''),
+        amount: a });
+      total += a;
+    });
+
+    var ship = num(q.totalCost) ? 0 : 0;
+    if (q.shipping) {
+      var st = (function () {
+        var sh = q.shipping;
+        var typed = String(sh.override == null ? '' : sh.override).trim();
+        var subjects = (q.cohorts || []).reduce(function (a, c) {
+          return a + cohortSubjects(c); }, 0);
+        var cost = (sh.legs || []).reduce(function (t, leg) {
+          var lc = String(leg.count || '').trim() === ''
+            ? (leg.toSponsor ? 1 : 0) : num(leg.count);
+          var lr = String(leg.rate || '').trim() === ''
+            ? num(leg.intl ? sh.intlRate : sh.usRate) : num(leg.rate);
+          return t + lc * lr; }, 0) * (num(sh.markup) || 1);
+        if (sh.mode === 'perSubject') {
+          var per = typed !== '' ? num(typed) : (subjects ? cost / subjects : 0);
+          return per * subjects;
+        }
+        return typed !== '' ? num(typed) : cost;
+      })();
+      if (st) { rows.push({ label: 'Shipping and Handling', amount: st }); total += st; }
+    }
+    return { rows: rows, total: total };
   }
 
   // ---------------------------------------------------------------- register
@@ -2079,13 +2423,43 @@
         row.exclusion_criteria = join(cohorts.map(function (c) { return c.exclusion; }));
         row.processing_requirements = join(specimens.map(function (t) {
           return (detail[t] || {}).processing; }));
-        row.pricing_notes = join(specimens.map(function (t) {
-          return ((pr.specimenPrices || {})[t] || {}).notes; }));
+        row.pricing_notes = join(
+          specimens.map(function (t) {
+            return ((pr.specimenPrices || {})[t] || {}).notes; })
+          .concat(Object.keys(pr.cohortInternal || {}).map(function (k) {
+            return (pr.cohortInternal[k] || {}).notes; })));
+        row.site_costs = join(Object.keys(pr.cohortInternal || {}).map(function (k) {
+          var c = pr.cohortInternal[k] || {};
+          return c.siteCost ? k + ': ' + c.siteCost : ''; }));
         row.study_summary = stripAcronym(q.summary, ac);
         row.additional_notes = stripAcronym(q.notes, ac);
       }
-      return row;
+
+      // Last pass before the row leaves: the sponsor's name and acronym are
+      // scrubbed from every value, not just the fields we thought to strip.
+      // A shipping destination reading "US-based Natera location" named the
+      // sponsor in a structured column that travelled even with free text off,
+      // and the next such field would have leaked the same way.
+      return redactSponsor(row, q.client, ac, row.sponsor_code);
     });
+  }
+
+  /** Replace the sponsor's name and acronym with its code, everywhere. */
+  function redactSponsor(row, client, acronym, code) {
+    var terms = [String(client || '').trim(), String(acronym || '').trim()]
+      .filter(function (t) { return t.length > 1; })
+      // Longest first, so "Natera Inc" is not half-replaced by "Natera".
+      .sort(function (a, b) { return b.length - a.length; });
+    if (!terms.length) return row;
+    var re = new RegExp(terms.map(function (t) {
+      return '\\b' + t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b';
+    }).join('|'), 'gi');
+    Object.keys(row).forEach(function (k) {
+      if (k === 'sponsor_code') return;
+      if (typeof row[k] !== 'string') return;
+      row[k] = row[k].replace(re, code).replace(/\s{2,}/g, ' ').trim();
+    });
+    return row;
   }
 
   /** Timepoint names for an arbitrary quote, not just the one being edited. */
@@ -2234,7 +2608,10 @@
 
   function renderForm(id) {
     var existing = id ? quotes.filter(function (q) { return q.id === id; })[0] : null;
-    var draft = existing ? JSON.parse(JSON.stringify(existing)) : blank();
+    var draft = (resumeDraft && (resumeDraft.id || null) === (id || null))
+      ? resumeDraft
+      : (existing ? JSON.parse(JSON.stringify(existing)) : blank());
+    resumeDraft = null;
     draft.header = draft.header || {};
     draft.header.serviceTypes = draft.header.serviceTypes || [];
     draft.specimenTypes = draft.specimenTypes || [];
@@ -2350,6 +2727,7 @@
       draft.header.sponsorContactName = study.contactName || '';
       draft.header.sponsorContactEmail = study.contactEmail || '';
       draft.header.perSubject = draft.header.perSubject || study.perSubject;
+      draft.header.parentCohortPrices = study.cohortPrices || {};
       draft.hubspotDealName = draft.hubspotDealName || study.dealName || '';
       draft.cohorts = (study.cohorts || []).map(function (c) {
         return { name: c.name, subjects: c.subjects, additionalSubjects: '' };
@@ -2444,6 +2822,7 @@
         contactName: (q.header || {}).sponsorContactName || '',
         contactEmail: (q.header || {}).sponsorContactEmail || '',
         perSubject: parentPerSubject(q),
+        cohortPrices: ((q.pricing || {}).cohortPrices) || {},
         dealName: q.hubspotDealName || '',
         cohorts: q.cohorts || []
       }, via);
@@ -3620,6 +3999,15 @@
 
         // --- one box, everything in it
         if (spec.freeform) {
+          if (spec.named) {
+            card.appendChild(field('What is it', { full: true,
+              placeholder: spec.namedHint,
+              hint: 'Used wherever the quote names the specimen \u2014 the summary '
+                  + 'and the quote name both read this rather than "other".',
+              get: function () { return d.otherName; },
+              set: function (v) { d.otherName = v; },
+              then: refreshDrafts }));
+          }
           card.appendChild(field(spec.freeformLabel, { type: 'textarea', rows: 2, full: true,
             placeholder: spec.freeformHint,
             get: function () { return d.freeform; },
@@ -3629,6 +4017,14 @@
         }
 
         var rows = [];
+
+        if (spec.named && !spec.freeform) {
+          rows.push(field('What is it', { full: true,
+            placeholder: spec.namedHint,
+            hint: 'Used wherever the quote names the specimen.',
+            get: function () { return d.otherName; },
+            set: function (v) { d.otherName = v; }, then: refreshDrafts }));
+        }
 
         // --- drawn into tubes: each tube is its own small block
         if (spec.tubes && d.byTubes) {
@@ -4020,6 +4416,12 @@
           ]));
         }
 
+        // The total line updates on its own. Repainting modeBox here would
+        // rebuild the very input being typed into and drop every keystroke
+        // after the first — the same repaint-during-typing trap as §9's lookup
+        // and §01's deal name.
+        var totalV = el('span', { class: 'v', text: money(shippingTotal()) });
+
         modeBox.appendChild(field(per ? 'Override the per-subject charge'
                                      : 'Override the shipping price', {
           inputmode: 'decimal', full: true,
@@ -4029,12 +4431,14 @@
               + 'the per-specimen figure \u2014 enter 0 here and raise the specimen prices.',
           get: function () { return sh.override; },
           set: function (v) { sh.override = v; },
-          then: function () { paintMode(); if (pricingRefresh) pricingRefresh(); } }));
+          then: function () {
+            totalV.textContent = money(shippingTotal());
+            if (pricingRefresh) pricingRefresh();
+          } }));
 
         modeBox.appendChild(el('div', { class: 'calc' }, [
           el('div', { class: 'calc-row calc-total' }, [
-            el('span', { text: 'Shipping price for sponsor' }),
-            el('span', { class: 'v', text: money(shippingTotal()) })])
+            el('span', { text: 'Shipping price for sponsor' }), totalV])
         ]));
       }
 
@@ -4188,7 +4592,14 @@
           var carried = draft.header.matchedStudy ? draft.header.perSubject : '';
           draft.cohorts.forEach(function (c, i) {
             var key = c.name || ('cohort-' + i);
-            if (pr.cohortPrices[key] == null && carried) pr.cohortPrices[key] = carried;
+            // Each cohort resumes at its own rate from the parent quote. A
+            // single blended figure would be wrong wherever the cohorts were
+            // priced differently, which is most of them.
+            if (pr.cohortPrices[key] == null) {
+              var own = (draft.header.parentCohortPrices || {})[key];
+              if (own) pr.cohortPrices[key] = own;
+              else if (carried) pr.cohortPrices[key] = carried;
+            }
             var subs = extAdditional(c);
             var sub = el('span', { class: 'ca' });
             var priceIn = el('input', { type: 'text', inputmode: 'decimal',
@@ -4206,7 +4617,12 @@
               el('span', { class: 'ca' }, [priceIn]), sub, el('span', {})]));
           });
           mainBox.appendChild(rows);
-          if (carried) {
+          var seededOwn = Object.keys(draft.header.parentCohortPrices || {}).length > 0;
+          if (seededOwn) {
+            mainBox.appendChild(el('div', { class: 'hint',
+              text: 'Each cohort starts at its own rate from the original '
+                    + 'quote. Change the ones that differ.' }));
+          } else if (carried) {
             mainBox.appendChild(el('div', { class: 'hint',
               text: 'Each cohort starts at ' + money(num(carried)) +
                     ', the rate carried over from the original quote. Change the '
@@ -4284,6 +4700,28 @@
               el('span', { class: 'hint', text: 'per subject' }),
               el('span', { class: 'ca' }, [perIn]),
               unitSel, el('span', {}), el('span', {})]));
+
+            // Site cost, source and the internal note follow the price. They
+            // were only ever on the per-specimen blocks, so switching the
+            // default to per cohort left nowhere to record what a site charges.
+            pr.cohortInternal = pr.cohortInternal || {};
+            var ic = pr.cohortInternal[key] = pr.cohortInternal[key] || {};
+            var internal = el('div', { class: 'cohort-internal' });
+            internal.appendChild(el('div', { class: 'grid' }, [
+              field('Site cost + stipend', { placeholder: 'context only', inputmode: 'decimal',
+                hint: 'Reference only \u2014 not added to the total.',
+                get: function () { return ic.siteCost; },
+                set: function (v) { ic.siteCost = v; } }),
+              field('Source', { placeholder: 'who quoted it, and when',
+                get: function () { return ic.source; },
+                set: function (v) { ic.source = v; } }),
+              field('Pricing notes (internal)', { type: 'textarea', rows: 2, full: true,
+                hint: 'Internal draft only \u2014 never reaches the sponsor document.',
+                placeholder: 'e.g. already floated $1,600, sponsor pushed back',
+                get: function () { return ic.notes; },
+                set: function (v) { ic.notes = v; } })
+            ]));
+            crows.appendChild(internal);
           });
           mainBox.appendChild(crows);
           mainBox.appendChild(el('div', { class: 'hint',
@@ -4687,6 +5125,13 @@
       onclick: function () { submit(); } }, [existing ? 'Save changes' : 'Create quote']));
     actions.appendChild(el('button', { class: 'btn', type: 'button',
       onclick: function () { go('register'); } }, ['Cancel']));
+    actions.appendChild(el('button', { class: 'btn', type: 'button',
+      onclick: function () {
+        previewDraft = draft; resumeDraft = draft;
+        go('draft', existing ? existing.id : null);
+      } }, ['Preview internal draft']));
+    if (existing) {
+    }
 
     if (existing) {
       var del = confirmButton('Delete quote', 'Delete this quote? It cannot be undone.',
