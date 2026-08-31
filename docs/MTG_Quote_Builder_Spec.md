@@ -1560,3 +1560,101 @@ longest term first. Verified: no company name or acronym anywhere in the file.
 
 `SAMPLES_VERSION` is deliberately **not** bumped. Nothing in the seeded quotes
 changed, and bumping it would discard the quotes John has been testing with.
+
+## §27 — Extension track, shipping, and the document rewrite, 2026-08-31
+
+Twelve items from rep review. The extension track and the document output were
+both wrong in ways only visible from using them.
+
+### The minimal extension track (items 1, 2, 4, 5)
+
+An extension whose study design is unchanged collapses to a short form. That
+form showed a subset of the sections but kept the **full track's numbers**, so
+it read 01, 03, 10, 11, 06, 12. Numbers are load-bearing *within* a track, so
+each track now gets its own consecutive run (`secNum()` maps the canonical id
+onto the minimal sequence). The minimal track is 01 Quote header, 02 Additional
+subjects, 03 Biospecimens, 04 Shipping, 05 Pricing, 06 Study summary,
+07 Additional quote details.
+
+**Biospecimens now appear in the minimal track** (§03). They were omitted on the
+assumption that an unchanged design means unchanged specimens, but an extension
+can add subjects across several specimen types at different rates. Pricing
+follows: each cohort now carries **one priced row per biospecimen**
+(`pricing.cohortSpecimenPrices[cohort][type]`), and a cohort's per-subject
+charge is the sum of them (`extCohortRate()`).
+
+**Shipping is streamlined.** The legs, standard rates, markup and the internal
+cost build-up were all settled in the original quote, so the minimal track shows
+only the mode and the figure. The field is labelled "Shipping price" rather than
+"Override the shipping price" — there is no calculated figure to override.
+
+**"What the total assumes" is hidden.** It prints in brackets after the total on
+the quote — the stool quote reads "$180,000 (estimating that 100% of subjects
+provide two stools)". A streamlined extension carries no such caveat.
+
+### Item 3 — pricing mode names
+
+"One price for every cohort" / "Price per cohort" → **"Same pricing for all
+cohorts"** / **"Different prices per cohort"**.
+
+### Item 6 — $600 of shipping on every untouched quote
+
+`legCount()` returned `batchCount()` for the sponsor leg when nothing was typed,
+and `batchCount()` returned 1 whether or not a batching plan had been chosen.
+With the standard US rate ($300) and the 2× markup, every new quote carried $600
+of shipping before the rep had entered anything. The sponsor leg now follows §09
+batching **only once a batching plan has actually been chosen**, and counts zero
+otherwise.
+
+### Item 7 — the extension summary lost its MT number
+
+`applyStudy()` set `draft.header.parentMtNumber = study.mt` unconditionally. The
+parent quote reference is tried first and register quotes carry no MT number, so
+a typed MT was blanked the moment a quote reference was also present. It now
+only overwrites when the lookup actually has one. The drafted extension summary
+cites both: *"…ordered under PO 4500123456 / MT Group study MT0438."*
+
+### Item 8 — US destination before the address
+
+The checkbox now sits **above** the ship-to box and fills it with the sentence
+the quote would carry anyway. It only ever fills a blank box, and unticking
+clears it only if it still holds that exact sentence — anything typed survives.
+The explanatory paragraph underneath is gone.
+
+### Item 9 — legs only where there is something to batch
+
+Fresh specimens ship site-to-sponsor overnight. When **every** selected specimen
+is fresh (`Shipped at 2-8 °C`), the legs block is replaced by a one-line note and
+the internal cost is zero. One non-fresh specimen brings the legs back, since
+that one still needs batching.
+
+### Items 10–12 — the document
+
+The preview was laid out as a web table and did not read like an MT Group quote.
+Rebuilt against the five real PDFs:
+
+- **Left-justified letterhead** with the two horizontal rules.
+- `Label:` / value in two columns, in the document's serif.
+- **Whole dollars.** No quote in the set shows cents; `docMoney()` prints them
+  only if a figure somehow carries them, rather than rounding silently.
+- **Long dates** — "July 24, 2025", not "Jul 24, 2025" (`docDate()`).
+- **Costs as labelled lines, not a table**, in the quotes' two-part shape: a rate
+  block ("Biospecimen Costs: $1,650 / subject (Cancer)") and then a
+  **Total Study Cost** breakdown of the extended amounts ending "(Total)". A
+  single-line quote just states its total. Other costs print as a rate —
+  "$50 / subject stool" — with the count left to the breakdown.
+- **The full terms**, all eight clauses verbatim, the purchase-order line, the
+  prepared-by line, payment terms and the signature block.
+- Site cost and internal notes hang off the right of their cost line in the
+  accent colour. *The sponsor quote is this document with those removed.*
+
+**`draftCostLines()` ignored extensions.** It priced against `cohortSubjects()`,
+the parent study's whole population, rather than the additional subjects, and
+knew nothing of `extMode`. That is what made the output wrong. It is now
+extension-aware, and the shipping figure comes from one `quoteShippingTotal()`
+that agrees with the form rather than a second copy of the arithmetic that had
+already drifted (it still counted an untyped sponsor leg as a shipment).
+
+Verified: all five real quotes reproduce to the cent, and an extension adding 50
+Cancer subjects at $1,000 whole blood + $250 plasma with $5,000 shipping totals
+$67,500 with each line named.
