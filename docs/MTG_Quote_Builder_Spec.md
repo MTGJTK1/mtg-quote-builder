@@ -1658,3 +1658,10 @@ already drifted (it still counted an untyped sponsor leg as a shipment).
 Verified: all five real quotes reproduce to the cent, and an extension adding 50
 Cancer subjects at $1,000 whole blood + $250 plasma with $5,000 shipping totals
 $67,500 with each line named.
+
+### Payment terms
+
+Confirmed as **net 30 days** by default. It is a field rather than fixed text
+because the quotes themselves vary — four of the five are net 30 and the adenoma
+quote is net 45. It sits in §12 with net 30 as the placeholder, so a rep only
+touches it on the quote that differs.

@@ -1983,6 +1983,10 @@
   /** The eight standard clauses, verbatim from the issued quotes. Identical on
    *  every one of the five; only the payment terms and the preparer vary, so
    *  those two are fields rather than text. */
+  /** Four of the five real quotes are net 30 and one is net 45, so this is the
+   *  default rather than fixed text. */
+  var PAYMENT_TERMS_DEFAULT = 'net 30 days';
+
   var TERMS = [
     ['IRB & HIPAA', 'The protocol is IRB approved. All patient samples and clinical '
       + 'data elements provided to client will be de-identified and all protected '
@@ -2229,7 +2233,8 @@
       el('div', { text: 'This Quote is prepared and approved by ' + who +
         ' (' + email + '). By issuing a Purchase Order and signing this Quote, '
         + 'you are accepting this Quote’s terms and conditions.' }),
-      el('div', { text: 'Payment terms are ' + (h.paymentTerms || 'net 30 days')
+      el('div', { text: 'Payment terms are ' +
+        (String(h.paymentTerms || '').trim() || PAYMENT_TERMS_DEFAULT)
         + '. Invoices will be submitted the month after biospecimen deliveries.' }),
       el('div', { class: 'draft-sig' }, [
         el('div', { text: '_______________________' }),
@@ -5400,6 +5405,12 @@
       paintConditions();
 
       sec.appendChild(subHead('Anything else'));
+      sec.appendChild(field('Payment terms', {
+        placeholder: PAYMENT_TERMS_DEFAULT,
+        hint: 'Printed in the Terms & Conditions. Leave blank for '
+            + PAYMENT_TERMS_DEFAULT + '.',
+        get: function () { return draft.header.paymentTerms; },
+        set: function (v) { draft.header.paymentTerms = v; } }));
       sec.appendChild(field('Notes', { type: 'textarea', rows: 4, full: true,
         placeholder: 'Delivery expectations, sponsor-specific terms, anything the sections above did not cover.',
         hint: 'Appears on both the internal draft and the sponsor quote.',
@@ -5423,8 +5434,6 @@
         previewDraft = draft; resumeDraft = draft;
         go('draft', existing ? existing.id : null);
       } }, ['Preview internal draft']));
-    if (existing) {
-    }
 
     if (existing) {
       var del = confirmButton('Delete quote', 'Delete this quote? It cannot be undone.',
