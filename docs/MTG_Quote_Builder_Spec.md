@@ -1765,3 +1765,79 @@ could be typing in it.** Update the specific node instead.
 `screenfail_rate` in the analysis export read `pricing.screenfail.rate`, which
 was never a field — the column had always been empty. Replaced by
 `screenfail_price`, `screenfail_max_cases` and `screenfails_shipped`.
+
+## §29 — Four more real quotes checked against the tool, 2026-09-01
+
+John supplied four more: Classic Hodgkin's lymphoma, 500 healthies, and two
+extensions (MT2234 #2 and MT2230 #1). All four now reproduce to the cent —
+$36,000, $600,000, $500,500 and $150,300 — but each exposed something.
+
+### Screenfails and outcome fees never reached the document
+
+`draftCostLines()` emitted cohort/specimen lines, other costs and shipping, but
+**not** screenfails or the outcome-data fee. The form counted them in its total
+and the document did not, so any quote carrying either printed a total lower
+than the one the rep had agreed. MT2230 extension #1 has $10,800 of screenfails
+inside a $150,300 total — the document would have said $139,500.
+
+Both now print as their own labelled lines. The screenfail line carries the
+caveat from "How it is applied" alongside the rate, which is how the real quote
+reads: *"Screenfail Rate: $600 / subject (capped at 20% of enrollment)"*. The
+percentage wording survives even though §28 replaced the % field with a case
+count — the count drives the arithmetic, the sentence carries the caveat.
+
+### Per-subject shipping had been removed from extensions
+
+§28 replaced the extension's "Quote per subject" with "Quote per biospecimen".
+Both of these extension quotes charge **$100 / subject** and **$150 / subject**,
+so that was a regression. Extensions now offer all three: lump sum, per subject,
+per biospecimen.
+
+### A pooled extension population
+
+MT2234 extension #2 enrols *"Up to 286 total subjects with the following cancers"*
+across ten named cancers, with allocations agreed later — one count, a bulleted
+list of types, and a sentence of prose. The cohort/count table could express none
+of it. The extension track gains **"This count is a maximum"**, a
+**Population note** and a **Types enrolled** list (one per line, printed as
+bullets). The document prints them as `Populations and Size`, with the noun taken
+from the cohort name so it reads "the following cancers".
+
+### "Up to" belongs on the total too
+
+500 healthies ends *"Total Study Cost: Up to $600,000"*. A capped cohort — or a
+capped extension count — now carries that prefix onto the total.
+
+### The breakdown under the total is a choice, not a rule
+
+Pan-cancer and MT2230 list every line under the total; Hodgkin's and 500
+healthies state one figure; MT2234 breaks down on only two lines. There is no
+rule to infer, so it is a checkbox — **"Break the total down by cost line"** —
+defaulting to on above two lines. A total with no breakdown drops the "(Total)"
+label, since nothing precedes it to total up.
+
+### Conditions belong in their paragraph, not a list
+
+§28 moved the conditions into the form section each one qualifies. These quotes
+show the document does the same: Hodgkin's states *"Natera will not terminate
+this study early…"* inside **Study Timeline** and the freight clause inside
+**Shipping & Handling**. `condText(q, sec)` now folds each section's ticked
+conditions into that section's paragraph, and only the clauses with no home
+section (just "changes are mutually agreed") remain in a trailing block.
+
+### The US-destination sentence printed twice
+
+§27 auto-fills the ship-to box with *"Shipped to a US-based destination
+designated by X."* — and the document printed it again above the address. It is
+now only added when the address box does not already contain it.
+
+### Still not reproducible, and left alone deliberately
+
+- **Section labels vary between quotes** — "Summary" vs "Study Objectives",
+  "Size" vs "Cohorts" vs "Populations and Size", "I/E Criteria" vs "Inclusions /
+  Exclusions", "Timeline" vs "Study Timeline", and "No other inclusions or
+  exclusions" vs "No additional…". The tool prints one label per row. Worth
+  raising with John rather than guessing a rule.
+- **Per-week collection caps.** §09 has "Maximum subjects delivered per day";
+  500 healthies also caps 75/week for the first two weeks. It fits in free text
+  today.

@@ -2026,6 +2026,14 @@
     ['Taxes', 'There are none.']
   ];
 
+  /** The ticked conditions belonging to one section, as one run of prose. */
+  function condText(q, sec) {
+    var picked = q.conditions || {};
+    return STUDY_CONDITIONS.filter(function (c) {
+      return c.sec === sec && Object.prototype.hasOwnProperty.call(picked, c.id);
+    }).map(function (c) { return picked[c.id]; }).join(' ');
+  }
+
   function renderInternalDraft(id) {
     var q = previewDraft ||
       quotes.filter(function (x) { return x.id === id; })[0];
@@ -2103,7 +2111,32 @@
             (sc.note || '') + (n ? ' (' + n + ')' : ''));
         });
       });
-      add(row(isExt ? 'Additional Subjects' : 'Size', sizeLines.join('\n')));
+      // A pooled extension population reads as prose, then the total, then
+      // the types as bullets — the shape MT2234 extension #2 uses.
+      var note = String(q.populationNote || '').trim();
+      var types = String(q.populationTypes || '').split('\n')
+        .map(function (l) { return l.trim(); }).filter(Boolean);
+      if (isExt && (note || types.length)) {
+        var total = (q.cohorts || []).reduce(function (t, c) {
+          return t + extAdditionalOf(c); }, 0);
+        var body = el('div', { class: 'draft-value' });
+        var noun = String(((q.cohorts || [])[0] || {}).name || '').trim().toLowerCase();
+        if (noun && !/s$/.test(noun)) noun += 's';
+        var lead = (q.extUpTo ? 'Up to ' : '') + total + ' total subjects' +
+          (types.length
+            ? ' with the following ' + (noun ? noun + ' ' : '') + 'will be enrolled.'
+            : ' will be enrolled.');
+        body.appendChild(el('div', { text: total ? lead : '' }));
+        if (note) body.appendChild(el('div', { text: note }));
+        if (types.length) {
+          body.appendChild(el('ul', {}, types.map(function (t) {
+            return el('li', { text: t }); })));
+        }
+        doc.appendChild(el('div', { class: 'draft-row' }, [
+          el('div', { class: 'draft-label', text: 'Populations and Size:' }), body]));
+      } else {
+        add(row(isExt ? 'Additional Subjects' : 'Size', sizeLines.join('\n')));
+      }
     }
 
     // I/E criteria print per cohort, as they do on the multi-cohort quotes.
@@ -2147,6 +2180,7 @@
         return ((q.specimenDetail || {})[t] || {}).processing; }).filter(Boolean);
       if (processing.length) add(row('Processing', processing.join('\n')));
     }
+    add(row('Collection conditions', condText(q, '05')));
     add(row('Provided by sponsor', q.sponsorProvides));
 
     var cd = q.clinicalData || {};
@@ -2155,18 +2189,23 @@
       (cd.ifAvailable || []).length
         ? 'If available: ' + cd.ifAvailable.join(', ') : '',
       cd.detail].filter(Boolean).join('\n')));
+    add(row('Population conditions',
+      [condText(q, '03'), condText(q, '04')].filter(Boolean).join(' ')));
 
-    add(row('Shipping & Handling', [
-      sh.usDestination ? usDestinationSentenceFor(q) : '',
-      sh.addresses, sh.detail
-    ].filter(Boolean).join('\n')));
+    var addrText = String(sh.addresses || '');
+    var usLine = sh.usDestination &&
+      addrText.indexOf(usDestinationSentenceFor(q)) === -1
+        ? usDestinationSentenceFor(q) : '';
+    add(row('Shipping & Handling', [usLine, addrText, sh.detail,
+      condText(q, '10')].filter(Boolean).join('\n')));
 
     var tl = q.timeline || {};
     add(row('Study Timeline', [
       tl.kickoffCall ? 'A study kick off call will be scheduled.' : '',
       tl.initiation ? 'Study initiation ' + tl.initiation + '.' : '',
       tl.enrollmentCompletion ? 'Enrollment complete ' + tl.enrollmentCompletion + '.' : '',
-      tl.delivery ? 'Delivery ' + tl.delivery + '.' : ''
+      tl.delivery ? 'Delivery ' + tl.delivery + '.' : '',
+      condText(q, '09')
     ].filter(Boolean).join(' ')));
 
     // ---- costs ---------------------------------------------------------
@@ -2206,7 +2245,9 @@
     // The Total Study Cost breakdown: the extended amount for every line, then
     // the total. A single-line quote just states the total.
     var totalBody = el('div', { class: 'draft-value' });
-    if (lines.rows.length > 1) {
+    var showBreakdown = pr.totalBreakdown == null
+      ? lines.rows.length > 2 : !!pr.totalBreakdown;
+    if (showBreakdown && lines.rows.length > 1) {
       lines.rows.forEach(function (r) {
         totalBody.appendChild(el('div', { class: 'draft-rate' }, [
           el('span', { class: 'draft-amt', text: docMoney(r.amount) }),
@@ -2214,14 +2255,27 @@
             (r.sub ? ' \u2014 ' + r.sub : '') + ')' })]));
       });
     }
+    var capped = !!q.extUpTo ||
+      (q.cohorts || []).some(function (c) { return c.upTo; });
+    var brokeDown = totalBody.childNodes.length > 0;
     totalBody.appendChild(el('div', { class: 'draft-rate draft-grand' }, [
-      el('span', { class: 'draft-amt', text: docMoney(lines.total) }),
+      el('span', { class: 'draft-amt',
+        text: (capped ? 'Up to ' : '') + docMoney(lines.total) }),
       el('span', { text: pr.totalAssumption && !isExt
-        ? '(' + pr.totalAssumption + ')' : '(Total)' })]));
+        ? '(' + pr.totalAssumption + ')'
+        : (brokeDown ? '(Total)' : '') })]));
     doc.appendChild(el('div', { class: 'draft-row' }, [
       el('div', { class: 'draft-label', text: 'Total Study Cost:' }), totalBody]));
 
-    var conds = Object.keys(q.conditions || {}).map(function (k) { return q.conditions[k]; });
+    // Only the clauses with no home section — everything else has already
+    // been printed in the paragraph it qualifies.
+    var placed = {};
+    STUDY_CONDITIONS.forEach(function (c) { if (c.sec) placed[c.id] = 1; });
+    add(row('Pricing conditions', condText(q, '11')));
+
+    var conds = Object.keys(q.conditions || {})
+      .filter(function (k) { return !placed[k]; })
+      .map(function (k) { return q.conditions[k]; });
     if (conds.length) add(row('Study conditions', conds.join('\n')));
     add(row('Notes', q.notes));
 
@@ -2280,7 +2334,7 @@
         return t + extAdditionalOf(c); }, 0);
       if (pr.extMode === 'flat') {
         var flat = num((q.header || {}).perSubject);
-        if (flat) push(docMoney(flat) + ' / subject', 'all cohorts', addl * flat);
+        if (flat) push(docMoney(flat) + ' / subject', 'Biospecimens & Data', addl * flat);
       } else {
         var types = orderedSpecimens(q);
         (q.cohorts || []).forEach(function (c, i) {
@@ -2328,6 +2382,22 @@
       });
     }
 
+    if ((pr.screenfail || {}).enabled) {
+      var sfN = screenfailCases(pr), sfRate = num(pr.screenfail.perSubject);
+      if (sfN && sfRate) {
+        // The quotes state the rate and let the caveat ride with it —
+        // "$600 / subject (capped at 20% of enrollment)".
+        var caveat = String(pr.screenfail.explanation || '').trim();
+        push(docMoney(sfRate) + ' / subject' + (caveat ? ' (' + caveat + ')' : ''),
+          'Screenfails', sfN * sfRate, '', '', 'Screenfail Rate');
+      }
+    }
+
+    if ((q.clinicalData || {}).outcomeData && num(pr.outcomeFee)) {
+      push(docMoney(num(pr.outcomeFee)) + ' / subject', 'Outcome data',
+        subjectsOf(q) * num(pr.outcomeFee), '', '', 'Outcome Data');
+    }
+
     (pr.otherCosts || []).forEach(function (o) {
       var a = otherCostAmount(o);
       if (!a) return;
@@ -2341,7 +2411,7 @@
     var st = quoteShippingTotal(q);
     if (st) {
       var perSub = (q.shipping || {}).mode === 'perSubject';
-      if (perSub && isExt) {
+      if ((q.shipping || {}).mode === 'perSpecimen') {
         var rates = ((q.shipping || {}).specimenRates) || {};
         var shipN = subjectsOf(q) +
           (((pr.screenfail || {}).shipped) ? screenfailCases(pr) : 0);
@@ -2434,8 +2504,8 @@
         : num(leg.rate);
       return t + lc * lr; }, 0) * (num(sh.markup) || 1);
 
+    if (sh.mode === 'perSpecimen') return subjects * extShippingPerSubject(q);
     if (sh.mode === 'perSubject') {
-      if (isExt) return subjects * extShippingPerSubject(q);
       var per = typed !== '' ? num(typed) : (subjects ? cost / subjects : 0);
       return per * subjects;
     }
@@ -3472,6 +3542,27 @@
       draft.cohorts = draft.cohorts || [];
       var rows = el('div', { class: 'cohorts' });
       var totalEl = el('span', { class: 'ca strong' });
+
+      sec.appendChild(checkbox('This count is a maximum ("up to")',
+        function () { return !!draft.extUpTo; },
+        function (v) { draft.extUpTo = v; },
+        function () { refreshDrafts(); }));
+
+      sec.appendChild(field('Population note', { type: 'textarea', rows: 2, full: true,
+        placeholder: 'e.g. MT Group and Natera will mutually agree in writing on '
+                   + 'enrollment allocations per cancer type. Early-stage cancers '
+                   + 'are preferred to the extent possible.',
+        hint: 'Prose that goes above the numbers. Use it when the split between '
+            + 'types is settled later rather than in the quote.',
+        get: function () { return draft.populationNote; },
+        set: function (v) { draft.populationNote = v; } }));
+
+      sec.appendChild(field('Types enrolled', { type: 'textarea', rows: 3, full: true,
+        placeholder: 'Cervical\nColorectal\nGastroesophageal\nHead & neck',
+        hint: 'One per line \u2014 each becomes a bullet. For a pooled population '
+            + 'with no count per type.',
+        get: function () { return draft.populationTypes; },
+        set: function (v) { draft.populationTypes = v; } }));
 
       function recompute() {
         totalEl.textContent = String(draft.cohorts.reduce(function (s, c) {
@@ -4702,12 +4793,10 @@
     function shippingTotal() {
       var sh = shipState();
       var typed = String(sh.override == null ? '' : sh.override).trim();
+      if (sh.mode === 'perSpecimen') {
+        return quoteSubjects() * extShippingPerSubject(draft);
+      }
       if (sh.mode === 'perSubject') {
-        // On an extension the rate is per biospecimen, summed over the types
-        // ticked, and there is no calculated figure to fall back on.
-        if (isMinimal()) {
-          return quoteSubjects() * extShippingPerSubject(draft);
-        }
         var per = typed !== '' ? num(typed) : shippingPerSubject();
         return per * quoteSubjects();
       }
@@ -4811,17 +4900,23 @@
         modeBox.replaceChildren();
         var minimalTrack = isMinimal();
         var per = sh.mode === 'perSubject';
-        modeBox.appendChild(el('div', { class: 'check-row' }, [
-          radio('shipmode', 'Quote as a lump sum', !per, function () {
+        var perSpec = sh.mode === 'perSpecimen';
+        var modes = [
+          radio('shipmode', 'Quote as a lump sum', !per && !perSpec, function () {
             sh.mode = 'lump'; sh.override = ''; refresh(); }),
-          radio('shipmode', minimalTrack ? 'Quote per biospecimen' : 'Quote per subject',
-            per, function () {
+          radio('shipmode', 'Quote per subject', per, function () {
             sh.mode = 'perSubject'; sh.override = ''; refresh(); })
-        ]));
+        ];
+        // Per biospecimen is an extension option: a subject giving whole blood
+        // and plasma is two things to ship. Both real extension quotes charge
+        // per subject, so that stays and this is a third choice.
+        if (minimalTrack) {
+          modes.push(radio('shipmode', 'Quote per biospecimen', perSpec, function () {
+            sh.mode = 'perSpecimen'; sh.override = ''; refresh(); }));
+        }
+        modeBox.appendChild(el('div', { class: 'check-row' }, modes));
 
-        // On an extension the charge is per biospecimen: one rate for each
-        // type ticked in §03, times the subjects it is collected from.
-        if (minimalTrack && per) {
+        if (perSpec) {
           sh.specimenRates = sh.specimenRates || {};
           var types = orderedSpecimens(draft);
           if (!types.length) {
@@ -5496,6 +5591,16 @@
       sec.appendChild(subHead('Other costs'));
       paintOther();
       sec.appendChild(otherBox);
+
+      sec.appendChild(checkbox('Break the total down by cost line',
+        function () {
+          return pr.totalBreakdown == null
+            ? draftCostLines(draft).rows.length > 2 : !!pr.totalBreakdown;
+        },
+        function (v) { pr.totalBreakdown = v; }));
+      sec.appendChild(el('div', { class: 'hint',
+        text: 'On: "$471,900 (Cancer) / $28,600 (Shipping) / $500,500 (Total)". '
+            + 'Off: just the total. Both appear in real quotes.' }));
 
       if (!ext) {
         sec.appendChild(field('What the total assumes', { full: true,
