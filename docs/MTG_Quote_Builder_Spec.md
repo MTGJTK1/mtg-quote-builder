@@ -1957,3 +1957,73 @@ now groups the specimens by handling temperature and states them there —
 
 **The breakdown toggle moved to §12** (item 13). It is a presentation choice, so
 it sits with payment terms and notes rather than in pricing.
+
+## §32 — Sixth-pass rep review, 2026-09-01
+
+### The cohort name box emptied as you typed it (item 2)
+
+`cleanCohortName()` strips a numbering prefix, because the document adds one.
+It was running on **every keystroke**, so typing "Cohort…" cleared the box
+letter by letter — the rep could never get past the word. It now runs on blur,
+once the word is finished, on both the full and the extension track.
+
+The regex was also too eager: `^\s*cohort\s*\d*\s*[:.–-]?\s*` matched the bare
+word, so "Cohort of healthy donors" became "of healthy donors". It now requires
+a real prefix — a number ("Cohort 2: x", "Cohort 1 x") or a separator
+("Cohort: x") — and leaves a description that merely opens with the word alone.
+
+**Fifth site of the repaint-during-typing family, and a new variant: it is not
+only repainting that eats input — transforming the value on every keystroke does
+the same.**
+
+### Form (items 1, 3, 5, 11, 12)
+
+- **"+ Add cohort" sits above the total**, inside the table, where the row it
+  adds will appear.
+- **Slides** comes off the tissue list; the free-text "other" boxes carry it
+  with a price of their own. A **second "Other"** is added for a study needing
+  two unlisted things at once.
+- **"Provided by the sponsor"** now appears only when something selected is
+  collected into a tube or a kit (`needsCollectionKit`). Tissue and FFPE come
+  from theatre and the block archive; there is nothing to send.
+- **Processing protocol** loses `process` on Fresh tissue and FFPE, so it is
+  hidden for both.
+- **Screenfails** are hidden when everything selected is `archival` (FFPE,
+  slides) — an archive pull screens nobody — and the flag is cleared so a
+  stale rate cannot survive in the total.
+
+Both blocks live in containers repainted by the specimen selection. Gating a
+field on `orderedSpecimens()` at build time only works until the rep ticks
+something; three fields were caught by that in this pass alone.
+
+### FFPE is priced per block (item 4)
+
+The per-cohort table gains a fourth column when a `blocks` specimen is selected:
+**Cohort | Subjects | Blocks / subject | $ per block | Subtotal**. Blocks per
+subject is read from §05 rather than retyped, seeds `pricing.cohortPer` and sets
+the unit to "block". 40 subjects × 2 blocks × $300 = $24,000. The §05 amount
+field now calls `pricingRefresh()` so the column follows it.
+
+### Extension shipping build-up removed again (item 6)
+
+**This re-reverses §31's item 8, which had reverted §28.** The position is now
+settled: an extension quotes a shipping figure and does not rebuild the cost
+behind it, because the override field is the price. If it moves a third time,
+the deciding question is whether the rep works out shipping cost inside an
+extension or carries it over from the parent.
+
+### Document (items 7, 8, 9, 10)
+
+- **"Net 30 days"** capitalised.
+- **The header block is one group.** Requestor, client, quote date and quote
+  number sit on consecutive lines, as the quotes print them; the blank line is
+  saved for between sections (`.draft-tight`).
+- **Acronyms keep their capitals in prose.** `specimenProse()` lowercases a
+  specimen name to sit in a sentence unless it is all-caps — "ffpe" read as a
+  typo. Applied at all nine prose sites.
+- **The total breakdown reads "$618,750 (Cancer)"** with a single space.
+  `.draft-amt` had a 96px minimum width, which set the descriptor across a tab
+  stop.
+- A bare count now carries its noun: "FFPE — 2" is meaningless, so specs whose
+  amount is a number gain `amountReads` ("blocks per subject", "swabs per
+  subject") and it prints as "FFPE — 2 blocks per subject".
