@@ -2027,3 +2027,82 @@ extension or carries it over from the parent.
 - A bare count now carries its noun: "FFPE — 2" is meaningless, so specs whose
   amount is a number gain `amountReads` ("blocks per subject", "swabs per
   subject") and it prints as "FFPE — 2 blocks per subject".
+
+## §33 — Seventh-pass rep review, 2026-09-01
+
+### Data entry, third report — fixed and now guarded by a sweep
+
+Two more fields dropped everything after the first keystroke:
+
+- **A shipping leg's count and rate** called `refresh()`, which repaints the
+  legs. Each row now updates its own "our cost" cell through `refreshDerived()`,
+  which does the totals without touching the leg rows. The list is repainted
+  only when a leg is added or removed.
+- **"Tubes per subject"** repainted the whole specimen card to add tube blocks,
+  taking its own input with it. The blocks live in their own container now.
+
+Three reports of the same class of bug is a process failure, not three
+coincidences. There is now **`sweep.js`**: it types a multi-character value into
+**every** text input the form offers, across a prospective quote, a
+retrospective quote and a minimal extension — 116 inputs — re-querying the list
+before each field so a repaint caused by one cannot be blamed on the next. It
+reports any field that does not hold what was typed. It found both faults above
+and now passes clean. **Run it after any change that touches a paint function.**
+
+### Retrospective quotes stop asking prospective questions
+
+A retrospective pull collects nothing, so: **no collection protocol document**
+(§03), **no collection timepoints section** at all, and the specimens that must
+come from a live subject are simply **not listed** — the notice explaining what
+had been removed was itself the clutter.
+
+**Sponsor-selected cases removes the cohort cards entirely.** With the cases
+already chosen there is no population to describe and nothing to count; §03
+shows only the case list or the document naming it.
+
+### Conditions
+
+Two more retired: **"subjects may have been collected before"** (redundant) and
+**"diagnosis may be confirmed after enrollment"** (rare enough for the notes
+box). Six remain.
+
+Clauses can now be limited by context, and one that cannot apply is not offered:
+
+- `prospectiveOnly` — hidden on a retrospective-only quote.
+- `bloodOnly` — hidden unless a blood product is selected.
+
+**"Subjects may enroll in another study"** is now *"Subjects may be enrolled in
+another {S} study."* — naming the sponsor and reading as something done to the
+subject. **"Subjects may be drawn more than once"** moved from §04 to §05, is
+prospective- and blood-only, and reads *"Subjects may be drawn more than once to
+meet the blood volume requirements."*
+
+### Pricing and shipping
+
+- **The outcome / follow-up data fee** appears in §11 as soon as the box is
+  ticked in §07. It was decided when §11 was built, so ticking it later left
+  nowhere to price it.
+- **The shipping legs block is named** "Shipping pricing — MT Group's internal
+  shipping cost estimates".
+- **The shipping price is a proposal, not a fixed figure.** The box comes
+  pre-filled with what the legs work out to (cost × markup) and the rep types
+  over it. It was a placeholder before, which read as "empty box beside a number
+  you cannot change".
+
+### The preview will not open on an unfinished quote
+
+`missingForQuote()` lists what is still needed and the preview shows that
+instead of a document: the client and a service type (§01), at least one
+biospecimen, a cohort with a description and a count, and a price. Cohorts and
+counts are skipped when the sponsor has picked the cases, since there is no
+population to count. Anything a real quote could legitimately omit is not on the
+list.
+
+### A caution recorded
+
+Removing the three conditions by cutting from `{ id: '…',` to the next `' },`
+silently ate the closing `];` and five constants that followed
+(`STATUSES`, `PRICE_UNITS`, `CRITERIA_HINT`, `SERVICE_TYPES`, `TUBE_TYPES`,
+`TUBE_SIZES`). `node --check` passed — they were only missing declarations, not
+a syntax error — and the failure showed up as `STATUSES is not defined` at
+runtime. **A structural edit needs a page load, not just a syntax check.**

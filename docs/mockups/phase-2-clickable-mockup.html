@@ -694,6 +694,14 @@
     font-size: 14.5px; line-height: 1.45;
     max-width: 780px;
   }
+  .draft-gaps {
+    max-width: 780px; border: 1px solid var(--needed);
+    background: var(--needed-bg); border-radius: 10px; padding: 18px 22px;
+    font-family: var(--sans);
+  }
+  .draft-gaps strong { color: var(--needed); display: block; margin-bottom: 6px; }
+  .draft-gaps p { margin: 0; color: var(--ink); }
+
   .draft-stamp {
     display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
     background: var(--accent-soft); border: 1px solid var(--rule);
@@ -1116,25 +1124,15 @@
       text: 'It is understood that if freight charges increase dramatically '
           + 'during the study execution, shipping & handling costs may also be '
           + 'increased.' },
-    { id: 'crossEnroll', sec: '03', label: 'Subjects may enroll in another study',
-      text: 'It is acceptable that subjects enrolled in this study also enroll '
-          + '(or be enrolled) in another {S} study with MT Group.' },
-    { id: 'priorCollect', sec: '03', label: 'Subjects may have been collected before',
-      text: 'It is acceptable for subjects to have been previously collected '
-          + 'for another {S} study.' },
-    { id: 'repeatDraw', sec: '04', label: 'Subjects may be drawn more than once',
-      text: 'It is acceptable for MT Group sites to draw subjects at multiple '
-          + 'times as long as the inclusion / exclusion criteria are met.' },
-    { id: 'confirmWindow', sec: '03',
-      label: 'Diagnosis may be confirmed after enrollment',
-      text: 'For suspected cancer subjects, it is acceptable that definitive '
-          + 'confirmation of cancer / non-cancer can occur up to 6 months after '
-          + 'enrollment.' }
+    { id: 'crossEnroll', sec: '03', prospectiveOnly: true,
+      label: 'Subjects may be enrolled in another study',
+      text: 'Subjects may be enrolled in another {S} study.' },
+    { id: 'repeatDraw', sec: '05', bloodOnly: true, prospectiveOnly: true,
+      label: 'Subjects may be drawn more than once',
+      text: 'Subjects may be drawn more than once to meet the blood volume '
+          + 'requirements.' }
   ];
 
-  // What a price is quoted per. Every one of these is taken from a real Natera
-  // quote: subject, draw, stool, case, report, shipper. The unit changes the
-  // arithmetic as well as the wording — 120 draws is not 120 subjects.
   // "Other" keeps the free-text escape hatch for a tube nobody has used yet.
   var TUBE_TYPES = ['Streck', 'K2EDTA', 'EDTA', 'PaxGene DNA', 'PaxGene RNA',
     'Sodium heparin', 'Lithium heparin', 'ACD', 'SST / serum separator',
@@ -1143,6 +1141,9 @@
   var TUBE_SIZES = ['2.5 mL', '3 mL', '4 mL', '5 mL', '6 mL', '8.5 mL',
     '10 mL', 'Other'];
 
+  // What a price is quoted per. Every one of these is taken from a real Natera
+  // quote: subject, draw, stool, case, report, shipper. The unit changes the
+  // arithmetic as well as the wording — 120 draws is not 120 subjects.
   var PRICE_UNITS = ['subject', 'draw', 'case', 'collection', 'stool', 'aliquot',
                      'block', 'slide', 'report', 'shipper'];
 
@@ -2064,6 +2065,42 @@
     }).map(function (c) { return picked[c.id]; }).join(' ');
   }
 
+  /** What a quote must carry before it can be previewed. Each entry names the
+   *  section to go back to, so the rep is told where to finish rather than
+   *  just that something is missing. */
+  function missingForQuote(q) {
+    var out = [];
+    var isExt = !!q.isExtension && (q.header || {}).designChanged === false;
+    var casesPicked = isRetrospectiveOnly(q) && !!(q.header || {}).sponsorSelected;
+    var pr = q.pricing || {};
+
+    if (!String(q.client || '').trim()) out.push('the client, in \u00a701');
+    if (!((q.header || {}).serviceTypes || []).length && !isExt) {
+      out.push('a service type \u2014 retrospective or prospective \u2014 in \u00a701');
+    }
+    if (!orderedSpecimens(q).length) out.push('at least one biospecimen');
+
+    // With the cases already chosen there is no population to count.
+    if (!casesPicked) {
+      var cohorts = q.cohorts || [];
+      if (!cohorts.length) out.push('at least one cohort');
+      else {
+        var unnamed = cohorts.filter(function (c) {
+          return !String(c.name || '').trim(); }).length;
+        if (unnamed) out.push('a description for every cohort');
+        var counted = cohorts.filter(function (c) {
+          return (isExt ? extAdditionalOf(c) : cohortSubjects(c)) > 0; }).length;
+        if (!counted) {
+          out.push(isExt ? 'the number of additional subjects'
+                         : 'the number of subjects or units per cohort');
+        }
+      }
+    }
+
+    if (!draftCostLines(q).total) out.push('a price');
+    return out;
+  }
+
   function renderInternalDraft(id) {
     var q = previewDraft ||
       quotes.filter(function (x) { return x.id === id; })[0];
@@ -2075,6 +2112,18 @@
         previewDraft = null;
         go(id ? 'edit' : 'new', id);
       } }, ['← Back to the form']));
+
+    var gaps = missingForQuote(q);
+    if (gaps.length) {
+      frag.appendChild(el('div', { class: 'draft-gaps' }, [
+        el('strong', { text: 'Not ready to quote yet' }),
+        el('p', { text: 'The document needs ' +
+          (gaps.length > 1
+            ? gaps.slice(0, -1).join(', ') + ' and ' + gaps[gaps.length - 1]
+            : gaps[0]) + '.' })
+      ]));
+      return frag;
+    }
 
     var doc = el('div', { class: 'draft' });
     var isExt = !!q.isExtension && (q.header || {}).designChanged === false;
@@ -3098,7 +3147,15 @@
      *  than in a list at the end — a rep answers "subjects may have been
      *  collected before" while they are looking at the cohorts, not after. */
     function conditionsFor(sec) {
-      var mine = STUDY_CONDITIONS.filter(function (c) { return c.sec === sec; });
+      var retroOnly = isRetrospectiveOnly(draft);
+      var draws = orderedSpecimens(draft).some(function (t) {
+        return /blood|plasma|serum|buffy|pbmc/i.test(t); });
+      var mine = STUDY_CONDITIONS.filter(function (c) {
+        if (c.sec !== sec) return false;
+        if (c.prospectiveOnly && retroOnly) return false;
+        if (c.bloodOnly && !draws) return false;
+        return true;
+      });
       if (!mine.length) return null;
       var wrap = el('div', { class: 'cond-block' });
       function sponsor() {
@@ -3465,7 +3522,7 @@
       } else {
         restBox.appendChild(sectionApproach());
         restBox.appendChild(sectionPopulation());
-        restBox.appendChild(sectionTimepoints());
+        if (!isRetrospectiveOnly(draft)) restBox.appendChild(sectionTimepoints());
         restBox.appendChild(sectionSpecimens());
         restBox.appendChild(sectionClinicalData());
         restBox.appendChild(sectionReports());
@@ -4038,7 +4095,8 @@
       }
       var oc = checkbox('Outcome / follow-up data required',
         function () { return cd.outcomeData; },
-        function (v) { cd.outcomeData = v; }, paintOutcome);
+        function (v) { cd.outcomeData = v; },
+        function () { paintOutcome(); if (pricingRefresh) pricingRefresh(); });
       oc.style.marginTop = '16px';
       sec.appendChild(oc);
       sec.appendChild(outBox);
@@ -4216,16 +4274,25 @@
         }
       }
 
-      sec.appendChild(field('Collection protocol document', { full: true,
-        placeholder: 'e.g. CRC and healthy collections_ Kit insert',
-        hint: 'Where the collection instructions live, if a document carries them.',
-        get: function () { return draft.collectionDoc; },
-        set: function (v) { draft.collectionDoc = v; } }));
+      var protoBox = el('div');
+      function paintProto() {
+        protoBox.replaceChildren();
+        // Nothing is collected on a retrospective pull, so there is no
+        // collection protocol to name.
+        if (isRetrospectiveOnly(draft)) return;
+        protoBox.appendChild(field('Collection protocol document', { full: true,
+          placeholder: 'e.g. CRC and healthy collections_ Kit insert',
+          hint: 'Where the collection instructions live, if a document carries them.',
+          get: function () { return draft.collectionDoc; },
+          set: function (v) { draft.collectionDoc = v; } }));
+      }
+      sec.appendChild(protoBox);
+      paintProto();
 
       var casesToggle = checkbox('The sponsor has selected the cases',
         function () { return h.sponsorSelected; },
         function (on) { h.sponsorSelected = on; paintCards(); },
-        function () { paintCases(); paintCards(); });
+        function () { paintCases(); paintCards(); renderBody(); });
       sec.appendChild(casesToggle);
       sec.appendChild(casesBox);
       casesRefresh = paintCases;
@@ -4238,6 +4305,13 @@
 
       function paintCards() {
         cards.replaceChildren();
+        if (casesPicked()) {
+          // The cases are already chosen; there is no population left to
+          // describe and nothing to count.
+          paintAllocation();
+          refreshDrafts();
+          return;
+        }
         draft.cohorts.forEach(function (c, i) { cards.appendChild(cohortCard(c, i)); });
         // Allocation note appears only once there is more than one cohort.
         paintAllocation();
@@ -4571,7 +4645,8 @@
           rows.push(field('Tubes per subject', { placeholder: 'e.g. 3',
             inputmode: 'numeric',
             get: function () { return d.tubeCount; },
-            set: function (v) { d.tubeCount = v; }, then: paintDetail }));
+            set: function (v) { d.tubeCount = v; },
+            then: function () { paintTubes(); refreshDrafts(); } }));
         } else if (spec.tubes) {
           rows.push(field('Volume per subject', { placeholder: 'e.g. 8-10 mL',
             hint: 'A range is fine \u2014 tubes do not always fill.',
@@ -4616,11 +4691,13 @@
         }
 
         // --- one block per tube: type, size, and how it is handled
-        if (spec.tubes && d.byTubes) {
+        var tubeBox = el('div', { class: 'tubes' });
+        function paintTubes() {
+          tubeBox.replaceChildren();
+          if (!(spec.tubes && d.byTubes)) return;
           var n = Math.max(0, Math.min(12, parseInt(d.tubeCount, 10) || 0));
           d.tubes = d.tubes || [];
           while (d.tubes.length < n) d.tubes.push({ type: '', size: '', processing: '' });
-          var tubeBox = el('div', { class: 'tubes' });
           for (var k = 0; k < n; k++) {
             (function (tube, k) {
               var row = el('div', { class: 'tube-row' });
@@ -4642,8 +4719,9 @@
               tubeBox.appendChild(row);
             })(d.tubes[k], k);
           }
-          if (n) card.appendChild(tubeBox);
         }
+        card.appendChild(tubeBox);
+        paintTubes();
 
         card.appendChild(timepointPicker(d, t));
 
@@ -4690,24 +4768,14 @@
       // Three parallel columns, unlabelled — the grouping is only there to keep
       // the list short, not to tell the rep anything.
       specimenBoxes = {};
+      // A retrospective-only quote simply does not list the specimens that have
+      // to be collected from a live subject. Saying so was more noise than the
+      // absence of four checkboxes nobody could have used.
       var retroOnly = isRetrospectiveOnly(draft);
-      var dropped = [];
       if (retroOnly) {
         draft.specimenTypes = draft.specimenTypes.filter(function (t) {
-          if (!isRetroImpossible(t)) return true;
-          dropped.push(t); return false;
+          return !isRetroImpossible(t);
         });
-      }
-      if (dropped.length) {
-        sec.appendChild(el('div', { class: 'hint warn',
-          text: dropped.join(', ') + ' removed — these have to be collected '
-              + 'from a live subject, so they cannot be provided '
-              + 'retrospectively. Add a prospective service type in \u00a701 to '
-              + 'offer them.' }));
-      } else if (retroOnly) {
-        sec.appendChild(el('div', { class: 'hint',
-          text: 'This quote is retrospective only, so specimens that have to be '
-              + 'collected from a live subject are not listed.' }));
       }
       sec.appendChild(el('div', { class: 'spec-cols' }, SPECIMEN_GROUPS.map(function (g) {
         return el('div', { class: 'spec-col' }, [].concat(g.items
@@ -4766,11 +4834,19 @@
         }
       };
       sec.appendChild(protocolBox);
-      paintProtocol();
 
       sec.appendChild(detailBox);
       paintDetail();
-      appendIf(sec, conditionsFor('05'));
+
+      var specCondBox = el('div');
+      sec.appendChild(specCondBox);
+      var basePaintProtocol = paintProtocol;
+      paintProtocol = function () {
+        basePaintProtocol();
+        specCondBox.replaceChildren();
+        appendIf(specCondBox, conditionsFor('05'));
+      };
+      paintProtocol();
       return sec;
     }
 
@@ -4935,7 +5011,13 @@
       var modeBox = el('div');
 
       function refresh() {
-        paintLegs(); paintCalc(); paintMode();
+        paintLegs(); refreshDerived();
+      }
+
+      /** Everything downstream of a leg's numbers, without touching the leg
+       *  rows — a text input must never repaint its own container. */
+      function refreshDerived() {
+        paintCalc(); paintMode();
         if (pricingRefresh) pricingRefresh();
       }
       var paintLegsBlock;
@@ -4963,16 +5045,22 @@
             oninput: function () { leg.dest = destIn.value; } });
           destIn.value = leg.dest || '';
 
+          var ourCost = el('span', { class: 'ca dim' });
+          function legRetotal() {
+            ourCost.textContent = money(legCount(sh, leg) * legRate(sh, leg));
+            refreshDerived();
+          }
+
           var countIn = el('input', { type: 'text', inputmode: 'numeric',
             placeholder: leg.toSponsor ? String(batchCount()) : '0',
             'aria-label': 'Number of shipments for leg ' + (i + 1),
-            oninput: function () { leg.count = countIn.value; refresh(); } });
+            oninput: function () { leg.count = countIn.value; legRetotal(); } });
           countIn.value = leg.count == null ? '' : String(leg.count);
 
           var rateIn = el('input', { type: 'text', inputmode: 'decimal',
             'aria-label': 'Cost per shipment for leg ' + (i + 1),
             placeholder: money(num(legIsIntl(sh, leg) ? sh.intlRate : sh.usRate)),
-            oninput: function () { leg.rate = rateIn.value; refresh(); } });
+            oninput: function () { leg.rate = rateIn.value; legRetotal(); } });
           rateIn.value = leg.rate == null ? '' : String(leg.rate);
 
           var locked = !!(leg.toSponsor && sh.usDestination);
@@ -4989,9 +5077,10 @@
             nameIn, destIn,
             el('span', { class: 'ca' }, [countIn]),
             el('span', { class: 'ca' }, [rateIn]),
-            el('span', { class: 'ca dim', text: money(legCount(sh, leg) * legRate(sh, leg)) }),
+            ourCost,
             x
           ]));
+          ourCost.textContent = money(legCount(sh, leg) * legRate(sh, leg));
           legsBox.appendChild(el('label', { class: 'check ship-intl' }, [
             intl, el('span', { text: locked
               ? 'Domestic \u2014 the quote states a US destination'
@@ -5101,7 +5190,15 @@
           hint: minimal ? '' :
             'For when shipping is too expensive to show and the cost gets buried in '
               + 'the per-specimen figure \u2014 enter 0 here and raise the specimen prices.',
-          get: function () { return sh.override; },
+          get: function () {
+            if (String(sh.override == null ? '' : sh.override).trim() !== '') {
+              return sh.override;
+            }
+            // Pre-filled with the proposal so the rep sees a price to accept
+            // or type over, rather than an empty box beside a figure.
+            var proposed = per ? shippingPerSubject() : shippingCalculated();
+            return proposed ? proposed.toFixed(2) : '';
+          },
           set: function (v) { sh.override = v; },
           then: function () {
             totalV.textContent = money(shippingTotal());
@@ -5156,7 +5253,8 @@
                 + 'overnight, so there are no legs to cost.' }));
           return;
         }
-        legsWrap.appendChild(subHead('Shipping legs'));
+        legsWrap.appendChild(subHead('Shipping pricing \u2014 MT Group\u2019s '
+          + 'internal shipping cost estimates'));
         legsWrap.appendChild(legsBox);
         legsWrap.appendChild(el('button', { class: 'add-row', type: 'button',
           onclick: function () {
@@ -5749,7 +5847,7 @@
         draft.totalCost = grand ? grand.toFixed(2) : '';
       }
       pricingRefresh = function () {
-        paintMain(); paintScreenfailBlock(); recalc();
+        paintMain(); paintScreenfailBlock(); paintOutcomeFee(); recalc();
       };
 
       paintMain();
@@ -5775,15 +5873,20 @@
       sec.appendChild(sfWrap);
       paintScreenfailBlock();
 
-      if (draft.clinicalData && draft.clinicalData.outcomeData) {
-        sec.appendChild(subHead('Outcome data'));
-        sec.appendChild(el('div', { class: 'grid' }, [
+      var outcomeBox = el('div');
+      function paintOutcomeFee() {
+        outcomeBox.replaceChildren();
+        if (!(draft.clinicalData && draft.clinicalData.outcomeData)) return;
+        outcomeBox.appendChild(subHead('Outcome / follow-up data'));
+        outcomeBox.appendChild(el('div', { class: 'grid' }, [
           field('Outcome data fee ($ per subject)', { inputmode: 'decimal',
             hint: 'Turned on in §07. The description lives there; the fee lives here.',
             get: function () { return pr.outcomeFee; },
             set: function (v) { pr.outcomeFee = v; }, then: recalc })
         ]));
       }
+      sec.appendChild(outcomeBox);
+      paintOutcomeFee();
 
       sec.appendChild(subHead('Other costs'));
       paintOther();
