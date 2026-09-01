@@ -1665,3 +1665,103 @@ Confirmed as **net 30 days** by default. It is a field rather than fixed text
 because the quotes themselves vary — four of the five are net 30 and the adenoma
 quote is net 45. It sits in §12 with net 30 as the placeholder, so a rep only
 touches it on the quote that differs.
+
+## §28 — Extension shipping, screenfails, and conditions in context, 2026-09-01
+
+Eight items from rep review.
+
+### 1. Extension shipping is per biospecimen
+
+An extension ships biospecimens, not subjects — a subject giving whole blood and
+plasma is two things to ship. On the minimal track the second mode is now
+**"Quote per biospecimen"**, and it lists one rate per type ticked in §03
+(`shipping.specimenRates[type]`). `extShippingPerSubject()` sums them, and the
+document names each rate and its extended amount separately.
+
+### 2. Screenfails are a case count, not a percentage
+
+"Cap (%)" is replaced by **"Estimated max screenfail cases"**
+(`pricing.screenfail.maxCases`). A percentage had to be turned back into a
+number of cases to be quoted anyway, and the quote states a number.
+
+### 3. Shipping sits below pricing on an extension
+
+Shipping is the small tail of an extension quote, not something to settle before
+the price. Minimal track order is now 01 Quote header, 02 Additional subjects,
+03 Biospecimens, 04 Pricing, 05 Shipping, 06 Study summary, 07 Additional
+details.
+
+### 4. "Screenfails are shipped" did nothing
+
+The checkbox stored `pricing.screenfail.shipped` and **nothing ever read it**.
+Screenfail cases that get shipped are shipped subjects, so they now count
+towards the per-subject shipping charge in the form, in the document and in the
+export. Verified: 100 subjects at $50 shipping is $5,000; adding 10 shipped
+screenfails makes it $5,500.
+
+### 5. The extension header had no requestor
+
+`renderMinimalHeader()` omitted the sponsor contact name and email, so the
+document's Requestor block was blank unless a lookup happened to fill it. Both
+fields are now on the extension header.
+
+### 6. Summary wording
+
+Now: *"This study is an extension to MT0438 that was quoted under
+"QTE NTA20250724" and ordered under "4500123456"."*
+
+### 7. Fresh specimens cannot be retrospective
+
+Two properties are now explicit on `SPECIMEN_SPEC` rather than inferred from the
+shipping sentence:
+
+- `direct` — ships site-to-sponsor overnight, so there are no legs to cost.
+- `noRetro` — has to be collected from a live subject, so it cannot appear on a
+  retrospective-only quote.
+
+`noRetro` is set on **Fresh tissue, Whole blood, Fresh bone marrow aspirate and
+Synovial tissue**. When retrospective is the only service type those four are
+withdrawn from §05, any already ticked are dropped, and a warning says why.
+Adding a prospective service type brings them back. *This list is a judgement
+call and John should correct it* — everything else in the list can plausibly come
+out of a bank (FFPE, slides, frozen tissue, plasma/serum/buffy/PBMC aliquots,
+urine, saliva, swabs, stool, synovial fluid).
+
+### 8. Study conditions live where they apply
+
+Each clause carries the section it belongs to and is asked there, next to the
+thing it qualifies:
+
+| Section | Clauses |
+|---|---|
+| §03 Population & cohorts | cross-enrollment, previously collected, diagnosis confirmed after enrollment |
+| §04 Collection timepoints | subjects may be drawn more than once |
+| §05 Biospecimens | site draw limit per visit |
+| §09 Timeline & logistics | no early termination, sponsor may halt, enrollment updates |
+| §10 Shipping | freight charges may rise |
+| §11 Pricing | invoiced on samples actually delivered |
+| §12 Additional details | changes are mutually agreed (no better home) |
+
+All eleven are offered exactly once. `conditionsFor(sec)` is the single renderer.
+
+### The header repaint trap — fourth site, fifth occurrence
+
+Typing a requestor name after the MT number sent the keystrokes into the **MT
+number field**. `afterLookup()` called `renderBody()`, which rebuilt the header —
+and the lookup fires on blur, by which time the rep has already moved into the
+next header field. Replacing the inputs underneath them sends what they type to
+whichever node the browser was left holding.
+
+`renderBody(keepHeader)` now leaves the header alone when a lookup calls it, and
+the header's values are written in place by `setUnfocused()`, which never touches
+the input holding focus. `applyStudy()` also stopped overwriting a requestor the
+rep had typed — the same fault the MT number had.
+
+**The rule, restated once more: nothing may rebuild a container while the rep
+could be typing in it.** Update the specific node instead.
+
+### Also
+
+`screenfail_rate` in the analysis export read `pricing.screenfail.rate`, which
+was never a field — the column had always been empty. Replaced by
+`screenfail_price`, `screenfail_max_cases` and `screenfails_shipped`.
