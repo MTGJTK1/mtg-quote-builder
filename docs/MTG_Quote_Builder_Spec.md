@@ -1841,3 +1841,50 @@ now only added when the address box does not already contain it.
 - **Per-week collection caps.** §09 has "Maximum subjects delivered per day";
   500 healthies also caps 75/week for the first two weeks. It fits in free text
   today.
+
+## §30 — Fourth-pass tidy-up of the specimen section, 2026-09-01
+
+### Population note and types enrolled, removed from the extension form
+
+§29 added them so MT2234 extension #2's pooled population could be built. John's
+call is that they do not belong on an extension that keeps its study design, so
+both fields are gone and the document branch that read them has gone with them —
+it was unreachable once nothing could set them.
+
+**Consequence, for John to rule on:** MT2234's bulleted list of ten cancers can
+no longer be captured. Its size line still reads "Cancer (up to 286 additional
+subjects)" and the total still comes to $500,500, but the list of cancer types
+is lost. On the full track the same list would go in the inclusion criteria,
+which already print as bullets; the extension track has no I/E fields.
+
+### "Provided by the sponsor" is part of the Biospecimens paragraph
+
+The document printed it as a row of its own. Every real quote states it inside
+Biospecimens — *"Natera will provide all Streck tubes / collection kits."*,
+*"All Streck tubes will be provided by Natera (PaxGene tubes will be provided by
+MT Group)."* The form field stays where it is, in §05; only the output moved.
+The sentence is composed from the sponsor name plus what the rep typed.
+
+### No processing protocol for unprocessed specimens
+
+Whole blood is delivered as drawn, so asking for a processing protocol document
+is a question with no answer. `isProcessed(type)` is true when a specimen is
+worked up (`process`) or split into aliquots (`aliquoted`); the field appears
+only when something selected qualifies, and repaints as the selection changes —
+ticking plasma brings it back, unticking takes it away.
+
+By that rule the field is hidden for whole blood, fresh bone marrow aspirate,
+slides, and the freeform "other" types; it shows for tissue, FFPE, all the
+aliquoted blood products, urine, saliva, swabs, stool and synovial fluid.
+
+### Tube type and size are lists
+
+Free text on a field with a dozen real answers. `TUBE_TYPES` is Streck, K2EDTA,
+EDTA, PaxGene DNA, PaxGene RNA, sodium and lithium heparin, ACD, SST, CPT and
+Tempus — the first three plus PaxGene DNA are the ones the real quotes name.
+`TUBE_SIZES` runs 2.5 mL to 10 mL.
+
+`pickOrType()` is the shared control: a dropdown that turns into a text box when
+"Other" is chosen, so the list covers the common case without becoming a cage.
+Each tube block keeps its own type and size, which is what MT2230 extension #1
+needs — 2 x 10 mL Streck **and** 2 x 2.5 mL PaxGene DNA on one collection.

@@ -1127,6 +1127,14 @@
   // What a price is quoted per. Every one of these is taken from a real Natera
   // quote: subject, draw, stool, case, report, shipper. The unit changes the
   // arithmetic as well as the wording — 120 draws is not 120 subjects.
+  // "Other" keeps the free-text escape hatch for a tube nobody has used yet.
+  var TUBE_TYPES = ['Streck', 'K2EDTA', 'EDTA', 'PaxGene DNA', 'PaxGene RNA',
+    'Sodium heparin', 'Lithium heparin', 'ACD', 'SST / serum separator',
+    'CPT', 'Tempus', 'Other'];
+
+  var TUBE_SIZES = ['2.5 mL', '3 mL', '4 mL', '5 mL', '6 mL', '8.5 mL',
+    '10 mL', 'Other'];
+
   var PRICE_UNITS = ['subject', 'draw', 'case', 'collection', 'stool', 'aliquot',
                      'block', 'slide', 'report', 'shipper'];
 
@@ -2098,7 +2106,8 @@
         return !isExt || extAdditionalOf(c) > 0; });
       var sizeLines = shown.map(function (c, i) {
         var n = isExt ? extAdditionalOf(c) : cohortSubjects(c);
-        var basis = c.upTo ? 'up to ' : c.estimated ? 'estimating ' : '';
+        var basis = (c.upTo || (isExt && q.extUpTo)) ? 'up to '
+          : c.estimated ? 'estimating ' : '';
         var name = c.name || 'Cohort ' + (i + 1);
         var head = shown.length > 1 ? 'Cohort ' + (i + 1) + '. ' : '';
         return head + name + (n ? ' (' + basis + n +
@@ -2111,32 +2120,7 @@
             (sc.note || '') + (n ? ' (' + n + ')' : ''));
         });
       });
-      // A pooled extension population reads as prose, then the total, then
-      // the types as bullets — the shape MT2234 extension #2 uses.
-      var note = String(q.populationNote || '').trim();
-      var types = String(q.populationTypes || '').split('\n')
-        .map(function (l) { return l.trim(); }).filter(Boolean);
-      if (isExt && (note || types.length)) {
-        var total = (q.cohorts || []).reduce(function (t, c) {
-          return t + extAdditionalOf(c); }, 0);
-        var body = el('div', { class: 'draft-value' });
-        var noun = String(((q.cohorts || [])[0] || {}).name || '').trim().toLowerCase();
-        if (noun && !/s$/.test(noun)) noun += 's';
-        var lead = (q.extUpTo ? 'Up to ' : '') + total + ' total subjects' +
-          (types.length
-            ? ' with the following ' + (noun ? noun + ' ' : '') + 'will be enrolled.'
-            : ' will be enrolled.');
-        body.appendChild(el('div', { text: total ? lead : '' }));
-        if (note) body.appendChild(el('div', { text: note }));
-        if (types.length) {
-          body.appendChild(el('ul', {}, types.map(function (t) {
-            return el('li', { text: t }); })));
-        }
-        doc.appendChild(el('div', { class: 'draft-row' }, [
-          el('div', { class: 'draft-label', text: 'Populations and Size:' }), body]));
-      } else {
-        add(row(isExt ? 'Additional Subjects' : 'Size', sizeLines.join('\n')));
-      }
+      add(row(isExt ? 'Additional Subjects' : 'Size', sizeLines.join('\n')));
     }
 
     // I/E criteria print per cohort, as they do on the multi-cohort quotes.
@@ -2166,6 +2150,10 @@
     // ---- biospecimens --------------------------------------------------
     var specs = orderedSpecimens(q);
     if (specs.length) {
+      // What the sponsor provides is stated inside this paragraph, the way the
+      // quotes read it — "Natera will provide all Streck tubes / collection
+      // kits." — rather than as a row of its own.
+      var provides = String(q.sponsorProvides || '').trim();
       add(row('Biospecimens', specs.map(function (t) {
         var d = (q.specimenDetail || {})[t] || {};
         var spec = SPECIMEN_SPEC[t] || {};
@@ -2175,13 +2163,16 @@
         if (d.freeform) bits.push(d.freeform);
         if (spec.says) bits.push(spec.says.replace(/\.$/, ''));
         return bits.join(' — ');
-      }).join('\n')));
+      }).concat(provides
+        ? [(q.client || 'The sponsor') + ' will provide ' +
+           provides.charAt(0).toLowerCase() + provides.slice(1) +
+           (/[.!?]$/.test(provides) ? '' : '.')]
+        : []).join('\n')));
       var processing = specs.map(function (t) {
         return ((q.specimenDetail || {})[t] || {}).processing; }).filter(Boolean);
       if (processing.length) add(row('Processing', processing.join('\n')));
     }
     add(row('Collection conditions', condText(q, '05')));
-    add(row('Provided by sponsor', q.sponsorProvides));
 
     var cd = q.clinicalData || {};
     add(row('Clinical Data', [
@@ -2431,6 +2422,13 @@
     }
 
     return { rows: rows, total: total };
+  }
+
+  /** Worked up after collection, so there is a protocol to name. Whole blood
+   *  and fresh aspirates are delivered as drawn and have none. */
+  function isProcessed(t) {
+    var spec = SPECIMEN_SPEC[t] || {};
+    return !!(spec.process || spec.aliquoted);
   }
 
   /** Ships site-to-sponsor overnight, so there is nothing to batch. */
@@ -3076,6 +3074,30 @@
       return wrap;
     }
 
+    /** A dropdown of the usual answers that turns into a text box on "Other",
+     *  so the list covers the common case without blocking the unusual one. */
+    function pickOrType(label, options, placeholder, get, set) {
+      var wrap = el('div', { class: 'pick-or-type' });
+      function paint() {
+        var cur = String(get() || '');
+        var known = options.indexOf(cur) > -1 && cur !== 'Other';
+        var listed = known ? cur : (cur ? 'Other' : '');
+        wrap.replaceChildren(field(label, { type: 'select',
+          options: [''].concat(options),
+          get: function () { return listed; },
+          set: function (v) { set(v === 'Other' ? ' ' : v); },
+          then: paint }));
+        if (listed === 'Other') {
+          wrap.appendChild(field(label + ' (other)', {
+            placeholder: placeholder,
+            get: function () { return cur.trim(); },
+            set: function (v) { set(v); } }));
+        }
+      }
+      paint();
+      return wrap;
+    }
+
     function checkbox(label, get, set, onToggle) {
       var box = el('input', { type: 'checkbox', onchange: function () {
         set(box.checked); if (onToggle) onToggle();
@@ -3548,21 +3570,7 @@
         function (v) { draft.extUpTo = v; },
         function () { refreshDrafts(); }));
 
-      sec.appendChild(field('Population note', { type: 'textarea', rows: 2, full: true,
-        placeholder: 'e.g. MT Group and Natera will mutually agree in writing on '
-                   + 'enrollment allocations per cancer type. Early-stage cancers '
-                   + 'are preferred to the extent possible.',
-        hint: 'Prose that goes above the numbers. Use it when the split between '
-            + 'types is settled later rather than in the quote.',
-        get: function () { return draft.populationNote; },
-        set: function (v) { draft.populationNote = v; } }));
 
-      sec.appendChild(field('Types enrolled', { type: 'textarea', rows: 3, full: true,
-        placeholder: 'Cervical\nColorectal\nGastroesophageal\nHead & neck',
-        hint: 'One per line \u2014 each becomes a bullet. For a pooled population '
-            + 'with no count per type.',
-        get: function () { return draft.populationTypes; },
-        set: function (v) { draft.populationTypes = v; } }));
 
       function recompute() {
         totalEl.textContent = String(draft.cohorts.reduce(function (s, c) {
@@ -4378,6 +4386,8 @@
 
     // ---- 05 biospecimens ----------------------------------------------
 
+    var paintProtocol = function () {};
+
     function sectionSpecimens() {
       var sec = el('section', { class: 'sec' });
       sec.appendChild(secHead(secNum('05'), 'Biospecimens'));
@@ -4523,12 +4533,12 @@
               var row = el('div', { class: 'tube-row' });
               row.appendChild(el('span', { class: 'sub-label', text: 'Tube ' + (k + 1) }));
               row.appendChild(el('div', { class: 'grid' }, [
-                field('Tube type', { placeholder: 'e.g. EDTA (K2)',
-                  get: function () { return tube.type; },
-                  set: function (v) { tube.type = v; } }),
-                field('Tube size', { placeholder: 'e.g. 10 mL',
-                  get: function () { return tube.size; },
-                  set: function (v) { tube.size = v; } }),
+                pickOrType('Tube type', TUBE_TYPES, 'e.g. Streck',
+                  function () { return tube.type; },
+                  function (v) { tube.type = v; }),
+                pickOrType('Tube size', TUBE_SIZES, 'e.g. 10 mL',
+                  function () { return tube.size; },
+                  function (v) { tube.size = v; }),
                 field('Processing instructions', { type: 'textarea', rows: 2, full: true,
                   placeholder: 'Double-spin, aliquoting, time to process\u2026',
                   hint: k === 0 ? 'Non-standard processing is one of the most common reasons '
@@ -4619,7 +4629,7 @@
             },
             function () {
               draft.specimensSuggested = false;
-              refreshDrafts(); paintDetail();
+              refreshDrafts(); paintDetail(); paintProtocol();
               if (pricingRefresh) pricingRefresh();
               // Whether the collection is all-fresh decides if §10 has legs at
               // all, so shipping has to be told when the selection changes.
@@ -4646,11 +4656,20 @@
         get: function () { return draft.sponsorProvides; },
         set: function (v) { draft.sponsorProvides = v; } }));
 
-      sec.appendChild(field('Processing protocol document', { full: true,
-        placeholder: 'e.g. Plasma Isolations for Vendor (5).doc',
-        hint: 'Named in the quote, so both sides are working to the same file.',
-        get: function () { return draft.processingDoc; },
-        set: function (v) { draft.processingDoc = v; } }));
+      // Repainted whenever the selection changes: ticking plasma has to bring
+      // the field back, and unticking it has to take it away again.
+      var protocolBox = el('div');
+      paintProtocol = function () {
+        protocolBox.replaceChildren();
+        if (!orderedSpecimens(draft).some(isProcessed)) return;
+        protocolBox.appendChild(field('Processing protocol document', { full: true,
+          placeholder: 'e.g. Plasma Isolations for Vendor (5).doc',
+          hint: 'Named in the quote, so both sides are working to the same file.',
+          get: function () { return draft.processingDoc; },
+          set: function (v) { draft.processingDoc = v; } }));
+      };
+      sec.appendChild(protocolBox);
+      paintProtocol();
 
       sec.appendChild(detailBox);
       paintDetail();
