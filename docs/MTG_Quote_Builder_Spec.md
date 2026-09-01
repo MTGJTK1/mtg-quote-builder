@@ -1888,3 +1888,72 @@ Tempus — the first three plus PaxGene DNA are the ones the real quotes name.
 "Other" is chosen, so the list covers the common case without becoming a cage.
 Each tube block keeps its own type and size, which is what MT2230 extension #1
 needs — 2 x 10 mL Streck **and** 2 x 2.5 mL PaxGene DNA on one collection.
+
+## §31 — Fifth-pass rep review, 2026-09-01
+
+Thirteen items. The three condition removals and the two pricing changes take
+more out of the form than they put in: 114 controls down to 111.
+
+### Cohorts and specimens
+
+**"Up to" is per cohort** (item 1). It was one tick for the whole extension;
+one cohort can be capped while another is exact. The box now sits between the
+cohort name and its count, and the document reads each cohort's own flag again.
+
+**Fresh tissue is specified by weight** (item 2). `MASS` was "Minimum size or
+weight … e.g. 100 mg, or 0.5 cm³"; it is now "Minimum weight … e.g. 100 mg".
+Nobody quotes tissue by volume.
+
+### Three conditions retired (items 3, 7, 10)
+
+Site draw limit per visit, invoiced on samples actually delivered, and changes
+are mutually agreed. All three are rare enough to belong in the notes box rather
+than as standing checkboxes. Eight remain, every one of them with a home
+section — so **§12's conditions block is gone entirely**, as are the document's
+"Collection conditions" and "Pricing conditions" rows and the trailing
+unplaced-clause block. `conditionsFor()` now returns null for a section with
+nothing left, so its call sites go through `appendIf()`.
+
+### Extension pricing (items 4, 5, 6)
+
+The modes are **"Same biospecimen pricing for all cohorts"** and **"Different
+biospecimen pricing per cohort"** — naming what is priced, not just how.
+
+"Same pricing" used to be one box, *Biospecimens & data ($ per subject)*. It is
+now a rate **per biospecimen**, applied to every cohort
+(`pricing.flatSpecimenPrices[type]`), with the carried-over parent rate seeding
+the first type. `extFlatRate()` sums them for the form and the document alike.
+
+That box was also the only place in the tool that said "biospecimens & data".
+Every biospecimen price includes its initial data, so the phrase is gone and the
+hint says so once.
+
+### Shipping cost builder restored on extensions (item 8)
+
+§28 hid the legs, rates, markup and internal-cost calc on an extension, on the
+grounds that the original quote had settled them. In use that was wrong — the
+rep still has to work out what shipping costs before naming a price — so the
+whole build-up is back, and the per-subject field reads as an override again
+because there is once more a calculated figure behind it. **This reverses §28's
+item 2; the newer instruction wins.**
+
+### Summary wording (item 9)
+
+*"This study is an extension to **the** MT2222 **study** that was quoted
+under…"*
+
+### The document (items 11, 12, 13)
+
+**Single-spaced** (item 11). Rows had 4px of padding each, which read as loose
+6-point spacing throughout. Padding is now zero, the line height is 1.45, and
+`.draft-row + .draft-row` carries a `1.45em` top margin — one blank line between
+sections, none inside them. Every other gap in the document is expressed in the
+same `1.45em` unit so the rhythm holds.
+
+**Handling temperature moved to Shipping & Handling** (item 12). "Shipped on dry
+ice" was appended to each biospecimen; it is a shipping statement. The document
+now groups the specimens by handling temperature and states them there —
+*"Whole blood shipped ambient on gel packs. Plasma shipped on dry ice."*
+
+**The breakdown toggle moved to §12** (item 13). It is a presentation choice, so
+it sits with payment terms and notes rather than in pricing.
