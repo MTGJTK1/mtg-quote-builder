@@ -2106,3 +2106,75 @@ silently ate the closing `];` and five constants that followed
 `TUBE_SIZES`). `node --check` passed — they were only missing declarations, not
 a syntax error — and the failure showed up as `STATUSES is not defined` at
 runtime. **A structural edit needs a page load, not just a syntax check.**
+
+## §34 — Eighth-pass rep review, 2026-09-01
+
+The biggest structural change since the document rewrite: pricing and shipping
+both collapse to one table each. 109 controls down to 101.
+
+### Pricing is one table (item 17)
+
+The choice between "price per cohort" and "price per specimen type" is gone.
+Every cohort now lists the biospecimens it collects, each with its own **unit**,
+**units per subject** and **price per unit**:
+
+| Biospecimen | Unit | Units / subject | $ per unit | Subtotal |
+
+That covers every shape the real quotes take — $1,650 a subject, $2,000 a stool
+with two stools each, $1,250 a draw — without asking which mode the rep is in.
+`pricing.lines[cohort][type] = { unit, per, price }` replaces `cohortPrices`,
+`cohortUnits`, `cohortPer` and `specimenPrices`, and the five seeded quotes are
+migrated to it. `cohortLineTotal()` is the one piece of arithmetic, shared by
+the form, the document and the extension carry-over.
+
+A block-counted specimen still fills its own "units per subject" from §05.
+
+### Shipping is one table (items 10–16)
+
+- **"Quote per subject" is "Quote per biospecimen"**, with a rate for each type
+  and a column showing **how many there are to ship** — 25 subjects giving two
+  stools each ships 50. `specimenUnitCount()` counts them, including shipped
+  screenfails.
+- The per-leg **international toggle** and the **"adjust the standard rates and
+  markup"** block are gone. A leg's rate is whatever is typed on it.
+- The internal cost is stated; **the 2× markup line is not**. The price box is
+  still pre-filled with twice cost, but the document no longer explains where
+  that came from, because the rep can change it.
+- **"Shipping price"**, not "override the shipping price", and sized for a
+  figure rather than the full width.
+- The block is headed **"How is shipping quoted"**.
+
+### Sponsor-selected cases (items 3, 4)
+
+With the cases already chosen, §05 is not a set of types to describe but a list
+of IDs. It becomes a table — **Specimen ID | What it is | Detail** — with the
+type from a short list (FFPE, plasma aliquot, buffy coat aliquot, PBMC aliquot,
+other) and a "what kind" box appearing under any row set to *other*. The list
+counts itself, and so does the pasted case list in §03.
+
+### Timeline (items 5–8)
+
+- The kickoff trigger is pre-filled with **"Scheduled ~1 week after receipt of
+  PO"**.
+- **Biospecimen delivery** and **clinical data delivery** are separate boxes;
+  they run on different clocks.
+- The receiving caps — **per day and now per week** — appear only on a
+  prospective collection of fresh tissue, whole blood or urine
+  (`collectsFresh`).
+- **"Blackout delivery days"**.
+
+### Conditions (item 9)
+
+No early termination, sponsor may halt, and enrollment updates are removed.
+Three remain: freight, cross-enrollment and repeat draws. §09 has none.
+
+### Hints (item 2)
+
+Ten hints that restated the label or the placeholder are gone, along with
+"subject counts come from the cohorts below" and "the count above comes from
+§03". A hint now earns its place by saying something the control does not.
+
+### FFPE and tissue (item 1)
+
+Confirmed already correct after §32: FFPE asks only for blocks per subject, and
+the three tissue types ask for a minimum weight and nothing else.
