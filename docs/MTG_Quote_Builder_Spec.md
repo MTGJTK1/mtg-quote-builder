@@ -2226,3 +2226,54 @@ them. `node --check` passed; the page threw `radio is not defined` on load.
 **This is the second time a range replacement has eaten a neighbour.** Replace
 by exact anchors, not by "everything up to the next thing that looks like a
 boundary", and load the page after any structural edit.
+
+## §36 — Tenth-pass rep review, 2026-09-02
+
+### Counts (items 1, 8)
+
+"An estimate" is gone. A count is exact or it is a ceiling, and the choice is
+now a **tick beside the number** rather than a dropdown hedging it three ways.
+That also fixes the report that an exact count printed "estimating" — the third
+state was the only thing that ever produced that word. The caveat still reaches
+the quote where the real one states it: on the total ("estimating 7 negative
+bladder cases"), not on the cohort.
+
+`c.estimated` is dead and removed from the seeded pan-cancer sample.
+
+### Pricing follows the population (item 6a)
+
+A cohort split into subcohorts is now **priced by subcohort**, because that is
+the level the counts live at. `pricingRows(q)` returns each cohort, or each of
+its subcohorts where it has them, and `pricing.lines` is keyed by
+`cohort::1a`. The form, `recalc()`, the document and `specimenUnitCount()` all
+read the same rows. Verified: 6 subjects at $1,500 plus 4 at $1,200 is $13,800.
+
+### Internal-only inputs are red (item 6b)
+
+Site cost, source and the pricing note render in `--danger` under a line reading
+"Internal only — never reaches the sponsor quote." The three hints that used to
+say the same thing per field are gone.
+
+### The document reads as prose (items 9, 10, 11, 12)
+
+- **`sentence()`** ends every drafted line with a full stop, applied to the
+  summary, clinical data, processing, shipping detail, notes and the timeline.
+- **`specimenSentence()`** replaces the dash-joined list. Tubes are grouped and
+  named as the quotes name them: *"Plasma will be collected in 2 x 10 mL Streck
+  tubes and 1 x 4 mL K2EDTA tube and processed according to Plasma Isolations
+  for Vendor (5).doc."* Minimum weights and other amounts print through the same
+  path, which is why they were missing before — the old builder dropped them
+  whenever a tube count was set.
+- **The timeline is sentences.** A rep types a duration, so the generator
+  supplies the verb: "3-4 weeks from PO" becomes *"Site initiation will occur
+  3-4 weeks from PO."* A phrase that already carries a verb is left alone. The
+  per-day and per-week caps, receiving days and blackouts now print too.
+- **Subcohorts print their description** under the cohort they belong to.
+
+### Also
+
+- A **Description** header on the subcohort table; the column had one but no
+  label, which read as missing (item 2).
+- **Tempus** removed from the tube list (item 3).
+- **Diagnosis** added to the clinical data categories (item 4).
+- **"Site initiation"**, not "Study initiation" (item 5).

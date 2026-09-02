@@ -766,6 +766,7 @@
   .cohort-row.ext-cohort { grid-template-columns: 1fr 60px 130px 30px; }
   .cohort-row.blockrow { grid-template-columns: 1fr 80px 110px 100px 100px 30px; }
   .cohort-row.selspec { grid-template-columns: 1fr 170px 1fr 30px; }
+  .check.upto { align-self: end; padding-bottom: 9px; white-space: nowrap; }
   .cohort-row.priceline { grid-template-columns: 1fr 120px 110px 110px 110px; }
   .cohort-row.priceline .indent { padding-left: 14px; }
   .cohort-row.cohort-sub { border-top: 1px solid var(--rule-strong); }
@@ -776,6 +777,20 @@
     padding: 10px 0 14px;
     border-bottom: 1px solid var(--rule);
     margin-bottom: 4px;
+  }
+
+  /* Internal-only inputs are red so a rep can see at a glance what the sponsor
+     will never read. */
+  .internal-only label, .internal-only .lab { color: var(--danger); }
+  .internal-only input, .internal-only textarea {
+    color: var(--danger); border-color: var(--danger-bg);
+  }
+  .internal-only input::placeholder, .internal-only textarea::placeholder {
+    color: var(--danger); opacity: .5;
+  }
+  .internal-note {
+    font-family: var(--sans); font-size: 11.5px; color: var(--danger);
+    margin: 0 0 6px;
   }
 
   .cohort-row.unit {
@@ -1092,7 +1107,8 @@
 
   // ---------------------------------------------------------------- §07 / §08
 
-  var CLINICAL_DATA_CATEGORIES = ['Demographics', 'Medical history', 'Therapeutic history',
+  var CLINICAL_DATA_CATEGORIES = ['Demographics', 'Diagnosis', 'Medical history',
+    'Therapeutic history',
     'Family history', 'Lifestyle factors (smoking, alcohol)',
     'Disease scoring (EASI, PASI, IHS4…)', 'Biomarkers', 'Other'];
 
@@ -1137,7 +1153,7 @@
   // "Other" keeps the free-text escape hatch for a tube nobody has used yet.
   var TUBE_TYPES = ['Streck', 'K2EDTA', 'EDTA', 'PaxGene DNA', 'PaxGene RNA',
     'Sodium heparin', 'Lithium heparin', 'ACD', 'SST / serum separator',
-    'CPT', 'Tempus', 'Other'];
+    'CPT', 'Other'];
 
   var TUBE_SIZES = ['2.5 mL', '3 mL', '4 mL', '5 mL', '6 mL', '8.5 mL',
     '10 mL', 'Other'];
@@ -1439,7 +1455,7 @@
       cohorts: [
         { name: 'Cancer', subjects: 375, subcohorts: [] },
         { name: 'Benign disease', subjects: 150, subcohorts: [] },
-        { name: 'Negative bladder', subjects: 7, estimated: true, subcohorts: [] }],
+        { name: 'Negative bladder', subjects: 7, subcohorts: [] }],
       pricing: {
         lines: {
           'Cancer': { 'Whole blood': { unit: 'subject', price: '1650.00' } },
@@ -2161,7 +2177,7 @@
     add(row('Quote Number', q.quoteNumber || quoteNumber(q), 'draft-tight'));
     doc.appendChild(el('div', { class: 'draft-rule' }));
 
-    add(row('Summary', q.summary));
+    add(row('Summary', sentence(q.summary)));
     add(row('Service Type', (h.serviceTypes || []).length
       ? (h.serviceTypes || []).join(' and ') + ' collection' : ''));
 
@@ -2171,19 +2187,20 @@
       // An extension only lists the cohorts it actually adds subjects to.
       var shown = cohorts.filter(function (c) {
         return !isExt || extAdditionalOf(c) > 0; });
-      var sizeLines = shown.map(function (c, i) {
+      var sizeLines = [];
+      shown.forEach(function (c, i) {
         var n = isExt ? extAdditionalOf(c) : cohortSubjects(c);
-        var basis = c.upTo ? 'up to ' : c.estimated ? 'estimating ' : '';
+        var basis = c.upTo ? 'up to ' : '';
         var name = c.name || 'Cohort ' + (i + 1);
         var head = shown.length > 1 ? 'Cohort ' + (i + 1) + '. ' : '';
-        return head + name + (n ? ' (' + basis + n +
-          (isExt ? ' additional subjects' : ' subjects') + ')' : '');
-      });
-      cohorts.forEach(function (c, i) {
+        sizeLines.push(head + name + (n ? ' (' + basis + n +
+          (isExt ? ' additional subjects' : ' subjects') + ')' : ''));
+        // Each subcohort under the cohort it belongs to, described.
         (c.subcohorts || []).forEach(function (sc, j) {
-          var n = isExt ? num(sc.additionalSubjects) : num(sc.subjects);
+          var sn = isExt ? num(sc.additionalSubjects) : num(sc.subjects);
+          var note = String(sc.note || '').trim();
           sizeLines.push('    ' + (i + 1) + String.fromCharCode(97 + j) + '. ' +
-            (sc.note || '') + (n ? ' (' + n + ')' : ''));
+            (note || 'Subcohort ' + (j + 1)) + (sn ? ' (' + sn + ')' : ''));
         });
       });
       add(row(isExt ? 'Additional Subjects' : 'Size', sizeLines.join('\n')));
@@ -2221,15 +2238,7 @@
       // kits." — rather than as a row of its own.
       var provides = String(q.sponsorProvides || '').trim();
       add(row('Biospecimens', specs.map(function (t) {
-        var d = (q.specimenDetail || {})[t] || {};
-        var spec = SPECIMEN_SPEC[t] || {};
-        var bits = [specimenLabel(q, t)];
-        if (d.tubeCount) bits.push(d.tubeCount + ' tubes per subject');
-        else if (d.amount) {
-          bits.push(d.amount + (spec.amountReads ? ' ' + spec.amountReads : ''));
-        }
-        if (d.freeform) bits.push(d.freeform);
-        return bits.join(' — ');
+        return specimenSentence(q, t);
       }).concat(provides
         ? [(q.client || 'The sponsor') + ' will provide ' +
            provides.charAt(0).toLowerCase() + provides.slice(1) +
@@ -2237,7 +2246,9 @@
         : []).join('\n')));
       var processing = specs.map(function (t) {
         return ((q.specimenDetail || {})[t] || {}).processing; }).filter(Boolean);
-      if (processing.length) add(row('Processing', processing.join('\n')));
+      if (processing.length) {
+        add(row('Processing', processing.map(sentence).join('\n')));
+      }
     }
 
     var cd = q.clinicalData || {};
@@ -2245,7 +2256,7 @@
       (cd.required || []).join(', '),
       (cd.ifAvailable || []).length
         ? 'If available: ' + cd.ifAvailable.join(', ') : '',
-      cd.detail].filter(Boolean).join('\n')));
+      sentence(cd.detail)].filter(Boolean).join('\n')));
     add(row('Population conditions',
       [condText(q, '03'), condText(q, '04')].filter(Boolean).join(' ')));
 
@@ -2271,15 +2282,41 @@
     var usLine = sh.usDestination &&
       addrText.indexOf(usDestinationSentenceFor(q)) === -1
         ? usDestinationSentenceFor(q) : '';
-    add(row('Shipping & Handling', [saysText, usLine, addrText, sh.detail,
-      condText(q, '10')].filter(Boolean).join('\n')));
+    add(row('Shipping & Handling', [saysText, usLine, addrText,
+      sentence(sh.detail), condText(q, '10')].filter(Boolean).join('\n')));
 
+    // Each entry is a duration the rep typed, so the sentence supplies the
+    // verb around it rather than printing the fragment on its own.
     var tl = q.timeline || {};
+    function whenClause(lead, v) {
+      var t = String(v || '').trim();
+      if (!t) return '';
+      // A rep types a duration — "3-4 weeks from PO", "within 30 days" — which
+      // needs a verb to become a sentence. Only a phrase that already carries
+      // one is left alone.
+      var needsVerb = !/^(will|is|are|begins?|occurs?|starts?|takes?|happens?)\b/i.test(t);
+      return sentence(lead + (needsVerb ? ' will occur ' : ' ') + t);
+    }
     add(row('Study Timeline', [
-      tl.kickoffCall ? 'A study kick off call will be scheduled.' : '',
-      tl.initiation ? 'Study initiation ' + tl.initiation + '.' : '',
-      tl.enrollmentCompletion ? 'Enrollment complete ' + tl.enrollmentCompletion + '.' : '',
-      tl.delivery ? 'Delivery ' + tl.delivery + '.' : '',
+      tl.kickoffCall
+        ? sentence('A study kick off call will be scheduled' +
+            (String(tl.kickoffTrigger || '').trim()
+              ? ' ' + String(tl.kickoffTrigger).trim()
+                  .replace(/^Scheduled\s+/i, '') : ''))
+        : '',
+      whenClause('Site initiation', tl.initiation),
+      tl.enrollmentCompletion
+        ? sentence('MT Group expects to complete enrollment ' +
+            String(tl.enrollmentCompletion).trim()) : '',
+      whenClause('Biospecimen delivery', tl.delivery),
+      whenClause('Clinical data delivery', tl.dataDelivery),
+      tl.maxPerDay ? sentence('No more than ' + tl.maxPerDay +
+        ' subjects will be collected and shipped per day') : '',
+      tl.maxPerWeek ? sentence('No more than ' + tl.maxPerWeek +
+        ' subjects will be collected and shipped per week') : '',
+      tl.receivingDays ? sentence('Fresh cases can be received ' +
+        String(tl.receivingDays).trim()) : '',
+      tl.blackouts ? sentence(String(tl.blackouts).trim()) : '',
       condText(q, '09')
     ].filter(Boolean).join(' ')));
 
@@ -2341,7 +2378,7 @@
     doc.appendChild(el('div', { class: 'draft-row' }, [
       el('div', { class: 'draft-label', text: 'Total Study Cost:' }), totalBody]));
 
-    add(row('Notes', q.notes));
+    add(row('Notes', sentence(q.notes)));
 
     // ---- terms ---------------------------------------------------------
     doc.appendChild(el('div', { class: 'draft-tc-head', text: 'TERMS AND CONDITIONS' }));
@@ -2445,22 +2482,20 @@
         push(docMoney(price) + ' / ' + name.toLowerCase(), name, n * price);
       });
     } else {
-      // One line per cohort per biospecimen, as the table is filled in.
+      // One line per priced row per biospecimen, as the table is filled in.
       var fullTypes = orderedSpecimens(q);
-      (q.cohorts || []).forEach(function (c, i) {
-        var key = c.name || ('cohort-' + i);
-        var byType = ((pr.lines || {})[key]) || {};
-        var n = cohortSubjects(c);
-        var ic = (pr.cohortInternal || {})[key] || {};
+      pricingRows(q).forEach(function (row) {
+        var byType = ((pr.lines || {})[row.key]) || {};
+        var ic = (pr.cohortInternal || {})[row.key] || {};
         var first = true;
         fullTypes.forEach(function (t) {
           var l = byType[t] || {};
           var price = num(l.price);
-          if (!price || !n) return;
+          if (!price || !row.n) return;
           var per = num(l.per) || 1;
           var unit = l.unit || 'subject';
-          push(docMoney(price) + ' / ' + unit, c.name || 'Cohort ' + (i + 1),
-            n * per * price, first ? ic.siteCost : '', first ? ic.notes : '',
+          push(docMoney(price) + ' / ' + unit, row.label,
+            row.n * per * price, first ? ic.siteCost : '', first ? ic.notes : '',
             '', fullTypes.length > 1 ? specimenProse(q, t) : '');
           first = false;
         });
@@ -2615,14 +2650,11 @@
   function specimenUnitCount(q, t) {
     var pr = q.pricing || {};
     if (casesPickedFor(q)) return selectedTypeCount(q, t);
-    var isExt = !!q.isExtension && (q.header || {}).designChanged === false;
     var maxPer = 1;
-    var total = (q.cohorts || []).reduce(function (a, c, i) {
-      var key = c.name || ('cohort-' + i);
-      var n = isExt ? extAdditionalOf(c) : cohortSubjects(c);
-      var per = num((((pr.lines || {})[key] || {})[t] || {}).per) || 1;
+    var total = pricingRows(q).reduce(function (a, row) {
+      var per = num((((pr.lines || {})[row.key] || {})[t] || {}).per) || 1;
       if (per > maxPer) maxPer = per;
-      return a + n * per;
+      return a + row.n * per;
     }, 0);
     // A screenfail that gets shipped is a shipped subject like any other.
     if ((pr.screenfail || {}).shipped) total += screenfailCases(pr) * maxPer;
@@ -2634,13 +2666,98 @@
   function parentCohortRates(q) {
     var pr = q.pricing || {}, out = {};
     var types = orderedSpecimens(q);
-    Object.keys(pr.lines || {}).forEach(function (key) {
-      var byType = pr.lines[key] || {};
+    Object.keys(pr.lines || {}).forEach(function (fullKey) {
+      var key = fullKey.split('::')[0];
+      var byType = pr.lines[fullKey] || {};
       var rate = types.reduce(function (t, ty) {
         var l = byType[ty] || {};
         return t + (num(l.per) || 1) * num(l.price);
       }, 0);
       if (rate) out[key] = rate.toFixed(2);
+    });
+    return out;
+  }
+
+  /** Ends a drafted line as a sentence. Everything the generator writes is
+   *  prose in the document, so it is punctuated like prose. */
+  function sentence(text) {
+    var t = String(text || '').trim();
+    if (!t) return '';
+    return /[.!?:;]$/.test(t) ? t : t + '.';
+  }
+
+  /** How many, of what, in what — as the quotes state it. Whole blood drawn
+   *  into tubes reads "collected in 4 x 10 mL Streck tubes", not a list of the
+   *  tubes one per line. */
+  function specimenSentence(q, t) {
+    var d = (q.specimenDetail || {})[t] || {};
+    var spec = SPECIMEN_SPEC[t] || {};
+    var name = specimenLabel(q, t);
+
+    if (d.tubeCount && (d.tubes || []).length) {
+      // Group identical tubes so "4 x 10 mL Streck" stays one phrase, and
+      // keep the order the rep entered them in.
+      var groups = [];
+      (d.tubes || []).slice(0, num(d.tubeCount) || (d.tubes || []).length)
+        .forEach(function (tube) {
+          var key = (tube.size || '') + '|' + (tube.type || '');
+          var hit = groups.filter(function (g) { return g.key === key; })[0];
+          if (hit) hit.n += 1;
+          else groups.push({ key: key, n: 1, size: tube.size, type: tube.type });
+        });
+      var phrases = groups.map(function (g) {
+        return g.n + ' x ' + [g.size, g.type].filter(Boolean).join(' ') + ' tube' +
+          (g.n === 1 ? '' : 's');
+      }).filter(function (x) { return /\d/.test(x); });
+      var lead = name + ' will be collected in ' +
+        (phrases.length
+          ? (phrases.length > 1
+              ? phrases.slice(0, -1).join(', ') + ' and ' + phrases[phrases.length - 1]
+              : phrases[0])
+          : d.tubeCount + ' tubes');
+      var howTo = String(q.processingDoc || '').trim();
+      var perTube = (d.tubes || []).map(function (tube) {
+        return String(tube.processing || '').trim(); }).filter(Boolean);
+      if (howTo) lead += ' and processed according to ' + howTo;
+      else if (perTube.length) lead += ' and processed as follows: ' + perTube.join('; ');
+      return sentence(lead);
+    }
+
+    var bits = [];
+    if (d.tubeCount) bits.push(d.tubeCount + ' tubes per subject');
+    else if (d.amount) bits.push(d.amount + (spec.amountReads ? ' ' + spec.amountReads : ''));
+    if (d.freeform) bits.push(d.freeform);
+    if (!bits.length) return sentence(name);
+    return sentence(name + ' \u2014 ' + bits.join(', '));
+  }
+
+  /** The rows a quote is priced over: each cohort, or each of its subcohorts
+   *  where it has them. The key is what `pricing.lines` is indexed by. */
+  function pricingRows(q) {
+    var isExt = !!q.isExtension && (q.header || {}).designChanged === false;
+    var out = [];
+    (q.cohorts || []).forEach(function (c, i) {
+      var base = c.name || ('cohort-' + i);
+      var subs = c.subcohorts || [];
+      if (subs.length) {
+        subs.forEach(function (sc, j) {
+          var label = (i + 1) + String.fromCharCode(97 + j);
+          out.push({
+            key: base + '::' + label,
+            label: (c.name || 'Cohort ' + (i + 1)) + ' \u2014 ' +
+                   (String(sc.note || '').trim() || label),
+            n: num(isExt ? sc.additionalSubjects : sc.subjects),
+            cohort: c, cohortIndex: i
+          });
+        });
+      } else {
+        out.push({
+          key: base,
+          label: c.name || 'Cohort ' + (i + 1),
+          n: isExt ? extAdditionalOf(c) : cohortSubjects(c),
+          cohort: c, cohortIndex: i
+        });
+      }
     });
     return out;
   }
@@ -2653,13 +2770,11 @@
   }
 
   /** What one cohort's biospecimen lines come to. */
-  function cohortLineTotal(q, pr, c, ci) {
-    var key = c.name || ('cohort-' + ci);
-    var lines = ((pr || {}).lines || {})[key] || {};
-    var n = cohortSubjects(c);
+  function rowLineTotal(q, pr, row) {
+    var lines = ((pr || {}).lines || {})[row.key] || {};
     return orderedSpecimens(q).reduce(function (t, ty) {
       var l = lines[ty] || {};
-      return t + n * (num(l.per) || 1) * num(l.price);
+      return t + row.n * (num(l.per) || 1) * num(l.price);
     }, 0);
   }
 
@@ -4245,7 +4360,7 @@
       }
 
       sec.appendChild(el('div', { class: 'grid' }, [
-        field('Study initiation', { placeholder: 'e.g. 3-4 weeks from PO',
+        field('Site initiation', { placeholder: 'e.g. 3-4 weeks from PO',
           get: function () { return tl.initiation; }, set: function (v) { tl.initiation = v; } }),
         field('Enrollment completion', { placeholder: 'e.g. 6-9 months',
           hint: 'Free text so ranges work. This range guides the batching plan below.',
@@ -4418,23 +4533,20 @@
           subjFld._input.value = String(cohortSubjects(c));
         }
 
-        // "Up to this number" and "this is an estimate" were two checkboxes
-        // hedging one number, and nothing stopped a rep ticking both. One
-        // control, three states, and it is the wording the quote prints — the
-        // pan-cancer quote totals its negative-bladder cohort as
-        // "estimating 7 cases".
-        var countBasis = field('This count is', { type: 'select',
-          options: ['exact', 'a maximum — up to this number', 'an estimate'],
-          get: function () {
-            if (c.upTo) return 'a maximum — up to this number';
-            if (c.estimated) return 'an estimate';
-            return 'exact';
-          },
-          set: function (v) {
-            c.upTo = v.indexOf('maximum') > -1;
-            c.estimated = v === 'an estimate';
-          },
-          then: function () { refreshDrafts(); if (pricingRefresh) pricingRefresh(); } });
+        // A count is exact or it is a ceiling. One tick beside the number
+        // says which, rather than a dropdown hedging it three ways.
+        var upToBox = el('input', { type: 'checkbox',
+          'aria-label': 'Subject count for ' + (c.name || 'cohort ' + (i + 1))
+            + ' is a maximum',
+          onchange: function () {
+            c.upTo = upToBox.checked;
+            c.estimated = false;
+            refreshDrafts();
+            if (pricingRefresh) pricingRefresh();
+          } });
+        upToBox.checked = !!c.upTo;
+        var countBasis = el('label', { class: 'check upto' },
+          [upToBox, el('span', { text: 'Up to' })]);
 
         var top;
         if (casesPicked()) {
@@ -4506,7 +4618,7 @@
           rows.appendChild(el('div', { class: 'cohort-row ext cohort-head' }, [
             el('span', { text: 'Subcohort' }),
             el('span', { class: 'ca', text: casesPicked() ? '# units' : '# subjects' }),
-            el('span', {}), el('span', {}), el('span', {})]));
+            el('span', { text: 'Description' }), el('span', {}), el('span', {})]));
           c.subcohorts.forEach(function (sc, j) {
             var label = (i + 1) + String.fromCharCode(97 + j);
             var noteIn = el('input', { type: 'text',
@@ -5609,20 +5721,19 @@
           el('span', { class: 'ca', text: 'Subtotal' })
         ]));
 
-        draft.cohorts.forEach(function (c, ci) {
-          var key = c.name || ('cohort-' + ci);
-          var n = cohortSubjects(c);
+        pricingRows(draft).forEach(function (row) {
+          var key = row.key, n = row.n;
           pr.lines[key] = pr.lines[key] || {};
-          var cohortSub = el('span', { class: 'ca strong' });
+          var rowSub = el('span', { class: 'ca strong' });
 
           grid.appendChild(el('div', { class: 'cohort-row priceline cohort-sub' }, [
-            el('span', { class: 'strong', text: c.name || 'Cohort ' + (ci + 1) }),
+            el('span', { class: 'strong', text: row.label }),
             el('span', { class: 'dim', text: n ? n + (n === 1 ? ' subject' : ' subjects') : '' }),
-            el('span', {}), el('span', {}), cohortSub
+            el('span', {}), el('span', {}), rowSub
           ]));
 
-          function cohortRetotal() {
-            cohortSub.textContent = money(cohortLineTotal(draft, pr, c, ci));
+          function rowRetotal() {
+            rowSub.textContent = money(rowLineTotal(draft, pr, row));
             recalc();
           }
 
@@ -5638,11 +5749,11 @@
             var sub = el('span', { class: 'ca' });
             function retotal() {
               sub.textContent = money(n * (num(line.per) || 1) * num(line.price));
-              cohortRetotal();
+              rowRetotal();
             }
 
             var unitSel = el('select', {
-              'aria-label': t + ' unit for ' + (c.name || 'cohort ' + (ci + 1)),
+              'aria-label': t + ' unit for ' + row.label,
               onchange: function () { line.unit = unitSel.value; retotal(); } });
             PRICE_UNITS.forEach(function (u) {
               unitSel.appendChild(el('option', { value: u, text: u }));
@@ -5650,12 +5761,12 @@
             unitSel.value = line.unit || 'subject';
 
             var perIn = el('input', { type: 'text', inputmode: 'numeric', placeholder: '1',
-              'aria-label': t + ' units per subject for ' + (c.name || 'cohort ' + (ci + 1)),
+              'aria-label': t + ' units per subject for ' + row.label,
               oninput: function () { line.per = perIn.value; retotal(); } });
             perIn.value = line.per == null ? '' : String(line.per);
 
             var priceIn = el('input', { type: 'text', inputmode: 'decimal',
-              'aria-label': t + ' $ per unit for ' + (c.name || 'cohort ' + (ci + 1)),
+              'aria-label': t + ' $ per unit for ' + row.label,
               oninput: function () { line.price = priceIn.value; retotal(); } });
             priceIn.value = line.price == null ? '' : String(line.price);
 
@@ -5669,22 +5780,22 @@
             ]));
           });
 
-          cohortSub.textContent = money(cohortLineTotal(draft, pr, c, ci));
+          rowSub.textContent = money(rowLineTotal(draft, pr, row));
 
-          // Site cost, source and the internal note, per cohort.
+          // Site cost, source and the internal note, per priced row.
           pr.cohortInternal = pr.cohortInternal || {};
           var ic = pr.cohortInternal[key] = pr.cohortInternal[key] || {};
-          var internal = el('div', { class: 'cohort-internal' });
+          var internal = el('div', { class: 'cohort-internal internal-only' });
+          internal.appendChild(el('div', { class: 'internal-note',
+            text: 'Internal only \u2014 never reaches the sponsor quote.' }));
           internal.appendChild(el('div', { class: 'grid' }, [
             field('Site cost + stipend', { placeholder: 'context only', inputmode: 'decimal',
-              hint: 'Reference only \u2014 not added to the total.',
               get: function () { return ic.siteCost; },
               set: function (v) { ic.siteCost = v; } }),
             field('Source', { placeholder: 'who quoted it, and when',
               get: function () { return ic.source; },
               set: function (v) { ic.source = v; } }),
             field('Pricing notes (internal)', { type: 'textarea', rows: 2, full: true,
-              hint: 'Internal draft only \u2014 never reaches the sponsor document.',
               placeholder: 'e.g. already floated $1,600, sponsor pushed back',
               get: function () { return ic.notes; },
               set: function (v) { ic.notes = v; } })
@@ -5828,11 +5939,11 @@
           });
           if (!lines.length) lines.push(['Biospecimens', 0]);
         } else {
-          draft.cohorts.forEach(function (c, i) {
-            var line = cohortLineTotal(draft, pr, c, i);
+          pricingRows(draft).forEach(function (row) {
+            var line = rowLineTotal(draft, pr, row);
             if (!line) return;
             specimenTotal += line;
-            lines.push([(c.name || 'Cohort ' + (i + 1)), line]);
+            lines.push([row.label, line]);
           });
           if (!lines.length) lines.push(['Biospecimens', 0]);
         }
