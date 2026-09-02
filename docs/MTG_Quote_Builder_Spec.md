@@ -2178,3 +2178,51 @@ Ten hints that restated the label or the placeholder are gone, along with
 
 Confirmed already correct after §32: FFPE asks only for blocks per subject, and
 the three tissue types ask for a minimum weight and nothing else.
+
+## §35 — Ninth-pass rep review, 2026-09-02
+
+### The sponsor-selected path was a dead end (items 4, 5, 8, 9)
+
+Reported as "the pricing and shipping biospecimen lists aren't linked". They
+are, on every other path — the failure was specific to a quote where the sponsor
+has picked the cases. There, §05 collects specimen **IDs**, so
+`draft.specimenTypes` stays empty and both tables had nothing to list. §03 also
+still asked for the case numbers as free text, collecting the same list twice.
+
+The case list is now the population, and the whole chain reads from it:
+
+- `quoteSpecimenTypes(q)` returns the ticked types normally, and the **distinct
+  types named in the case list** on a sponsor-selected quote.
+- `selectedTypeCount(q, name)` counts them, so pricing and shipping both show
+  how many of each there are.
+- §11 prices each type once over that count (`pricing.selectedPrices`); §10
+  ships the same list. Two FFPE blocks and one plasma aliquot price and ship as
+  three things.
+- Choosing "list the biospecimens here" in §03 now says so and stops — the IDs
+  are entered once, in §05.
+- The **"+ Add cohort" button is hidden** when the cases are picked; there are
+  no cohorts to add.
+
+### Quote approach (items 1, 2, 3)
+
+- **§02 does not appear on a retrospective quote at all.** There is no approach
+  to choose: the cases or the counts are already known.
+- The **"defined dollar amount" branch stops at the PO total.** The tumor/case
+  type table, the per-case prices, the matched-blood add-on and the
+  estimated-subjects calculator are gone — every one of them is collected again
+  in §03 and §11, and asking twice produced two answers.
+- "Subject counts come from the cohorts below" is gone.
+
+### Wording (items 6, 7)
+
+Biospecimen delivery, clinical data delivery and blackout days all end **"or
+leave blank"**. The lump-sum box is **"Lump sum shipping price"**.
+
+### A caution, repeated
+
+Rewriting `sectionApproach()` by replacing everything up to the next function
+also removed `radio()` and `timepointNames()`, which happened to live between
+them. `node --check` passed; the page threw `radio is not defined` on load.
+**This is the second time a range replacement has eaten a neighbour.** Replace
+by exact anchors, not by "everything up to the next thing that looks like a
+boundary", and load the page after any structural edit.

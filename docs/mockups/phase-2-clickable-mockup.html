@@ -2437,6 +2437,13 @@
           }
         });
       }
+    } else if (casesPickedFor(q)) {
+      quoteSpecimenTypes(q).forEach(function (name) {
+        var n = selectedTypeCount(q, name);
+        var price = num((pr.selectedPrices || {})[name]);
+        if (!n || !price) return;
+        push(docMoney(price) + ' / ' + name.toLowerCase(), name, n * price);
+      });
     } else {
       // One line per cohort per biospecimen, as the table is filled in.
       var fullTypes = orderedSpecimens(q);
@@ -2563,7 +2570,7 @@
   /** The shipping charge across every biospecimen, counted in units. */
   function specimenShippingTotal(q) {
     var rates = ((q.shipping || {}).specimenRates) || {};
-    return orderedSpecimens(q).reduce(function (t, ty) {
+    return quoteSpecimenTypes(q).reduce(function (t, ty) {
       return t + specimenUnitCount(q, ty) * num(rates[ty]); }, 0);
   }
 
@@ -2576,6 +2583,28 @@
     return types.reduce(function (t, ty) { return t + num(rates[ty]); }, 0);
   }
 
+  /** The biospecimen types a quote actually covers. Normally the ticked list;
+   *  on a sponsor-selected quote, the distinct types named in the case list. */
+  function quoteSpecimenTypes(q) {
+    if (!casesPickedFor(q)) return orderedSpecimens(q);
+    var seen = [];
+    (q.selectedSpecimens || []).forEach(function (r) {
+      var name = r.type === 'Other'
+        ? (String(r.otherType || '').trim() || 'Other') : r.type;
+      if (name && seen.indexOf(name) === -1) seen.push(name);
+    });
+    return seen;
+  }
+
+  /** How many of one type the case list names. */
+  function selectedTypeCount(q, name) {
+    return (q.selectedSpecimens || []).filter(function (r) {
+      var t = r.type === 'Other'
+        ? (String(r.otherType || '').trim() || 'Other') : r.type;
+      return t === name;
+    }).length;
+  }
+
   /** The sponsor picked the cases, so there is a list rather than a design. */
   function casesPickedFor(q) {
     return isRetrospectiveOnly(q) && !!(q.header || {}).sponsorSelected;
@@ -2585,6 +2614,7 @@
    *  subject set in pricing, so a subject giving two stools ships two. */
   function specimenUnitCount(q, t) {
     var pr = q.pricing || {};
+    if (casesPickedFor(q)) return selectedTypeCount(q, t);
     var isExt = !!q.isExtension && (q.header || {}).designChanged === false;
     var maxPer = 1;
     var total = (q.cohorts || []).reduce(function (a, c, i) {
@@ -2613,6 +2643,13 @@
       if (rate) out[key] = rate.toFixed(2);
     });
     return out;
+  }
+
+  /** What a sponsor-selected case list comes to. */
+  function selectedListTotal(q) {
+    var prices = ((q.pricing || {}).selectedPrices) || {};
+    return quoteSpecimenTypes(q).reduce(function (t, name) {
+      return t + selectedTypeCount(q, name) * num(prices[name]); }, 0);
   }
 
   /** What one cohort's biospecimen lines come to. */
@@ -3583,7 +3620,7 @@
         restBox.appendChild(sectionExtensionCohorts());
         restBox.appendChild(sectionSpecimens());
       } else {
-        restBox.appendChild(sectionApproach());
+        if (!isRetrospectiveOnly(draft)) restBox.appendChild(sectionApproach());
         restBox.appendChild(sectionPopulation());
         if (!isRetrospectiveOnly(draft)) restBox.appendChild(sectionTimepoints());
         restBox.appendChild(sectionSpecimens());
@@ -3902,81 +3939,22 @@
         body.replaceChildren();
         var byDollar = draft.approach === 'dollar';
 
-        var radios = el('div', { class: 'check-row' }, [
+        body.appendChild(el('div', { class: 'check-row' }, [
           radio('approach', 'Defined subject count', !byDollar, function () {
             draft.approach = 'subjects'; paint(); }),
           radio('approach', 'Defined dollar amount', byDollar, function () {
             draft.approach = 'dollar'; paint(); })
-        ]);
-        body.appendChild(radios);
-        if (!byDollar) {
-          body.appendChild(el('div', { class: 'hint',
-            text: 'Subject counts come from the cohorts below.' }));
-          return;
-        }
+        ]));
+        if (!byDollar) return;
 
-        draft.caseTypes = draft.caseTypes || [{ label: '', price: '' }];
+        // The PO total and nothing else. What the money buys — case types,
+        // counts, prices — is the cohort and pricing tables' job, and asking
+        // for it twice produced two answers.
         body.appendChild(el('div', { class: 'grid' }, [
           field('PO total', { placeholder: '500000.00', inputmode: 'decimal',
             get: function () { return draft.poTotal; },
-            set: function (v) { draft.poTotal = v; }, then: recalcEstimate })
+            set: function (v) { draft.poTotal = v; } })
         ]));
-
-        var rows = el('div', { class: 'cohorts' });
-        var estimate = el('div', { class: 'calc' });
-
-        function recalcEstimate() {
-          var po = num(draft.poTotal);
-          var highest = draft.caseTypes.reduce(function (m, c) {
-            return Math.max(m, num(c.price)); }, 0);
-          estimate.replaceChildren();
-          estimate.appendChild(el('div', { class: 'calc-row' }, [
-            el('span', { text: 'PO total' }),
-            el('span', { class: 'v', text: money(po) })]));
-          estimate.appendChild(el('div', { class: 'calc-row' }, [
-            el('span', { text: 'Highest case price' }),
-            el('span', { class: 'v', text: highest ? money(highest) : '—' })]));
-          estimate.appendChild(el('div', { class: 'calc-row calc-total' }, [
-            el('span', { text: 'Estimated subjects' }),
-            el('span', { class: 'v', text: highest ? String(Math.floor(po / highest)) : '—' })]));
-        }
-
-        function paintRows() {
-          rows.replaceChildren();
-          rows.appendChild(el('div', { class: 'cohort-row full cohort-head' }, [
-            el('span', { text: 'Tumor / case type' }),
-            el('span', { class: 'ca', text: '$ per case' }), el('span', {})]));
-          draft.caseTypes.forEach(function (c, i) {
-            var lab = el('input', { type: 'text', value: c.label || '',
-              'aria-label': 'Case type ' + (i + 1),
-              placeholder: 'e.g. NSCLC resection',
-              oninput: function () { draft.caseTypes[i].label = lab.value; } });
-            lab.value = c.label || '';
-            var pr = el('input', { type: 'text', inputmode: 'decimal',
-              'aria-label': 'Price per case for ' + (c.label || 'case type ' + (i + 1)),
-              oninput: function () { draft.caseTypes[i].price = pr.value; recalcEstimate(); } });
-            pr.value = c.price || '';
-            var x = el('button', { class: 'row-x', type: 'button',
-              'aria-label': 'Remove case type ' + (i + 1),
-              onclick: function () { draft.caseTypes.splice(i, 1); paintRows(); recalcEstimate(); } }, ['×']);
-            rows.appendChild(el('div', { class: 'cohort-row full' },
-              [lab, el('span', { class: 'ca' }, [pr]), x]));
-          });
-        }
-        paintRows();
-        body.appendChild(rows);
-        body.appendChild(el('button', { class: 'add-row', type: 'button', onclick: function () {
-          draft.caseTypes.push({ label: '', price: '' }); paintRows();
-        } }, ['+ Add case type']));
-
-        body.appendChild(checkbox('Matched blood add-on',
-          function () { return draft.matchedBlood; },
-          function (v) { draft.matchedBlood = v; }));
-
-        body.appendChild(estimate);
-        recalcEstimate();
-        body.appendChild(el('div', { class: 'hint',
-          text: 'Estimate uses the highest case price, not an average — the mix is unknown, so this stays conservative. Do not attribute counts to specific types here.' }));
       }
       paint();
       sec.appendChild(body);
@@ -4273,9 +4251,9 @@
           hint: 'Free text so ranges work. This range guides the batching plan below.',
           get: function () { return tl.enrollmentCompletion; },
           set: function (v) { tl.enrollmentCompletion = v; }, then: paintBatching }),
-        field('Biospecimen delivery', { placeholder: 'e.g. within 30 days of collection',
+        field('Biospecimen delivery', { placeholder: 'e.g. within 30 days of collection, or leave blank',
           get: function () { return tl.delivery; }, set: function (v) { tl.delivery = v; } }),
-        field('Clinical data delivery', { placeholder: 'e.g. 2-3 weeks after the biospecimens',
+        field('Clinical data delivery', { placeholder: 'e.g. 2-3 weeks after the biospecimens, or leave blank',
           get: function () { return tl.dataDelivery; },
           set: function (v) { tl.dataDelivery = v; } })
       ]));
@@ -4307,7 +4285,8 @@
       paintCaps();
 
       sec.appendChild(field('Blackout delivery days', { full: true,
-        placeholder: 'e.g. no subjects in January; lab closed 20 Dec – 2 Jan',
+        placeholder: 'e.g. no subjects in January; lab closed 20 Dec – 2 Jan, '
+                   + 'or leave blank',
         get: function () { return tl.blackouts; }, set: function (v) { tl.blackouts = v; } }));
 
       sec.appendChild(batchBox);
@@ -4348,23 +4327,9 @@
             get: function () { return h.sponsorCasesDoc; },
             set: function (v) { h.sponsorCasesDoc = v; } }));
         } else {
-          var tally = el('div', { class: 'hint' });
-          function countCases() {
-            var n = String(h.sponsorSelectedCases || '').split('\n')
-              .filter(function (l) { return l.trim(); }).length;
-            h.sponsorSelectedCount = n;
-            tally.textContent = n
-              ? n + (n === 1 ? ' biospecimen listed' : ' biospecimens listed') : '';
-            if (pricingRefresh) pricingRefresh();
-          }
-          casesBox.appendChild(field('Case or biospecimen numbers', {
-            type: 'textarea', rows: 3, full: true,
-            placeholder: 'One per line',
-            get: function () { return h.sponsorSelectedCases; },
-            set: function (v) { h.sponsorSelectedCases = v; },
-            then: countCases }));
-          casesBox.appendChild(tally);
-          countCases();
+          casesBox.appendChild(el('div', { class: 'hint',
+            text: 'List them in \u00a705, with an ID and what each one is.' }));
+          return;
         }
       }
 
@@ -4392,12 +4357,14 @@
       paintCases();
 
       draft.cohorts = draft.cohorts || [];
+      var addCohortBtn = null;
       var cards = el('div');
       // Declared before paintCards() runs — it calls paintAllocation().
       var allocBox = el('div');
 
       function paintCards() {
         cards.replaceChildren();
+        if (addCohortBtn) addCohortBtn.style.display = casesPicked() ? 'none' : '';
         if (casesPicked()) {
           // The cases are already chosen; there is no population left to
           // describe and nothing to count.
@@ -4591,10 +4558,12 @@
 
       paintCards();
       sec.appendChild(cards);
-      sec.appendChild(el('button', { class: 'add-row', type: 'button', onclick: function () {
+      var addCohortBtn = el('button', { class: 'add-row', type: 'button', onclick: function () {
         draft.cohorts.push({ name: '', subjects: '', subcohorts: [] });
         paintCards();
-      } }, ['+ Add cohort']));
+      } }, ['+ Add cohort']);
+      sec.appendChild(addCohortBtn);
+      addCohortBtn.style.display = casesPicked() ? 'none' : '';
 
       function paintAllocation() {
         allocBox.replaceChildren();
@@ -5273,7 +5242,7 @@
 
         if (perSpec) {
           sh.specimenRates = sh.specimenRates || {};
-          var types = orderedSpecimens(draft);
+          var types = quoteSpecimenTypes(draft);
           if (!types.length) {
             modeBox.appendChild(emptyNote('Tick the biospecimens above and each '
               + 'one gets its own shipping rate here.'));
@@ -5288,7 +5257,7 @@
               var nUnits = specimenUnitCount(draft, t);
               var sub = el('span', { class: 'ca' });
               var rateIn = el('input', { type: 'text', inputmode: 'decimal',
-                'aria-label': 'Shipping rate for ' + specimenLabel(draft, t),
+                'aria-label': 'Shipping rate for ' + t,
                 oninput: function () {
                   sh.specimenRates[t] = rateIn.value;
                   sub.textContent = money(nUnits * num(rateIn.value));
@@ -5298,7 +5267,7 @@
               rateIn.value = sh.specimenRates[t] || '';
               sub.textContent = money(nUnits * num(rateIn.value));
               grid.appendChild(el('div', { class: 'cohort-row ext' }, [
-                el('span', { text: specimenLabel(draft, t) }),
+                el('span', { text: t }),
                 el('span', { class: 'ca dim', text: String(nUnits) }),
                 el('span', { class: 'ca' }, [rateIn]), sub, el('span', {})]));
             });
@@ -5318,7 +5287,7 @@
         // and §01's deal name.
         var totalV = el('span', { class: 'v', text: money(shippingTotal()) });
 
-        modeBox.appendChild(field('Shipping price', {
+        modeBox.appendChild(field('Lump sum shipping price', {
           inputmode: 'decimal',
           get: function () {
             if (String(sh.override == null ? '' : sh.override).trim() !== '') {
@@ -5584,6 +5553,41 @@
         // it collects, each with its own unit, how many of that unit a subject
         // gives, and the price. That covers every shape the real quotes take —
         // $1,650 a subject, $2,000 a stool with two stools each, $1,250 a draw.
+        if (casesPickedFor(draft)) {
+          var listed = quoteSpecimenTypes(draft);
+          if (!listed.length) {
+            mainBox.appendChild(emptyNote('List the specimens in \u00a705 and each type '
+              + 'gets a price here.'));
+            return;
+          }
+          pr.selectedPrices = pr.selectedPrices || {};
+          var sgrid = el('div', { class: 'cohorts' });
+          sgrid.appendChild(el('div', { class: 'cohort-row ext cohort-head' }, [
+            el('span', { text: 'Biospecimen' }),
+            el('span', { class: 'ca', text: 'Listed' }),
+            el('span', { class: 'ca', text: '$ each' }),
+            el('span', { class: 'ca', text: 'Subtotal' }), el('span', {})]));
+          listed.forEach(function (name) {
+            var n = selectedTypeCount(draft, name);
+            var sub = el('span', { class: 'ca' });
+            var priceIn = el('input', { type: 'text', inputmode: 'decimal',
+              'aria-label': '$ each for ' + name,
+              oninput: function () {
+                pr.selectedPrices[name] = priceIn.value;
+                sub.textContent = money(n * num(priceIn.value));
+                recalc();
+              } });
+            priceIn.value = pr.selectedPrices[name] || '';
+            sub.textContent = money(n * num(priceIn.value));
+            sgrid.appendChild(el('div', { class: 'cohort-row ext' }, [
+              el('span', { text: name }),
+              el('span', { class: 'ca dim', text: String(n) }),
+              el('span', { class: 'ca' }, [priceIn]), sub, el('span', {})]));
+          });
+          mainBox.appendChild(sgrid);
+          return;
+        }
+
         if (!draft.cohorts.length) {
           mainBox.appendChild(emptyNote('Add cohorts in \u00a703 and each one gets its price here.'));
           return;
@@ -5814,6 +5818,15 @@
             specimenTotal = subjects * flatRate;
             lines.push([subjects + ' subjects × ' + money(flatRate), specimenTotal]);
           }
+        } else if (casesPickedFor(draft)) {
+          quoteSpecimenTypes(draft).forEach(function (name) {
+            var n = selectedTypeCount(draft, name);
+            var price = num((pr.selectedPrices || {})[name]);
+            if (!n || !price) return;
+            specimenTotal += n * price;
+            lines.push([name + ' \u2014 ' + n + ' \u00d7 ' + money(price), n * price]);
+          });
+          if (!lines.length) lines.push(['Biospecimens', 0]);
         } else {
           draft.cohorts.forEach(function (c, i) {
             var line = cohortLineTotal(draft, pr, c, i);
