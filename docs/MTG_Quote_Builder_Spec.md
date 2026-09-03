@@ -2277,3 +2277,45 @@ say the same thing per field are gone.
 - **Tempus** removed from the tube list (item 3).
 - **Diagnosis** added to the clinical data categories (item 4).
 - **"Site initiation"**, not "Study initiation" (item 5).
+
+## §37 — Eleventh-pass rep review, 2026-09-03
+
+Eight items of field-by-field feedback on the clickable mockup.
+
+- **Everything internal-only is red** (item 1). The shipping legs block and
+  the shipping calculator output carry `internal-only` now, and the styling
+  reaches their subheads and calculation rows, not just the top line. Red
+  means "the sponsor never sees this", so the marking has to be complete or
+  it teaches the wrong lesson.
+- **Auto quote name with several cohorts** (item 2). The name lists every
+  cohort up to three (`NSCLC & CRC - fresh tissue`); past three it says
+  `4 cohorts - whole blood`.
+- **Subject range on a fixed-dollar quote** (item 3). Once cohort pricing is
+  entered, the PO total buys a range of subjects: divide the PO by the
+  dearest per-subject rate for the low end, by the cheapest for the high end.
+  Shown live under the PO total box and printed in the document's Size row —
+  *"This purchase order covers 39 to 62 subjects, depending on the mix of
+  cohorts enrolled."* The range follows price edits because `recalc()`
+  refreshes it.
+- **Minimum weight per tumor** (item 4). Specimens measured by mass get a
+  **Minimum weight** box on their priced row, stored as `line.minWeight`, and
+  the document prints a **Minimum Weight** row — *"NSCLC: 100 mg minimum per
+  tumor."* Before this the figure had no home, and a rep with a minimum to
+  record could only put it somewhere it didn't belong (see item 7).
+- **One US-destination sentence** (item 5). The auto-fill writes the sentence
+  into the address box and the document printed its own copy. Dedupe now
+  matches the stem `US-based destination designated by`, so a box filled
+  before the sponsor was named still matches.
+- **"in" before an enrollment duration** (item 6). `durationIn()` prefixes
+  `in` when the value starts with a number, `~`, `<` or `>`, so it reads
+  *"MT Group expects to complete enrollment in ~4 months"* but leaves a
+  phrase like "by Q3" alone.
+- **$12.6M on a ten-patient fresh tissue study (item 7) could not be
+  reproduced.** Ten subjects at $12,600 gives $126,000 with and without
+  subcohorts. $12.6M is exactly 100× that, which is what happens if a
+  minimum weight of "100 mg" is typed into the **Units / subject** column —
+  the mistake item 4's new field exists to prevent. Left as-is pending
+  numbers from a recurrence.
+- **Every cost line names its biospecimen** (item 8). `specimenProse(q, t)`
+  is now always the cost line's sub-descriptor, so the document reads
+  *"$12,600 / subject (NSCLC — fresh tissue)"*.

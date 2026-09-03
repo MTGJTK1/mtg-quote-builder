@@ -781,7 +781,9 @@
 
   /* Internal-only inputs are red so a rep can see at a glance what the sponsor
      will never read. */
-  .internal-only label, .internal-only .lab { color: var(--danger); }
+  .internal-only label, .internal-only .lab,
+  .internal-only .subhead, .internal-only .cohort-head,
+  .internal-only .calc-row, .internal-only .calc-row .v { color: var(--danger); }
   .internal-only input, .internal-only textarea {
     color: var(--danger); border-color: var(--danger-bg);
   }
@@ -1866,9 +1868,16 @@
 
   /** Quote name drafts from the cohorts and specimens (spec §06). */
   function draftQuoteName(d) {
-    var indication = (d.cohorts || [])
+    // Every cohort is named, not just the first — "CRC & healthy - stool" is
+    // what the real quote is called. Four or more and it reads as a count.
+    var names = (d.cohorts || [])
       .map(function (c) { return String(c.name || '').trim(); })
-      .filter(Boolean)[0] || '';
+      .filter(Boolean);
+    var indication = names.length > 3
+      ? names.length + ' cohorts'
+      : names.length > 1
+        ? names.slice(0, -1).join(', ') + ' & ' + names[names.length - 1]
+        : (names[0] || '');
     var specs = orderedSpecimens(d).map(function (t) {
       return specimenProse(d, t); });
     var specPart = specs.length > 2
@@ -2203,7 +2212,33 @@
             (note || 'Subcohort ' + (j + 1)) + (sn ? ' (' + sn + ')' : ''));
         });
       });
+      // A fixed-dollar quote says what the money buys rather than a count.
+      var range = subjectRange(q);
+      if (range) {
+        sizeLines.push(sentence('This purchase order covers ' +
+          (range.low === range.high ? String(range.low)
+            : range.low + ' to ' + range.high) +
+          ' subjects, depending on the mix of cohorts enrolled'));
+      }
       add(row(isExt ? 'Additional Subjects' : 'Size', sizeLines.join('\n')));
+    }
+
+
+
+    // A minimum weight stated per cohort, where the rows differ.
+    var weightLines = [];
+    pricingRows(q).forEach(function (r) {
+      var byType = ((q.pricing || {}).lines || {})[r.key] || {};
+      orderedSpecimens(q).forEach(function (t) {
+        var w = String((byType[t] || {}).minWeight || '').trim();
+        if (w) {
+          weightLines.push(r.label + ': ' + w + ' minimum per ' +
+            (/tissue/i.test(t) ? 'tumor' : specimenProse(q, t)));
+        }
+      });
+    });
+    if (weightLines.length) {
+      add(row('Minimum Weight', weightLines.map(sentence).join('\n')));
     }
 
     // I/E criteria print per cohort, as they do on the multi-cohort quotes.
@@ -2280,7 +2315,7 @@
 
     var addrText = String(sh.addresses || '');
     var usLine = sh.usDestination &&
-      addrText.indexOf(usDestinationSentenceFor(q)) === -1
+      addrText.indexOf('US-based destination designated by') === -1
         ? usDestinationSentenceFor(q) : '';
     add(row('Shipping & Handling', [saysText, usLine, addrText,
       sentence(sh.detail), condText(q, '10')].filter(Boolean).join('\n')));
@@ -2307,7 +2342,7 @@
       whenClause('Site initiation', tl.initiation),
       tl.enrollmentCompletion
         ? sentence('MT Group expects to complete enrollment ' +
-            String(tl.enrollmentCompletion).trim()) : '',
+            durationIn(tl.enrollmentCompletion)) : '',
       whenClause('Biospecimen delivery', tl.delivery),
       whenClause('Clinical data delivery', tl.dataDelivery),
       tl.maxPerDay ? sentence('No more than ' + tl.maxPerDay +
@@ -2341,7 +2376,7 @@
       g.rows.forEach(function (r) {
         var line = el('div', { class: 'draft-rate' }, [
           el('span', { text: r.rate + (g.rows.length > 1 && r.desc
-            ? ' (' + r.desc + ')' : '') })
+            ? ' (' + r.desc + (r.sub ? ' \u2014 ' + r.sub : '') + ')' : '') })
         ]);
         if (r.siteCost || r.note) {
           line.appendChild(el('span', { class: 'draft-internal', text:
@@ -2496,7 +2531,7 @@
           var unit = l.unit || 'subject';
           push(docMoney(price) + ' / ' + unit, row.label,
             row.n * per * price, first ? ic.siteCost : '', first ? ic.notes : '',
-            '', fullTypes.length > 1 ? specimenProse(q, t) : '');
+            '', specimenProse(q, t));
           first = false;
         });
       });
@@ -2676,6 +2711,44 @@
       if (rate) out[key] = rate.toFixed(2);
     });
     return out;
+  }
+
+  /** What one subject of a priced row costs — the sum of its biospecimen
+   *  lines, per subject. */
+  function ratePerSubject(q, pr, key) {
+    var byType = ((pr || {}).lines || {})[key] || {};
+    return orderedSpecimens(q).reduce(function (t, ty) {
+      var l = byType[ty] || {};
+      return t + (num(l.per) || 1) * num(l.price);
+    }, 0);
+  }
+
+  /** The subjects a fixed PO buys, as a range. The high end assumes every
+   *  subject is the cheapest kind, the low end assumes every one is the
+   *  dearest. Null until there is a PO and at least one rate. */
+  function subjectRange(q) {
+    var po = num(q.poTotal);
+    if (!po) return null;
+    var pr = q.pricing || {};
+    var rates = pricingRows(q).map(function (r) {
+      return ratePerSubject(q, pr, r.key); })
+      .filter(function (v) { return v > 0; });
+    if (!rates.length) return null;
+    var cheapest = Math.min.apply(null, rates);
+    var dearest = Math.max.apply(null, rates);
+    return {
+      low: Math.floor(po / dearest),
+      high: Math.floor(po / cheapest),
+      cheapest: cheapest, dearest: dearest
+    };
+  }
+
+  /** A bare duration needs a preposition: "~4 months" becomes "in ~4 months",
+   *  while "after site initiation" or "by March" is already a phrase. */
+  function durationIn(v) {
+    var t = String(v || '').trim();
+    if (!t) return '';
+    return /^[~<>\d]/.test(t) ? 'in ' + t : t;
   }
 
   /** Ends a drafted line as a sentence. Everything the generator writes is
@@ -4042,6 +4115,7 @@
     var specimenBoxes = {};
     var shippingRefresh = null;
     var paintCaps = function () {};
+    var approachRange = function () {};
 
     // ---- 02 quote approach ---------------------------------------------
 
@@ -4065,11 +4139,33 @@
         // The PO total and nothing else. What the money buys — case types,
         // counts, prices — is the cohort and pricing tables' job, and asking
         // for it twice produced two answers.
+        var rangeBox = el('div', { class: 'calc' });
+        function paintRange() {
+          rangeBox.replaceChildren();
+          var r = subjectRange(draft);
+          if (!r) {
+            rangeBox.appendChild(el('div', { class: 'calc-row' }, [
+              el('span', { text: 'Enter the PO total and the prices in \u00a711 '
+                + 'and the subject range works itself out.' })]));
+            return;
+          }
+          rangeBox.appendChild(el('div', { class: 'calc-row' }, [
+            el('span', { text: 'Cheapest subject ' + money(r.cheapest) +
+              ', dearest ' + money(r.dearest) })]));
+          rangeBox.appendChild(el('div', { class: 'calc-row calc-total' }, [
+            el('span', { text: 'Subjects this PO buys' }),
+            el('span', { class: 'v', text: r.low === r.high
+              ? String(r.low) : r.low + '\u2013' + r.high })]));
+        }
+        approachRange = paintRange;
+
         body.appendChild(el('div', { class: 'grid' }, [
           field('PO total', { placeholder: '500000.00', inputmode: 'decimal',
             get: function () { return draft.poTotal; },
-            set: function (v) { draft.poTotal = v; } })
+            set: function (v) { draft.poTotal = v; }, then: paintRange })
         ]));
+        body.appendChild(rangeBox);
+        paintRange();
       }
       paint();
       sec.appendChild(body);
@@ -5261,7 +5357,7 @@
 
       var sh = shipState();
       var legsBox = el('div');
-      var calcOut = el('div', { class: 'calc' });
+      var calcOut = el('div', { class: 'calc internal-only' });
       var modeBox = el('div');
 
       function refresh() {
@@ -5455,7 +5551,7 @@
 
       // Fresh specimens go site-to-sponsor overnight, so there are no legs to
       // cost and no batching to plan.
-      var legsWrap = el('div');
+      var legsWrap = el('div', { class: 'internal-only' });
       paintLegsBlock = function () {
         legsWrap.replaceChildren();
         if (isFreshCollection()) {
@@ -5466,6 +5562,8 @@
         }
         legsWrap.appendChild(subHead('Shipping pricing \u2014 MT Group\u2019s '
           + 'internal shipping cost estimates'));
+        legsWrap.appendChild(el('div', { class: 'internal-note',
+          text: 'Internal only \u2014 never reaches the sponsor quote.' }));
         legsWrap.appendChild(legsBox);
         legsWrap.appendChild(el('button', { class: 'add-row', type: 'button',
           onclick: function () {
@@ -5765,6 +5863,19 @@
               oninput: function () { line.per = perIn.value; retotal(); } });
             perIn.value = line.per == null ? '' : String(line.per);
 
+            // Tissue is specified by weight, and the minimum can differ by
+            // tumor type. Without a home here it went into the count column,
+            // where "100 mg" reads as a hundredfold multiplier.
+            var wantsWeight = (SPECIMEN_SPEC[t] || {}).amount === MASS;
+            var weightIn = null;
+            if (wantsWeight) {
+              weightIn = el('input', { type: 'text',
+                'aria-label': t + ' minimum weight for ' + row.label,
+                placeholder: 'e.g. 100 mg',
+                oninput: function () { line.minWeight = weightIn.value; refreshDrafts(); } });
+              weightIn.value = line.minWeight == null ? '' : String(line.minWeight);
+            }
+
             var priceIn = el('input', { type: 'text', inputmode: 'decimal',
               'aria-label': t + ' $ per unit for ' + row.label,
               oninput: function () { line.price = priceIn.value; retotal(); } });
@@ -5778,6 +5889,12 @@
               el('span', { class: 'ca' }, [priceIn]),
               sub
             ]));
+            if (weightIn) {
+              grid.appendChild(el('div', { class: 'cohort-row priceline sub-price' }, [
+                el('span', { class: 'dim indent', text: 'Minimum weight' }),
+                weightIn, el('span', {}), el('span', {}), el('span', {})
+              ]));
+            }
           });
 
           rowSub.textContent = money(rowLineTotal(draft, pr, row));
@@ -5989,9 +6106,11 @@
           el('span', { class: 'v', text: money(grand) })]));
 
         draft.totalCost = grand ? grand.toFixed(2) : '';
+        approachRange();
       }
       pricingRefresh = function () {
         paintMain(); paintScreenfailBlock(); paintOutcomeFee(); recalc();
+        approachRange();
       };
 
       paintMain();
