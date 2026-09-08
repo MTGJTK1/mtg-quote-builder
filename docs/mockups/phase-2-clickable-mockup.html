@@ -709,6 +709,14 @@
     font-family: var(--sans); font-size: 12.5px; color: var(--ink-soft);
   }
   .draft-stamp strong { color: var(--accent); }
+  .draft-check {
+    border: 1px dashed var(--accent); border-radius: 7px;
+    padding: 10px 14px; margin-bottom: 22px; font-size: 12.5px;
+  }
+  .draft-check strong { display: block; margin-bottom: 5px; }
+  .draft-check ul { margin: 0 0 6px; padding-left: 18px; }
+  .draft-check li { margin: 2px 0; }
+  .draft-check-note { color: var(--ink-soft); }
   /* Left-justified letterhead, as on the issued quotes. */
   .draft-head { margin-bottom: 0; font-size: 14px; }
   .draft-rule { border-top: 1px solid var(--ink); margin: 1.45em 0; }
@@ -726,6 +734,7 @@
   .draft-value { color: var(--ink); }
   .draft-value ul { margin: 0; padding-left: 1.1rem; }
   .draft-value ul + .draft-ie-head { margin-top: 1.45em; }
+  .draft-ie-close { margin-top: 9px; }
   .draft-ie-head { font-weight: 600; }
 
   /* Cost lines are plain document text, not a table. */
@@ -768,6 +777,7 @@
   .cohort-row.selspec { grid-template-columns: 1fr 170px 1fr 30px; }
   .check.upto { align-self: end; padding-bottom: 9px; white-space: nowrap; }
   .cohort-row.priceline { grid-template-columns: 1fr 120px 110px 110px 110px; }
+  .unit-cell { display: grid; gap: 4px; min-width: 0; }
   .cohort-row.priceline .indent { padding-left: 14px; }
   .cohort-row.cohort-sub { border-top: 1px solid var(--rule-strong); }
   .cohort-row.sub-price { border-top: 0; padding-top: 0; }
@@ -839,12 +849,18 @@
     .cohort-row.ship { grid-template-columns: 1fr; gap: 6px; }
   }
 
+  /* Three parallel columns, and they stay three. The old 760px breakpoint
+     collapsed them to one list in a side panel or a narrow window, which is
+     where the mockup is usually read. The labels wrap instead. */
   .spec-cols {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 22px;
   }
-  @media (max-width: 760px) { .spec-cols { grid-template-columns: 1fr; gap: 18px; } }
+  @media (max-width: 760px) { .spec-cols { gap: 10px; } }
+  @media (max-width: 480px) { .spec-cols { grid-template-columns: 1fr; gap: 16px; } }
+  .spec-cols .check { line-height: 1.3; }
+  @media (max-width: 760px) { .spec-cols .check { font-size: 13px; gap: 6px; } }
 
   .spec-col-title {
     font-size: 10.5px; font-weight: 600;
@@ -1059,10 +1075,14 @@
       freeformHint: 'Everything about it \u2014 amount, handling, storage, shipping' },
 
     'Whole blood': { tubes: true, says: 'Shipped ambient on gel packs.', noRetro: true },
-    'Plasma': { tubes: true, aliquoted: true, says: 'Shipped on dry ice.' },
-    'Serum': { tubes: true, aliquoted: true, says: 'Shipped on dry ice.' },
-    'Buffy coat': { tubes: true, aliquoted: true, says: 'Shipped on dry ice.' },
-    'PBMCs': { tubes: true, aliquoted: true, says: 'Shipped in an LN2 dry shipper.' },
+    'Plasma': { tubes: true, aliquoted: true, standardProcessing: true,
+      says: 'Shipped on dry ice.' },
+    'Serum': { tubes: true, aliquoted: true, standardProcessing: true,
+      says: 'Shipped on dry ice.' },
+    'Buffy coat': { tubes: true, aliquoted: true, standardProcessing: true,
+      says: 'Shipped on dry ice.' },
+    'PBMCs': { tubes: true, aliquoted: true, standardProcessing: true,
+      says: 'Shipped in an LN2 dry shipper.' },
     'Other blood product': { tubes: true, aliquoted: true, named: true,
       namedHint: 'e.g. leukopak, PAXgene RNA, dried blood spot',
       says: 'Shipped on dry ice.' },
@@ -1087,7 +1107,7 @@
     'Synovial tissue': { amount: MASS, says: 'Shipped at 2-8 \u00b0C.', process: true,
       direct: true, noRetro: true },
     'Other': { freeform: true, named: true,
-      namedHint: 'e.g. ascites, CSF, synovial biopsy',
+      namedHint: 'e.g. ascites, CSF, cerebrospinal fluid',
       freeformLabel: 'Describe what is needed',
       freeformHint: 'Everything about it \u2014 amount, handling, storage, shipping' },
     // A second one, for a study that needs two unlisted things at once — a
@@ -1142,35 +1162,38 @@
     { id: 'freight', sec: '10', label: 'Shipping costs may rise with freight charges',
       text: 'It is understood that if freight charges increase dramatically '
           + 'during the study execution, shipping & handling costs may also be '
-          + 'increased.' },
-    { id: 'crossEnroll', sec: '03', prospectiveOnly: true,
-      label: 'Subjects may be enrolled in another study',
-      text: 'Subjects may be enrolled in another {S} study.' },
-    { id: 'repeatDraw', sec: '05', bloodOnly: true, prospectiveOnly: true,
-      label: 'Subjects may be drawn more than once',
-      text: 'Subjects may be drawn more than once to meet the blood volume '
-          + 'requirements.' }
+          + 'increased.' }
   ];
+  // Cross-enrolment in another sponsor study and repeat draws were prompted
+  // here until the eleventh rep review. Both are occasional, and a tickbox on
+  // every quote for something that applies to few of them is noise. The draft's
+  // reviewer checklist now asks about them instead, and the answer goes in
+  // §12's notes.
 
   // "Other" keeps the free-text escape hatch for a tube nobody has used yet.
-  var TUBE_TYPES = ['Streck', 'K2EDTA', 'EDTA', 'PaxGene DNA', 'PaxGene RNA',
+  var TUBE_TYPES = ['Streck Cell-Free DNA', 'K2EDTA', 'EDTA', 'PaxGene DNA', 'PaxGene RNA',
     'Sodium heparin', 'Lithium heparin', 'ACD', 'SST / serum separator',
     'CPT', 'Other'];
 
   var TUBE_SIZES = ['2.5 mL', '3 mL', '4 mL', '5 mL', '6 mL', '8.5 mL',
     '10 mL', 'Other'];
 
-  // What a price is quoted per. Every one of these is taken from a real Natera
-  // quote: subject, draw, stool, case, report, shipper. The unit changes the
-  // arithmetic as well as the wording — 120 draws is not 120 subjects.
-  var PRICE_UNITS = ['subject', 'draw', 'case', 'collection', 'stool', 'aliquot',
-                     'block', 'slide', 'report', 'shipper'];
+  // What a price is quoted per. Cut to the four that actually get used, plus an
+  // "other" that opens a box — a ten-item list where four are ever picked is a
+  // list a rep has to read every time. The unit changes the arithmetic as well
+  // as the wording: 120 aliquots is not 120 subjects.
+  var PRICE_UNITS = ['subject', 'mL', 'aliquot', 'cell #', 'Other'];
 
   // Said on every criteria box rather than once in a note above them, because a
   // rep reads the box they are typing in.
   var CRITERIA_HINT = 'Put each criterion on its own line \u2014 every line becomes '
                     + 'a bullet in the quote.';
   var SERVICE_TYPES = ['Retrospective', 'Prospective'];
+
+  // What the timeline says on nearly every quote, so it is offered rather than
+  // typed. Editable like any other pre-filled box.
+  var SITE_INITIATION_DEFAULT = '3-4 weeks after the kick off call and '
+    + 'alignment on all study parameters';
 
   var STATUSES = [
     { value: 'draft', label: 'Draft' },
@@ -1495,10 +1518,10 @@
       isExtension: false, hubspotDealName: '',
       cohorts: [{ name: 'Self-reported healthy', subjects: 75, subcohorts: [] }],
       specimenDetail: { 'Whole blood': { byTubes: true, tubeCount: '4', tubes: [
-        { type: 'Streck', size: '10 mL', processing: '21 gauge straight needle, one arm' },
-        { type: 'Streck', size: '10 mL', processing: '21 gauge straight needle, one arm' },
-        { type: 'Streck', size: '10 mL', processing: '21 gauge butterfly needle, opposite arm' },
-        { type: 'Streck', size: '10 mL', processing: '21 gauge butterfly needle, opposite arm' }] } },
+        { type: 'Streck Cell-Free DNA', size: '10 mL', processing: '21 gauge straight needle, one arm' },
+        { type: 'Streck Cell-Free DNA', size: '10 mL', processing: '21 gauge straight needle, one arm' },
+        { type: 'Streck Cell-Free DNA', size: '10 mL', processing: '21 gauge butterfly needle, opposite arm' },
+        { type: 'Streck Cell-Free DNA', size: '10 mL', processing: '21 gauge butterfly needle, opposite arm' }] } },
       pricing: {
         lines: { 'Self-reported healthy': {
           'Whole blood': { unit: 'subject', price: '1100.00' } } } },
@@ -1572,11 +1595,24 @@
 
   // ---------------------------------------------------------------- helpers
 
+  /** The quote number, in the format MT Group already uses: QTE + sponsor
+   *  acronym + the quote date + what the quote is for — "QTE NTA20250724
+   *  Pan-cancer and benign diseases - blood". It is the only name a quote
+   *  has; the form asks for it under that name and nothing calls it a quote
+   *  name any more. */
   function quoteNumber(q) {
     var prefix = String(q.sponsorAcronym || q.client || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
     var d = String(q.quoteDate || '').replace(/-/g, '');
     if (!prefix && !d && !q.quoteName) return '';
     return ('QTE ' + prefix + d + ' ' + (q.quoteName || '')).trim();
+  }
+
+  /** What a quote number says the quote is for, with the QTE and stem taken
+   *  off. Anything that is not in the house format is its own description. */
+  function quoteDescription(v) {
+    var t = String(v || '').trim();
+    var m = t.match(/^QTE\s+[A-Z0-9]+\s+(.*)$/i);
+    return m ? m[1].trim() : t;
   }
 
   function finalize(q) {
@@ -1866,7 +1902,8 @@
     return null;
   }
 
-  /** Quote name drafts from the cohorts and specimens (spec §06). */
+  /** The descriptive half of the quote number, drafted from the cohorts and
+   *  specimens (spec §06). */
   function draftQuoteName(d) {
     // Every cohort is named, not just the first — "CRC & healthy - stool" is
     // what the real quote is called. Four or more and it reads as a count.
@@ -1901,6 +1938,36 @@
     });
   }
 
+  /** What a priced line is quoted per, as the document says it. "Other" is
+   *  whatever the rep typed beside the menu. */
+  function priceUnitName(l) {
+    var u = String((l || {}).unit || '').trim();
+    if (!u) return 'subject';
+    if (u !== 'Other') return u;
+    return String((l || {}).unitOther || '').trim() || 'subject';
+  }
+
+  /** A run of clinical data categories as one phrase. Only the first is
+   *  capitalised — a list where every item is a proper noun reads as a set of
+   *  headings, not a sentence. Anything already in capitals stays that way. */
+  function dataList(items) {
+    return (items || []).map(function (name, i) {
+      var t = String(name || '');
+      if (i === 0) return t;
+      return /^[A-Z]{2,}/.test(t) ? t : t.charAt(0).toLowerCase() + t.slice(1);
+    }).join(', ');
+  }
+
+  /** A minimum weight as the quote states it: at-least sign, and milligrams
+   *  supplied when the rep typed a bare number. A value that already carries a
+   *  unit or a comparison is left as typed. */
+  function weightPhrase(v) {
+    var t = String(v == null ? '' : v).trim();
+    if (!t) return '';
+    if (/^\d+(\.\d+)?$/.test(t)) t += ' mg';
+    return /^[\u2265\u2264<>~]/.test(t) ? t : '\u2265' + t;
+  }
+
   /** Specimen names in running prose. Acronyms keep their capitals — "ffpe"
    *  reads as a typo — everything else is lowercased to sit in a sentence. */
   function specimenProse(q, t) {
@@ -1912,8 +1979,17 @@
    *  its name; everything else reads as itself. Without this the summary says
    *  "other", which tells a sponsor nothing. */
   function specimenLabel(d, t) {
-    var name = String((((d || {}).specimenDetail || {})[t] || {}).otherName || '').trim();
-    return name || t;
+    var detail = (((d || {}).specimenDetail || {})[t] || {});
+    var name = String(detail.otherName || '').trim();
+    if (name) return name;
+    // A rep who described the specimen but did not name it has still said what
+    // it is; the first clause of the description is the name. Better that than
+    // a summary and a quote number that both read "other (2)".
+    if (/^Other/.test(t)) {
+      var said = String(detail.freeform || '').trim().split(/[,.;\n]/)[0].trim();
+      if (said && said.length <= 40) return said;
+    }
+    return t;
   }
 
   /** Priced units in a cohort: subjects times units per subject, which is one
@@ -1930,6 +2006,19 @@
       return c.subcohorts.reduce(function (s, sc) { return s + num(sc.subjects); }, 0);
     }
     return num(c.subjects);
+  }
+
+  /** Stable key for a cohort in per-cohort maps. Names change while a rep is
+   *  typing, so the index backs the name up. */
+  function cohortWeightKey(c, i) {
+    return String((c || {}).name || '').trim() || ('cohort-' + i);
+  }
+
+  /** What a cohort is called wherever it is listed outside §03 — numbered, so
+   *  it lines up with the cohort cards and the document. */
+  function cohortLabelFor(c, i) {
+    var name = String((c || {}).name || '').trim();
+    return 'Cohort ' + (i + 1) + (name ? ': ' + name : '');
   }
 
   /** A specimen with no explicit list is collected at every timepoint — the
@@ -2078,6 +2167,19 @@
     ['Taxes', 'There are none.']
   ];
 
+  // What gets forgotten. Each one is a real thing a rep has left out of a
+  // quote, and each is occasional enough that a tickbox on every quote would
+  // be noise. The draft asks; §12's notes box is where the answer goes.
+  var CHECK_BEFORE_SENDING = [
+    'Whether subjects already enrolled in another study for this sponsor can '
+      + 'be included in this one.',
+    'Whether the sponsor asked for a specific biospecimen collection protocol, '
+      + 'and which document it is.',
+    'Whether subjects may be drawn more than once to meet the volume.',
+    'What the sponsor is providing \u2014 tubes, kits, shippers, labels.',
+    'Anything agreed on a call that is not written down anywhere above.'
+  ];
+
   /** The ticked conditions belonging to one section, as one run of prose. */
   function condText(q, sec) {
     var picked = q.conditions || {};
@@ -2155,6 +2257,20 @@
         + 'internal notes removed.' })
     ]));
 
+    // The occasional things. They used to be tickboxes on every quote, which
+    // put a question in front of every rep for something that applies to few
+    // quotes. They are a checklist on the draft instead: read it, and if one
+    // applies, write it into §12's notes. Internal only — it never reaches the
+    // sponsor version.
+    doc.appendChild(el('div', { class: 'draft-check draft-internal' }, [
+      el('strong', { text: 'Before you send this \u2014 does the quote need to say?' }),
+      el('ul', {}, CHECK_BEFORE_SENDING.map(function (t) {
+        return el('li', { text: t }); })),
+      el('span', { class: 'draft-check-note',
+        text: 'Anything that applies goes in \u00a712\u2019s notes box, and '
+            + 'prints under Notes below.' })
+    ]));
+
     // Letterhead, left-justified as on the issued quotes.
     doc.appendChild(el('div', { class: 'draft-head' }, [
       el('div', { text: 'The MT Group' }),
@@ -2225,17 +2341,27 @@
 
 
 
-    // A minimum weight stated per cohort, where the rows differ.
+    // The minimum weight, from §05. One line when every cohort takes the same
+    // minimum, one line per cohort when they differ.
     var weightLines = [];
-    pricingRows(q).forEach(function (r) {
-      var byType = ((q.pricing || {}).lines || {})[r.key] || {};
-      orderedSpecimens(q).forEach(function (t) {
-        var w = String((byType[t] || {}).minWeight || '').trim();
-        if (w) {
-          weightLines.push(r.label + ': ' + w + ' minimum per ' +
-            (/tissue/i.test(t) ? 'tumor' : specimenProse(q, t)));
-        }
+    orderedSpecimens(q).forEach(function (t) {
+      if ((SPECIMEN_SPEC[t] || {}).amount !== MASS) return;
+      var d = (q.specimenDetail || {})[t] || {};
+      var per = /tissue/i.test(t) ? 'tumor' : specimenProse(q, t);
+      var byCohort = d.minWeightByCohort || {};
+      var any = false;
+      (q.cohorts || []).forEach(function (c, i) {
+        var w = weightPhrase(byCohort[cohortWeightKey(c, i)]);
+        if (!w) return;
+        any = true;
+        // The cohort's own name, not "Cohort 1: NSCLC" — the tumor types are
+        // the cohorts, and two colons in one line reads as a mistake.
+        weightLines.push((String(c.name || '').trim() || 'Cohort ' + (i + 1)) +
+          ': ' + w + ' per ' + per);
       });
+      if (any) return;
+      var flat = weightPhrase(d.amount);
+      if (flat) weightLines.push(flat + ' per ' + per);
     });
     if (weightLines.length) {
       add(row('Minimum Weight', weightLines.map(sentence).join('\n')));
@@ -2258,7 +2384,7 @@
         }
         bulletBlock('Inclusions', c.inclusion);
         bulletBlock('Exclusions', c.exclusion);
-        body.appendChild(el('div', {}, [
+        body.appendChild(el('div', { class: 'draft-ie-close' }, [
           el('u', { text: 'No additional inclusions or exclusions' })]));
         doc.appendChild(el('div', { class: 'draft-row' }, [
           el('div', { class: 'draft-label', text: label + ':' }), body]));
@@ -2288,9 +2414,9 @@
 
     var cd = q.clinicalData || {};
     add(row('Clinical Data', [
-      (cd.required || []).join(', '),
+      dataList(cd.required),
       (cd.ifAvailable || []).length
-        ? 'If available: ' + cd.ifAvailable.join(', ') : '',
+        ? 'If available: ' + dataList(cd.ifAvailable) : '',
       sentence(cd.detail)].filter(Boolean).join('\n')));
     add(row('Population conditions',
       [condText(q, '03'), condText(q, '04')].filter(Boolean).join(' ')));
@@ -2339,7 +2465,8 @@
               ? ' ' + String(tl.kickoffTrigger).trim()
                   .replace(/^Scheduled\s+/i, '') : ''))
         : '',
-      whenClause('Site initiation', tl.initiation),
+      whenClause('Site initiation', tl.initiation == null
+        ? SITE_INITIATION_DEFAULT : tl.initiation),
       tl.enrollmentCompletion
         ? sentence('MT Group expects to complete enrollment ' +
             durationIn(tl.enrollmentCompletion)) : '',
@@ -2408,7 +2535,7 @@
       el('span', { class: 'draft-amt',
         text: (capped ? 'Up to ' : '') + docMoney(lines.total) }),
       el('span', { text: pr.totalAssumption && !isExt
-        ? '(' + pr.totalAssumption + ')'
+        ? '(' + (brokeDown ? 'Total \u2014 ' : '') + pr.totalAssumption + ')'
         : (brokeDown ? '(Total)' : '') })]));
     doc.appendChild(el('div', { class: 'draft-row' }, [
       el('div', { class: 'draft-label', text: 'Total Study Cost:' }), totalBody]));
@@ -2528,7 +2655,7 @@
           var price = num(l.price);
           if (!price || !row.n) return;
           var per = num(l.per) || 1;
-          var unit = l.unit || 'subject';
+          var unit = priceUnitName(l);
           push(docMoney(price) + ' / ' + unit, row.label,
             row.n * per * price, first ? ic.siteCost : '', first ? ic.notes : '',
             '', specimenProse(q, t));
@@ -2773,15 +2900,19 @@
       var groups = [];
       (d.tubes || []).slice(0, num(d.tubeCount) || (d.tubes || []).length)
         .forEach(function (tube) {
-          var key = (tube.size || '') + '|' + (tube.type || '');
+          var key = (tube.size || '') + '|' + (tube.type || '') + '|' +
+            (tube.ifAvailable ? 'ifav' : '');
           var hit = groups.filter(function (g) { return g.key === key; })[0];
           if (hit) hit.n += 1;
-          else groups.push({ key: key, n: 1, size: tube.size, type: tube.type });
+          else groups.push({ key: key, n: 1, size: tube.size, type: tube.type,
+            ifAvailable: !!tube.ifAvailable });
         });
       var phrases = groups.map(function (g) {
         return g.n + ' x ' + [g.size, g.type].filter(Boolean).join(' ') + ' tube' +
-          (g.n === 1 ? '' : 's');
-      }).filter(function (x) { return /\d/.test(x); });
+          (g.n === 1 ? '' : 's') + (g.ifAvailable ? ' if available' : '');
+      // A tube block the rep has not filled in yet contributes nothing — "1 x
+      // tube" is not a sentence the sponsor should read.
+      }).filter(function (x, i) { return groups[i].size || groups[i].type; });
       var lead = name + ' will be collected in ' +
         (phrases.length
           ? (phrases.length > 1
@@ -2793,7 +2924,20 @@
         return String(tube.processing || '').trim(); }).filter(Boolean);
       if (howTo) lead += ' and processed according to ' + howTo;
       else if (perTube.length) lead += ' and processed as follows: ' + perTube.join('; ');
+      // MT Group's own processing is the answer on most frozen blood product
+      // quotes, and the quote says so in one sentence rather than repeating
+      // the protocol.
+      if ((d.tubes || []).some(function (tube) { return tube.standardProcessing; })) {
+        return sentence(lead) + ' ' + sentence('Blood processed to ' +
+          specimenProse(q, t) + ' using MTG standard processes');
+      }
       return sentence(lead);
+    }
+
+    // When the name was read out of the description there is nothing to put in
+    // front of it — "Vaginal swab — Vaginal swab, 2 per subject" says it twice.
+    if (/^Other/.test(t) && !String(d.otherName || '').trim() && d.freeform) {
+      return sentence(d.freeform);
     }
 
     var bits = [];
@@ -4456,8 +4600,13 @@
       }
 
       sec.appendChild(el('div', { class: 'grid' }, [
-        field('Site initiation', { placeholder: 'e.g. 3-4 weeks from PO',
-          get: function () { return tl.initiation; }, set: function (v) { tl.initiation = v; } }),
+        // Pre-filled with what a real quote says, so the rep accepts or edits
+        // it rather than retyping the same sentence on every quote.
+        field('Site initiation', { autofilled: true,
+          get: function () {
+            return tl.initiation == null ? SITE_INITIATION_DEFAULT : tl.initiation;
+          },
+          set: function (v) { tl.initiation = v; } }),
         field('Enrollment completion', { placeholder: 'e.g. 6-9 months',
           hint: 'Free text so ranges work. This range guides the batching plan below.',
           get: function () { return tl.enrollmentCompletion; },
@@ -4486,8 +4635,6 @@
             set: function (v) { tl.maxPerWeek = v; } }),
           field('Days fresh cases can be received', {
             placeholder: 'e.g. Mon-Fri, or any day incl. weekends',
-            hint: 'Fresh collection is surgery-driven and surgery does not stop '
-                + 'for weekends. A weekday-only receiver silently loses eligible cases.',
             get: function () { return tl.receivingDays; },
             set: function (v) { tl.receivingDays = v; } })
         ]));
@@ -4544,19 +4691,9 @@
         }
       }
 
-      var protoBox = el('div');
-      function paintProto() {
-        protoBox.replaceChildren();
-        // Nothing is collected on a retrospective pull, so there is no
-        // collection protocol to name.
-        if (isRetrospectiveOnly(draft)) return;
-        protoBox.appendChild(field('Collection protocol document', { full: true,
-          placeholder: 'e.g. CRC and healthy collections_ Kit insert',
-            get: function () { return draft.collectionDoc; },
-          set: function (v) { draft.collectionDoc = v; } }));
-      }
-      sec.appendChild(protoBox);
-      paintProto();
+      // The collection protocol document used to be named here. Removed on rep
+      // review: it is needed rarely enough that it belongs in §12's notes box
+      // with everything else the sections did not cover.
 
       var casesToggle = checkbox('The sponsor has selected the cases',
         function () { return h.sponsorSelected; },
@@ -4971,7 +5108,7 @@
             card.appendChild(field('What is it', { full: true,
               placeholder: spec.namedHint,
               hint: 'Used wherever the quote names the specimen \u2014 the summary '
-                  + 'and the quote name both read this rather than "other".',
+                  + 'and the quote number both read this rather than "other".',
               get: function () { return d.otherName; },
               set: function (v) { d.otherName = v; },
               then: refreshDrafts }));
@@ -4979,7 +5116,10 @@
           card.appendChild(field(spec.freeformLabel, { type: 'textarea', rows: 2, full: true,
             placeholder: spec.freeformHint,
             get: function () { return d.freeform; },
-            set: function (v) { d.freeform = v; } }));
+            set: function (v) { d.freeform = v; },
+            // An unnamed "other" takes its name from this box, so the summary
+            // and the quote number have to be redrafted when it changes.
+            then: refreshDrafts }));
           card.appendChild(timepointPicker(d, t));
           return card;
         }
@@ -5012,6 +5152,13 @@
               get: function () { return d.aliquots; },
               set: function (v) { d.aliquots = v; } }));
           }
+        } else if (spec.amount === MASS && (draft.cohorts || []).length > 1) {
+          // A minimum tumor weight differs by tumor type, and the tumor types
+          // are the cohorts — 100 mg of lung is not 250 mg of colon. One box
+          // per cohort, here in §05 with the rest of the specimen detail,
+          // rather than as an extra row in §11's pricing table.
+          d.minWeightByCohort = d.minWeightByCohort || {};
+          rows.push(weightByCohort(d));
         } else if (spec.amount) {
           rows.push(field(spec.amount.label, { placeholder: spec.amount.hint,
             get: function () { return d.amount; },
@@ -5055,17 +5202,30 @@
             (function (tube, k) {
               var row = el('div', { class: 'tube-row' });
               row.appendChild(el('span', { class: 'sub-label', text: 'Tube ' + (k + 1) }));
+              // The two tickboxes sit with the type and size they qualify:
+              // "if available" says the tube is a preference, not a
+              // requirement, and MT Group's standard processing is the answer
+              // on most quotes for the frozen blood products.
+              var ticks = el('div', { class: 'check-row full' }, [
+                checkbox('If available',
+                  function () { return tube.ifAvailable; },
+                  function (v) { tube.ifAvailable = v; }, refreshDrafts)
+              ]);
+              if (spec.standardProcessing) {
+                ticks.appendChild(checkbox('MTG standard processing',
+                  function () { return tube.standardProcessing; },
+                  function (v) { tube.standardProcessing = v; }, refreshDrafts));
+              }
               row.appendChild(el('div', { class: 'grid' }, [
-                pickOrType('Tube type', TUBE_TYPES, 'e.g. Streck',
+                pickOrType('Tube type', TUBE_TYPES, 'e.g. Streck Cell-Free DNA',
                   function () { return tube.type; },
                   function (v) { tube.type = v; }),
                 pickOrType('Tube size', TUBE_SIZES, 'e.g. 10 mL',
                   function () { return tube.size; },
                   function (v) { tube.size = v; }),
+                ticks,
                 field('Processing instructions', { type: 'textarea', rows: 2, full: true,
                   placeholder: 'Double-spin, aliquoting, time to process\u2026',
-                  hint: k === 0 ? 'Non-standard processing is one of the most common reasons '
-                                + 'a site declines.' : '',
                   get: function () { return tube.processing; },
                   set: function (v) { tube.processing = v; }, then: refreshDrafts })
               ]));
@@ -5082,13 +5242,28 @@
           card.appendChild(field('Additional processing requirements', {
             type: 'textarea', rows: 2, full: true,
             placeholder: 'e.g. sterile collection, time-to-ship limit, on-site aliquoting',
-            hint: 'Non-standard processing is one of the most common reasons a site '
-                + 'declines. Say it here rather than assuming the site will ask.',
             get: function () { return d.processing; },
             set: function (v) { d.processing = v; },
             then: refreshDrafts }));
         }
         return card;
+      }
+
+      /** One minimum weight per cohort, laid out as a small labelled grid. Each
+       *  box is tied to its own label by id, like every other control. */
+      function weightByCohort(d) {
+        var box = el('div', { class: 'full' });
+        box.appendChild(el('div', { class: 'sub-label',
+          text: 'Minimum weight, per cohort' }));
+        var grid = el('div', { class: 'grid' }, (draft.cohorts || []).map(function (c, i) {
+          var key = cohortWeightKey(c, i);
+          return field(cohortLabelFor(c, i), { placeholder: 'e.g. 100 mg',
+            get: function () { return d.minWeightByCohort[key]; },
+            set: function (v) { d.minWeightByCohort[key] = v; },
+            then: refreshDrafts });
+        }));
+        box.appendChild(grid);
+        return box;
       }
 
       /** Which timepoints this specimen is collected at. Only worth asking once
@@ -5229,7 +5404,11 @@
     function shipState() {
       var sh = draft.shipping = draft.shipping || {};
       if (!sh.legs) {
-        sh.legs = DEFAULT_LEGS.map(function (l) { return Object.assign({}, l); });
+        // Nothing goes through MT Group on an all-fresh collection, so that
+        // quote starts with the one leg it actually has.
+        sh.legs = DEFAULT_LEGS.filter(function (l) {
+          return !isFreshCollection() || l.toSponsor;
+        }).map(function (l) { return Object.assign({}, l); });
       }
       if (sh.usRate == null)   sh.usRate = '300';
       if (sh.intlRate == null) sh.intlRate = '3000';
@@ -5282,7 +5461,6 @@
 
     function shippingCost() {
       var sh = shipState();
-      if (isFreshCollection()) return 0;
       return sh.legs.reduce(function (t, leg) {
         return t + legCount(sh, leg) * legRate(sh, leg);
       }, 0);
@@ -5549,19 +5727,20 @@
       sec.appendChild(destToggle);
       sec.appendChild(addrFld);
 
-      // Fresh specimens go site-to-sponsor overnight, so there are no legs to
-      // cost and no batching to plan.
+      // A fresh collection has one leg, not none: the site couriers it straight
+      // to the sponsor overnight, which is the most expensive shipment MT Group
+      // buys. Hiding the leg rows here left a fresh-tissue quote with no way to
+      // cost shipping at all and an internal figure stuck at $0.
       var legsWrap = el('div', { class: 'internal-only' });
       paintLegsBlock = function () {
         legsWrap.replaceChildren();
-        if (isFreshCollection()) {
-          legsWrap.appendChild(el('div', { class: 'hint',
-            text: 'Fresh specimens ship from the site straight to the sponsor '
-                + 'overnight, so there are no legs to cost.' }));
-          return;
-        }
         legsWrap.appendChild(subHead('Shipping pricing \u2014 MT Group\u2019s '
           + 'internal shipping cost estimates'));
+        if (isFreshCollection()) {
+          legsWrap.appendChild(el('div', { class: 'hint',
+            text: 'Fresh specimens go from the site straight to the sponsor '
+                + 'overnight \u2014 one leg, at courier rates.' }));
+        }
         legsWrap.appendChild(el('div', { class: 'internal-note',
           text: 'Internal only \u2014 never reaches the sponsor quote.' }));
         legsWrap.appendChild(legsBox);
@@ -5842,7 +6021,10 @@
             var spec = SPECIMEN_SPEC[t] || {};
             if (spec.blocks && line.per == null) {
               var blocks = num(((draft.specimenDetail || {})[t] || {}).amount);
-              if (blocks) { line.per = String(blocks); line.unit = line.unit || 'block'; }
+              if (blocks) {
+                line.per = String(blocks);
+                if (!line.unit) { line.unit = 'Other'; line.unitOther = 'block'; }
+              }
             }
             var sub = el('span', { class: 'ca' });
             function retotal() {
@@ -5850,31 +6032,36 @@
               rowRetotal();
             }
 
+            // "Other" opens a box beside the menu rather than repainting the
+            // row, so whatever is typed there survives every keystroke.
+            var unitOther = el('input', { type: 'text', placeholder: 'e.g. block',
+              'aria-label': t + ' other unit for ' + row.label,
+              oninput: function () { line.unitOther = unitOther.value; } });
+            unitOther.value = line.unitOther == null ? '' : String(line.unitOther);
+
             var unitSel = el('select', {
               'aria-label': t + ' unit for ' + row.label,
-              onchange: function () { line.unit = unitSel.value; retotal(); } });
+              onchange: function () {
+                line.unit = unitSel.value;
+                unitOther.style.display = unitSel.value === 'Other' ? '' : 'none';
+                retotal();
+              } });
             PRICE_UNITS.forEach(function (u) {
               unitSel.appendChild(el('option', { value: u, text: u }));
             });
-            unitSel.value = line.unit || 'subject';
+            unitSel.value = PRICE_UNITS.indexOf(line.unit) > -1
+              ? line.unit : (line.unit ? 'Other' : 'subject');
+            if (unitSel.value === 'Other' && line.unitOther == null && line.unit
+                && PRICE_UNITS.indexOf(line.unit) === -1) {
+              line.unitOther = line.unit;
+              unitOther.value = line.unit;
+            }
+            unitOther.style.display = unitSel.value === 'Other' ? '' : 'none';
 
             var perIn = el('input', { type: 'text', inputmode: 'numeric', placeholder: '1',
               'aria-label': t + ' units per subject for ' + row.label,
               oninput: function () { line.per = perIn.value; retotal(); } });
             perIn.value = line.per == null ? '' : String(line.per);
-
-            // Tissue is specified by weight, and the minimum can differ by
-            // tumor type. Without a home here it went into the count column,
-            // where "100 mg" reads as a hundredfold multiplier.
-            var wantsWeight = (SPECIMEN_SPEC[t] || {}).amount === MASS;
-            var weightIn = null;
-            if (wantsWeight) {
-              weightIn = el('input', { type: 'text',
-                'aria-label': t + ' minimum weight for ' + row.label,
-                placeholder: 'e.g. 100 mg',
-                oninput: function () { line.minWeight = weightIn.value; refreshDrafts(); } });
-              weightIn.value = line.minWeight == null ? '' : String(line.minWeight);
-            }
 
             var priceIn = el('input', { type: 'text', inputmode: 'decimal',
               'aria-label': t + ' $ per unit for ' + row.label,
@@ -5884,17 +6071,11 @@
             sub.textContent = money(n * (num(line.per) || 1) * num(line.price));
             grid.appendChild(el('div', { class: 'cohort-row priceline' }, [
               el('span', { class: 'dim indent', text: specimenLabel(draft, t) }),
-              unitSel,
+              el('span', { class: 'unit-cell' }, [unitSel, unitOther]),
               el('span', { class: 'ca' }, [perIn]),
               el('span', { class: 'ca' }, [priceIn]),
               sub
             ]));
-            if (weightIn) {
-              grid.appendChild(el('div', { class: 'cohort-row priceline sub-price' }, [
-                el('span', { class: 'dim indent', text: 'Minimum weight' }),
-                weightIn, el('span', {}), el('span', {}), el('span', {})
-              ]));
-            }
           });
 
           rowSub.textContent = money(rowLineTotal(draft, pr, row));
@@ -5928,7 +6109,9 @@
       function paintScreenfail() {
         sfBox.replaceChildren();
         if (!pr.screenfail.enabled) return;
-        var cohortNames = draft.cohorts.map(function (c, i) { return c.name || 'Cohort ' + (i + 1); });
+        // Numbered and named, so the tickboxes read the way the cohort cards
+        // above them and the document below them do.
+        var cohortNames = draft.cohorts.map(cohortLabelFor);
         var box = el('div', { class: 'toggle-box' });
         box.appendChild(el('div', { class: 'grid' }, [
           field('Screenfail rate ($ per subject)', { inputmode: 'decimal',
@@ -5978,6 +6161,12 @@
       // whole line, which is the old behaviour.
       function paintOther() {
         otherBox.replaceChildren();
+        // Column headings over an empty table read as a section that does not
+        // work. It opens with one blank line, the way §03 opens with one
+        // cohort card; a line with nothing in it costs nothing.
+        if (!pr.otherCosts.length) {
+          pr.otherCosts.push({ label: '', amount: '', count: '', unit: '' });
+        }
         var rows = el('div', { class: 'cohorts' });
         rows.appendChild(el('div', { class: 'cohort-row cost cohort-head' }, [
           el('span', { text: 'Cost' }),
@@ -6176,7 +6365,7 @@
       return el('div', { class: 'sub-head', text: text });
     }
 
-    // ---- 06 summary + quote name (after pricing) -----------------------
+    // ---- 06 summary + quote number (after pricing) ---------------------
 
     var summaryInput = null, nameInput = null;
 
@@ -6187,7 +6376,12 @@
       }
       if (!draft.nameEdited && nameInput) {
         var n = draftQuoteName(draft);
-        if (n) { draft.quoteName = n; nameInput.value = n; refreshNumber(); }
+        if (n) {
+          draft.quoteName = n;
+          if (!draft.quoteNumberEdited) draft.quoteNumber = quoteNumber(draft);
+          nameInput.value = draft.quoteNumber || n;
+          refreshNumber();
+        }
       }
     }
 
@@ -6205,27 +6399,40 @@
       return sec;
     }
 
-    // The quote name is the quote number — there is only one, and it comes last,
-    // once everything it draws on has been filled in.
+    // The quote number. It comes last, once everything it draws on has been
+    // filled in. The box holds the whole number — "QTE NTA20260901 CRC -
+    // plasma" — because that is what a rep reads off a quote and searches
+    // for; it is not called a quote name anywhere any more.
     function sectionQuoteName() {
       var sec = el('section', { class: 'sec' });
-      sec.appendChild(secHead('', 'Quote name'));
+      sec.appendChild(secHead('', 'Quote number'));
 
-      var nFld = field('Quote name', { required: true, full: true, autofilled: true,
-        placeholder: 'CRC - plasma & buffy',
-        hint: 'Drafts itself from the cohorts and specimens above, and is the quote number too. Editing it stops the rewriting.',
-        get: function () { return draft.quoteName; },
-        set: function (v) { draft.quoteName = v; draft.nameEdited = true; } });
+      var nFld = field('Quote number', { required: true, full: true, autofilled: true,
+        placeholder: 'QTE NTA20260901 CRC - plasma & buffy',
+        hint: 'Builds itself from the sponsor, the date and the cohorts and '
+            + 'biospecimens above. Editing it stops the rewriting.',
+        get: function () { return draft.quoteNumber || quoteNumber(draft); },
+        set: function (v) {
+          draft.quoteNumber = v;
+          draft.quoteNumberEdited = true;
+          draft.nameEdited = true;
+          // Everything downstream still works off the descriptive half, so it
+          // is read back out of whatever the rep typed.
+          draft.quoteName = quoteDescription(v);
+        } });
       nameInput = nFld._input;
       sec.appendChild(nFld);
 
       sec.appendChild(el('button', { class: 'add-row', type: 'button', onclick: function () {
         draft.summaryEdited = false; draft.nameEdited = false;
+        draft.quoteNumberEdited = false;
         var sm = draftSummary(draft), n = draftQuoteName(draft);
         draft.summary = sm; if (summaryInput) summaryInput.value = sm;
-        draft.quoteName = n; nameInput.value = n;
+        draft.quoteName = n;
+        draft.quoteNumber = quoteNumber(draft);
+        nameInput.value = draft.quoteNumber;
         toast('Redrafted from your entries');
-      } }, ['↻ Redraft the name and summary']));
+      } }, ['↻ Redraft the number and summary']));
 
       refreshDrafts();
       return sec;
@@ -6298,7 +6505,7 @@
     function submit() {
       var errs = [];
       if (!String(draft.client).trim()) errs.push('Client / sponsor is required (§01).');
-      if (!String(draft.quoteName).trim()) errs.push('Quote name is required (§06).');
+      if (!String(draft.quoteName).trim()) errs.push('Quote number is required (§06).');
       if (!String(draft.quoteDate).trim()) errs.push('Quote date is required (§01).');
       if (String(draft.totalCost).trim() !== '' && isNaN(Number(String(draft.totalCost).replace(/[$,]/g, '')))) {
         errs.push('Total cost must be a number (§11).');

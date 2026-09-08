@@ -2319,3 +2319,71 @@ Eight items of field-by-field feedback on the clickable mockup.
 - **Every cost line names its biospecimen** (item 8). `specimenProse(q, t)`
   is now always the cost line's sub-descriptor, so the document reads
   *"$12,600 / subject (NSCLC — fresh tissue)"*.
+
+## §38 — Twelfth-pass rep review, 2026-09-08
+
+Twenty-three items. Several of them delete things.
+
+**Deletions.** The **collection protocol document** box left §03 (item 1), the
+**"Non-standard processing is one of the most common reasons a site declines"**
+hints left §05 twice (item 5), and the **"fresh collection is surgery-driven"**
+hint left §09 (item 11). Two of the three `STUDY_CONDITIONS` went with them:
+**cross-enrolment in another sponsor study** (item 2) and **repeat draws**
+(item 8). Only the freight clause remains prompted. Each of these was a
+question on every quote for something that applies to few of them.
+
+**The internal draft asks instead** (item 9). A dashed reviewer block at the
+top of the draft — internal only, dropped from the sponsor version — lists
+what gets forgotten: cross-enrolment, a requested collection protocol, repeat
+draws, what the sponsor is providing, anything agreed on a call. Whatever
+applies goes in §12's notes box. This is where the deleted tickboxes went.
+
+**§05 biospecimens.**
+- The three columns are three columns again down to 480px (item 3). The old
+  760px breakpoint collapsed them to one list in a side panel, which is where
+  the mockup is usually read.
+- **Streck** is now **Streck Cell-Free DNA** in the tube list (item 4).
+- The "other" example no longer offers **synovial biopsy**, which is already a
+  checkbox of its own (item 7).
+- Every tube row gains an **If available** tick (item 18); the four frozen
+  blood products — plasma, serum, buffy coat, PBMCs — also gain **MTG standard
+  processing** (item 6). The first prints as *"1 x 10 mL Streck Cell-Free DNA
+  tube if available"*; the second adds *"Blood processed to plasma using MTG
+  standard processes."*
+- A tube block with neither type nor size no longer prints as "1 x tube".
+- **Minimum weight moved here from §11** (item 13). With more than one cohort
+  it is a small grid, one box per cohort, because the tumor types are the
+  cohorts. It prints as *"NSCLC: ≥100 mg per tumor"* — the at-least sign and
+  the milligrams supplied when the rep typed a bare number (item 22).
+- An **"other" described but not named** now takes its name from the
+  description, in the summary, the quote number and the document (item 19),
+  and the document stops saying it twice.
+
+**§09 timeline.** Site initiation is pre-filled with *"3-4 weeks after the kick
+off call and alignment on all study parameters"* (item 10).
+
+**§10 shipping.** A **fresh collection has one leg, not none** (item 12). The
+legs table used to disappear entirely on an all-fresh quote and the internal
+cost was pinned at $0 — a fresh-tissue quote had no way to cost shipping at
+all. The table stays, with a note that the one leg is the overnight courier.
+
+**§11 pricing.**
+- The unit list is **subject, mL, aliquot, cell # and Other**, with Other
+  opening a box beside the menu (item 14). Two real quotes price per *draw*
+  and per *stool*; both now go through Other.
+- The screenfail **Applies to** list reads **"Cohort 1: Non Hodgkins
+  Lymphoma"** (item 15).
+- **Other costs opens with one blank line** (item 16). Column headings over an
+  empty table read as a section that does not work.
+- **What the total assumes** rides with the total marker rather than replacing
+  it — *"(Total — estimating that 100% of subjects provide two stools)"*
+  (item 17).
+
+**§06.** The section, the field and the validation message all say **quote
+number**, and the box holds the whole number — *"QTE NTA20260908 Non Hodgkins
+Lymphoma - plasma"* — rather than the descriptive half alone (item 20). The
+generated format is unchanged: it already matched the issued quotes.
+
+**Document.** A blank line before *"No additional inclusions or exclusions"*
+(item 21), and clinical data reads as a phrase — *"Demographics, diagnosis,
+medical history"* — rather than a run of proper nouns (item 23).
