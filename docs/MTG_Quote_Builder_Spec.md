@@ -2387,3 +2387,23 @@ generated format is unchanged: it already matched the issued quotes.
 **Document.** A blank line before *"No additional inclusions or exclusions"*
 (item 21), and clinical data reads as a phrase — *"Demographics, diagnosis,
 medical history"* — rather than a run of proper nouns (item 23).
+
+## §39 — Deleting a quote from the register, 2026-09-09
+
+A trial quote left on the register gets read as a real one. Every row now
+carries a **Delete**, and it is a real delete — the quote goes out of storage,
+not into an archive.
+
+- The control sits **in the quote cell**, under the biospecimen line, not in a
+  column of its own. The table already runs off the right edge in a narrow
+  window, and a delete button you have to scroll sideways to reach is one
+  nobody finds.
+- It arms before it fires, through the same `confirmButton` the sample reset
+  uses: *Delete → "Delete this quote?" → Yes, delete / Cancel*. `window.confirm`
+  is suppressed in the artifact viewer, so an inline arm is the only pattern
+  that works there.
+- The toast that follows carries an **Undo** for seven seconds, and putting a
+  quote back puts it back at its own position rather than at the end.
+- The delete persists: stored data wins on load, so a reload does not resurrect
+  it. **Reset sample data** in the foot row still restores the five real quotes,
+  as it always did.
