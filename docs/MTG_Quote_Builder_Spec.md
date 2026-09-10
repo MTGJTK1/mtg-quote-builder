@@ -2407,3 +2407,28 @@ not into an archive.
 - The delete persists: stored data wins on load, so a reload does not resurrect
   it. **Reset sample data** in the foot row still restores the five real quotes,
   as it always did.
+
+## §40 — Thirteenth-pass rep review, 2026-09-10
+
+Four items.
+
+- **An extension with subcohorts prices its subcohorts** (item 1). The choice
+  now reads *"Same biospecimen pricing for all subcohorts" / "Different
+  biospecimen price per subcohort"*, the table heads **Subcohort**, and the
+  rows come from `pricingRows()` — the same rows the full track prices — rather
+  than from `draft.cohorts`. `recalc()` and `draftCostLines()` follow the same
+  rows, so the total, the breakdown and the document agree. A subcohort starts
+  at its parent cohort's carried-over rate.
+- **Other costs is a card of labelled boxes** (item 2). It was a table row, and
+  `.cohort-row.cost` collapses to a single column below 760px — which is the
+  width the mockup is read at. The rep saw four unlabelled boxes stacked, one
+  of them with no placeholder at all, and no column headings to say which was
+  which. It is now one small card per line: **What the cost is**, **Unit**,
+  **How many**, **Rate ($ per unit)**, and a computed **Amount**. Every box has
+  a real label tied to it by id. The arithmetic is unchanged — a blank count
+  still means the rate is the whole line.
+- **Payment terms are not asked** (item 3). They are Net 30 on every quote. The
+  field is gone from §12; the Terms & Conditions still print
+  `PAYMENT_TERMS_DEFAULT`.
+- **A subcohort count says what it counts** (item 4): *"1a. stage I-II (3
+  subjects)"*, and *"(3 additional subjects)"* on an extension.

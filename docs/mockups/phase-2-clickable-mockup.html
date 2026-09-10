@@ -777,6 +777,7 @@
   }
   @media (max-width: 760px) { .cohort-row.cost { grid-template-columns: 1fr; gap: 6px; } }
   /* A biospecimen price line sits under its cohort row, indented. */
+  .cost-line .cohort-card-head .row-x { margin-left: auto; }
   .cohort-row.ext-cohort { grid-template-columns: 1fr 60px 130px 30px; }
   .cohort-row.blockrow { grid-template-columns: 1fr 80px 110px 100px 100px 30px; }
   .cohort-row.selspec { grid-template-columns: 1fr 170px 1fr 30px; }
@@ -2375,7 +2376,9 @@
           var sn = isExt ? num(sc.additionalSubjects) : num(sc.subjects);
           var note = String(sc.note || '').trim();
           sizeLines.push('    ' + (i + 1) + String.fromCharCode(97 + j) + '. ' +
-            (note || 'Subcohort ' + (j + 1)) + (sn ? ' (' + sn + ')' : ''));
+            (note || 'Subcohort ' + (j + 1)) +
+            (sn ? ' (' + sn + (isExt ? ' additional subject' : ' subject') +
+              (sn === 1 ? '' : 's') + ')' : ''));
         });
       });
       // A fixed-dollar quote says what the money buys rather than a count.
@@ -2603,8 +2606,8 @@
       el('div', { text: 'This Quote is prepared and approved by ' + who +
         ' (' + email + '). By issuing a Purchase Order and signing this Quote, '
         + 'you are accepting this Quote’s terms and conditions.' }),
-      el('div', { text: 'Payment terms are ' +
-        (String(h.paymentTerms || '').trim() || PAYMENT_TERMS_DEFAULT)
+      // Standard on every quote, so it is printed rather than asked.
+      el('div', { text: 'Payment terms are ' + PAYMENT_TERMS_DEFAULT
         + '. Invoices will be submitted the month after biospecimen deliveries.' }),
       el('div', { class: 'draft-sig' }, [
         el('div', { text: '_______________________' }),
@@ -2664,9 +2667,11 @@
         }
       } else {
         var types = orderedSpecimens(q);
-        (q.cohorts || []).forEach(function (c, i) {
-          var key = c.name || ('cohort-' + i);
-          var n = extAdditionalOf(c);
+        // One line per priced row — a cohort, or a subcohort where the cohort
+        // has them, the same rows the form priced.
+        pricingRows(q).forEach(function (row) {
+          var key = row.key;
+          var n = row.n;
           if (!n) return;
           var byType = (pr.cohortSpecimenPrices || {})[key] || {};
           var ic = (pr.cohortInternal || {})[key] || {};
@@ -2675,13 +2680,13 @@
             priced.forEach(function (t, j) {
               var p = num(byType[t]);
               push(docMoney(p) + ' / ' + specimenProse(q, t),
-                c.name || 'Cohort ' + (i + 1), n * p,
+                row.label, n * p,
                 j === 0 ? ic.siteCost : '', j === 0 ? ic.notes : '', '',
                 priced.length > 1 ? specimenProse(q, t) : '');
             });
           } else {
             var p2 = num((pr.cohortPrices || {})[key]);
-            if (p2) push(docMoney(p2) + ' / subject', c.name || 'Cohort ' + (i + 1),
+            if (p2) push(docMoney(p2) + ' / subject', row.label,
               n * p2, ic.siteCost, ic.notes);
           }
         });
@@ -5866,10 +5871,16 @@
 
         if (ext) {
           var perCohort = pr.extMode !== 'flat';
+          // Once a cohort has subcohorts they are what gets priced, so the
+          // choice has to say so — otherwise it offers a per-cohort price
+          // beside a table of subcohorts.
+          var bySub = (draft.cohorts || []).some(function (c) {
+            return (c.subcohorts || []).length > 0; });
+          var unitWord = bySub ? 'subcohort' : 'cohort';
           mainBox.appendChild(el('div', { class: 'check-row' }, [
-            radio('extprice', 'Same biospecimen pricing for all cohorts', !perCohort,
+            radio('extprice', 'Same biospecimen pricing for all ' + unitWord + 's', !perCohort,
               function () { pr.extMode = 'flat'; paintMain(); recalc(); }),
-            radio('extprice', 'Different biospecimen pricing per cohort', perCohort,
+            radio('extprice', 'Different biospecimen price per ' + unitWord, perCohort,
               function () { pr.extMode = 'perCohort'; paintMain(); recalc(); })
           ]));
 
@@ -5924,8 +5935,9 @@
           }
           var rows = el('div', { class: 'cohorts' });
           var extTypes = orderedSpecimens(draft);
+          var unitHead = bySub ? 'Subcohort' : 'Cohort';
           rows.appendChild(el('div', { class: 'cohort-row ext cohort-head' }, [
-            el('span', { text: extTypes.length > 1 ? 'Cohort / biospecimen' : 'Cohort' }),
+            el('span', { text: extTypes.length > 1 ? unitHead + ' / biospecimen' : unitHead }),
             el('span', { class: 'ca', text: 'Subjects' }),
             el('span', { class: 'ca', text: '$ per subject' }),
             el('span', { class: 'ca', text: 'Subtotal' }), el('span', {})]));
@@ -5935,15 +5947,19 @@
           var carried = draft.header.matchedStudy ? draft.header.perSubject : '';
           pr.cohortSpecimenPrices = pr.cohortSpecimenPrices || {};
 
-          draft.cohorts.forEach(function (c, i) {
-            var key = c.name || ('cohort-' + i);
-            var subs = extAdditional(c);
-            var cohortName = c.name || 'Cohort ' + (i + 1);
+          // The same rows the full track prices: one per cohort, or one per
+          // subcohort where a cohort has them.
+          pricingRows(draft).forEach(function (row) {
+            var key = row.key;
+            var subs = row.n;
+            var cohortName = row.label;
 
             // Each cohort resumes at its own rate from the parent quote. A
             // single blended figure would be wrong wherever the cohorts were
-            // priced differently, which is most of them.
-            var seed = (draft.header.parentCohortPrices || {})[key] || carried || '';
+            // priced differently, which is most of them. Subcohorts start at
+            // their parent cohort's rate.
+            var parentKey = row.cohort.name || ('cohort-' + row.cohortIndex);
+            var seed = (draft.header.parentCohortPrices || {})[parentKey] || carried || '';
             var byType = pr.cohortSpecimenPrices[key] = pr.cohortSpecimenPrices[key] || {};
             if (extTypes.length && byType[extTypes[0]] == null && seed) {
               byType[extTypes[0]] = seed;
@@ -6218,59 +6234,61 @@
       // $100 a subject is $53,200 of a real $948,425 quote, and shipping kits
       // out to sites is $50 a stool. Leave the count blank and the rate is the
       // whole line, which is the old behaviour.
+      // Each cost line is its own small card of labelled boxes rather than a
+      // row under column headings. As a table it collapsed to a stack of
+      // unlabelled inputs in a narrow window — four blank boxes and no way to
+      // tell which was the rate — which read as a section that did not work.
       function paintOther() {
         otherBox.replaceChildren();
-        // Column headings over an empty table read as a section that does not
-        // work. It opens with one blank line, the way §03 opens with one
-        // cohort card; a line with nothing in it costs nothing.
+        // It opens with one blank line, the way §03 opens with one cohort
+        // card; a line with nothing in it costs nothing.
         if (!pr.otherCosts.length) {
           pr.otherCosts.push({ label: '', amount: '', count: '', unit: '' });
         }
-        var rows = el('div', { class: 'cohorts' });
-        rows.appendChild(el('div', { class: 'cohort-row cost cohort-head' }, [
-          el('span', { text: 'Cost' }),
-          el('span', { class: 'ca', text: 'Rate' }),
-          el('span', { class: 'ca', text: '×' }),
-          el('span', { text: 'Unit' }),
-          el('span', { class: 'ca', text: 'Amount' }),
-          el('span', {})]));
         pr.otherCosts.forEach(function (o, i) {
-          var lab = el('input', { type: 'text', 'aria-label': 'Cost line ' + (i + 1) + ' label',
-            placeholder: 'e.g. Medrio entry',
-            oninput: function () { pr.otherCosts[i].label = lab.value; } });
-          lab.value = o.label || '';
-
-          var sub = el('span', { class: 'ca dim' });
+          var card = el('div', { class: 'toggle-box cost-line' });
+          var amountOut = el('span', { class: 'v' });
           function retotal() {
-            sub.textContent = money(otherCostAmount(pr.otherCosts[i]));
+            amountOut.textContent = money(otherCostAmount(pr.otherCosts[i]));
             recalc();
           }
 
-          var amt = el('input', { type: 'text', inputmode: 'decimal',
-            'aria-label': 'Cost line ' + (i + 1) + ' rate',
-            oninput: function () { pr.otherCosts[i].amount = amt.value; retotal(); } });
-          amt.value = o.amount || '';
+          card.appendChild(el('div', { class: 'cohort-card-head' }, [
+            el('span', { class: 'sec-num', text: String(i + 1) }),
+            el('span', { class: 'cohort-card-title', text: 'Cost line' }),
+            el('button', { class: 'row-x', type: 'button',
+              'aria-label': 'Remove cost line ' + (i + 1),
+              onclick: function () {
+                pr.otherCosts.splice(i, 1); paintOther(); recalc();
+              } }, ['×'])
+          ]));
 
-          var qty = el('input', { type: 'text', inputmode: 'numeric', placeholder: '—',
-            'aria-label': 'Cost line ' + (i + 1) + ' count',
-            oninput: function () { pr.otherCosts[i].count = qty.value; retotal(); } });
-          qty.value = o.count == null ? '' : String(o.count);
+          card.appendChild(field('What the cost is', { full: true,
+            placeholder: 'e.g. Medrio entry',
+            get: function () { return pr.otherCosts[i].label; },
+            set: function (v) { pr.otherCosts[i].label = v; } }));
 
-          var unit = el('input', { type: 'text', placeholder: 'subjects, reports…',
-            'aria-label': 'Cost line ' + (i + 1) + ' unit',
-            oninput: function () { pr.otherCosts[i].unit = unit.value; } });
-          unit.value = o.unit || '';
+          card.appendChild(el('div', { class: 'grid' }, [
+            field('Unit', { placeholder: 'e.g. subjects, reports, stools',
+              get: function () { return pr.otherCosts[i].unit; },
+              set: function (v) { pr.otherCosts[i].unit = v; } }),
+            field('How many', { inputmode: 'numeric',
+              placeholder: 'Leave blank for a lump sum',
+              get: function () { return pr.otherCosts[i].count; },
+              set: function (v) { pr.otherCosts[i].count = v; }, then: retotal }),
+            field('Rate ($ per unit)', { inputmode: 'decimal',
+              placeholder: 'e.g. 100',
+              get: function () { return pr.otherCosts[i].amount; },
+              set: function (v) { pr.otherCosts[i].amount = v; }, then: retotal })
+          ]));
 
-          var x = el('button', { class: 'row-x', type: 'button',
-            'aria-label': 'Remove cost line ' + (i + 1),
-            onclick: function () { pr.otherCosts.splice(i, 1); paintOther(); recalc(); } }, ['×']);
-
-          sub.textContent = money(otherCostAmount(o));
-          rows.appendChild(el('div', { class: 'cohort-row cost' },
-            [lab, el('span', { class: 'ca' }, [amt]), el('span', { class: 'ca' }, [qty]),
-             unit, sub, x]));
+          card.appendChild(el('div', { class: 'calc' }, [
+            el('div', { class: 'calc-row calc-total' }, [
+              el('span', { text: 'Amount' }), amountOut])
+          ]));
+          amountOut.textContent = money(otherCostAmount(o));
+          otherBox.appendChild(card);
         });
-        otherBox.appendChild(rows);
         otherBox.appendChild(el('button', { class: 'add-row', type: 'button', onclick: function () {
           pr.otherCosts.push({ label: '', amount: '', count: '', unit: '' }); paintOther();
         } }, ['+ Add cost line']));
@@ -6284,11 +6302,13 @@
         var specimenTotal = 0;
         if (ext) {
           if (pr.extMode !== 'flat') {          // undefined defaults to per-cohort
-            draft.cohorts.forEach(function (c, i) {
-              var key = c.name || ('cohort-' + i);
-              specimenTotal += extAdditional(c) * extCohortRate(pr, key);
+            var extBySub = (draft.cohorts || []).some(function (c) {
+              return (c.subcohorts || []).length > 0; });
+            pricingRows(draft).forEach(function (row) {
+              specimenTotal += row.n * extCohortRate(pr, row.key);
             });
-            lines.push(['Biospecimens & data, by cohort', specimenTotal]);
+            lines.push(['Biospecimens & data, by ' +
+              (extBySub ? 'subcohort' : 'cohort'), specimenTotal]);
           } else {
             var flatRate = extFlatRate(pr, draft);
             specimenTotal = subjects * flatRate;
@@ -6517,12 +6537,6 @@
         text: 'On: "$471,900 (Cancer) / $28,600 (Shipping) / $500,500 (Total)". '
             + 'Off: just the total. Both appear in real quotes.' }));
 
-      sec.appendChild(field('Payment terms', {
-        placeholder: PAYMENT_TERMS_DEFAULT,
-        hint: 'Printed in the Terms & Conditions. Leave blank for '
-            + PAYMENT_TERMS_DEFAULT + '.',
-        get: function () { return draft.header.paymentTerms; },
-        set: function (v) { draft.header.paymentTerms = v; } }));
       sec.appendChild(field('Notes', { type: 'textarea', rows: 4, full: true,
         placeholder: 'Delivery expectations, sponsor-specific terms, anything the sections above did not cover.',
         get: function () { return draft.notes; }, set: function (v) { draft.notes = v; } }));
